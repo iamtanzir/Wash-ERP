@@ -1,0 +1,65 @@
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "System user with role-based access",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "editor", "viewer"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "erp_order": {
+      "title": "ERP Order",
+      "description": "Master ERP plan records",
+      "type": "object",
+      "properties": {
+        "buyer": { "type": "string" },
+        "erp_ship_date": { "type": "string", "format": "date" },
+        "file_name": { "type": "string" },
+        "style_no": { "type": "string" },
+        "cpl_qty_kg": { "type": "number" },
+        "order_qty_pcs": { "type": "number" },
+        "floor": { "type": "string" },
+        "wash_type": { "type": "string" },
+        "status": { "type": "string" },
+        "plan": { "type": "string" },
+        "source_ref": { "type": "string" },
+        "remarks": { "type": "string" },
+        "uploaded_by": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["buyer", "file_name", "style_no"]
+    },
+    "audit_log": {
+      "title": "Audit Log",
+      "description": "Activity log for sensitive actions",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string" },
+        "userId": { "type": "string" },
+        "targetId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "details": { "type": "string" }
+      },
+      "required": ["action", "userId", "timestamp"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "user",
+      "description": "Registered system users"
+    },
+    "erp_orders": {
+      "schema": "erp_order",
+      "description": "Active and history ERP orders"
+    },
+    "audit_logs": {
+      "schema": "audit_log",
+      "description": "Audit trail for admin actions"
+    }
+  }
+}
