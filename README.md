@@ -1,4 +1,4 @@
-# Secure Wash ERP Module
+# Wash ERP Module
 
 A simplified, robust enterprise resource planning system with basic internal authentication, built for secure environments.
 
