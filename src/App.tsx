@@ -1,0 +1,53 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
+import DailyUpdate from './pages/DailyUpdate';
+import CloseOrder from './pages/CloseOrder';
+import DataBank from './pages/DataBank';
+import NewERPPlan from './pages/NewERPPlan';
+import CplReport from './pages/CPLReport';
+import Login from './pages/Login';
+import Admin from './pages/Admin';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './contexts/AuthContext';
+import { Toaster } from 'sonner';
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Toaster position="top-right" richColors />
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="cpl-report" element={<CplReport />} />
+              <Route path="daily-update" element={<DailyUpdate />} />
+              <Route path="close-order" element={<CloseOrder />} />
+              <Route path="data-bank" element={<DataBank />} />
+              
+              {/* Editor/Admin Only */}
+              <Route element={<ProtectedRoute role="editor" />}>
+                <Route path="new-plan" element={<NewERPPlan />} />
+              </Route>
+              
+              {/* Admin Only */}
+              <Route element={<ProtectedRoute role="admin" />}>
+                <Route path="admin" element={<Admin />} />
+              </Route>
+            </Route>
+          </Route>
+          
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}

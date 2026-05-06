@@ -1,0 +1,574 @@
+[
+  {
+    "name": "erp_orders",
+    "type": "base",
+    "system": false,
+    "id": "collection_erp_order001",
+    "schema": [
+      {
+        "system": false,
+        "id": "field_buyer_erpo001",
+        "name": "buyer",
+        "type": "select",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSelect": 1,
+          "values": [
+            "AEO (American Eagle) - 133",
+            "Aldi - 119",
+            "ALDI(GP) - 150",
+            "Artsana - 104",
+            "As color Ltd - 115",
+            "C and A - 333",
+            "Carrefour - 125",
+            "Celio - 666",
+            "Centric - 113",
+            "Cotton On - 555",
+            "FARMERS - 122",
+            "H and M - 111",
+            "Hummel - 123",
+            "Jack and Jones - 775",
+            "JDY - 771",
+            "Lidl - 222",
+            "NZA - 131",
+            "Only - 126",
+            "Only and Sons - 774",
+            "OVS - 116",
+            "Primark - 444",
+            "Tom Tailor - 112",
+            "Warehouse - 108",
+            "Teddy Spa - 144",
+            "Nakata - 146",
+            "PUMA - 130",
+            "SUZI - 118",
+            "Vero Moda - 772",
+            "LLC Baltic - 105",
+            "Meijer - 127",
+            "Mosaica Brand - 129",
+            "Next - 120",
+            "Just Like Hero - 132",
+            "Kaufland - 888",
+            "Hurley - 128",
+            "Glassons - 136",
+            "Brand Machine - 109",
+            "Yamamay - 117",
+            "Others"
+          ]
+        }
+      },
+      {
+        "system": false,
+        "id": "field_fileno_erpo002",
+        "name": "file_no",
+        "type": "text",
+        "required": true,
+        "presentable": true,
+        "unique": true,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_style_erpo003",
+        "name": "style_no",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_orderqty_erpo4",
+        "name": "order_qty",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": 0, "max": null, "noDecimal": true }
+      },
+      {
+        "system": false,
+        "id": "field_color_erpo005",
+        "name": "color",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_wash_erpo006",
+        "name": "wash_type",
+        "type": "select",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSelect": 1,
+          "values": ["Normal Wash", "Acid Wash", "Enzyme Wash", "Pigment Wash", "Spray Wash", "Soft Wash", "Garment Dye"]
+        }
+      },
+      {
+        "system": false,
+        "id": "field_floor_erpo007",
+        "name": "sew_floor",
+        "type": "select",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSelect": 1,
+          "values": ["G.F", "1st.F", "2nd.F", "K.F", "B2B", "NKFL", "INCTL"]
+        }
+      },
+      {
+        "system": false,
+        "id": "field_status_erpo008",
+        "name": "status",
+        "type": "select",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSelect": 1,
+          "values": ["Pending", "Running", "Pending Closure", "Closed"]
+        }
+      },
+      {
+        "system": false,
+        "id": "field_color_erpo020",
+        "name": "color",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_erpdate_erpo09",
+        "name": "erp_date",
+        "type": "date",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": "", "max": "" }
+      },
+      {
+        "system": false,
+        "id": "field_cplkg_erpo010",
+        "name": "cpl_qty_kg",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "noDecimal": false }
+      },
+      {
+        "system": false,
+        "id": "field_item_erpo011",
+        "name": "item",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_ppplan_erpo012",
+        "name": "pp_plan",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_prntemb_erpo013",
+        "name": "print_emb",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_srcrif_erpo014",
+        "name": "source_ref",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_wrkord_erpo015",
+        "name": "work_order",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_bgtprc_erpo016",
+        "name": "budget_price",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "noDecimal": false }
+      },
+      {
+        "system": false,
+        "id": "field_apprprc_erpo017",
+        "name": "approval_price",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "noDecimal": false }
+      },
+      {
+        "system": false,
+        "id": "field_pino_erpo018",
+        "name": "pi_no",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_emarks_erpo019",
+        "name": "remarks",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      }
+    ],
+    "indexes": ["CREATE UNIQUE INDEX `idx_file_no_unique` ON `erp_orders` (`file_no`)"],
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": null,
+    "options": {}
+  },
+  {
+    "name": "daily_logs",
+    "type": "base",
+    "system": false,
+    "id": "collection_dly_log00002",
+    "schema": [
+      {
+        "system": false,
+        "id": "field_erporder_dl001",
+        "name": "erp_order",
+        "type": "relation",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "collectionId": "collection_erp_order001",
+          "cascadeDelete": true,
+          "minSelect": null,
+          "maxSelect": 1,
+          "displayFields": null
+        }
+      },
+      {
+        "system": false,
+        "id": "field_logdate_dl002",
+        "name": "log_date",
+        "type": "date",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": "", "max": "" }
+      },
+      {
+        "system": false,
+        "id": "field_rcvqty_dl003",
+        "name": "received_qty",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": 0, "max": null, "noDecimal": true }
+      },
+      {
+        "system": false,
+        "id": "field_delqty_dl004",
+        "name": "delivered_qty",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": 0, "max": null, "noDecimal": true }
+      },
+      {
+        "system": false,
+        "id": "field_unit_dl005",
+        "name": "unit",
+        "type": "select",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSelect": 1,
+          "values": ["INCTL", "NKFL", "B2B", "Outside"]
+        }
+      },
+      {
+        "system": false,
+        "id": "field_remarks_dl006",
+        "name": "remarks",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_createdby_dl007",
+        "name": "created_by",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_rcvchal_dl008",
+        "name": "receive_challan",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_delchal_dl009",
+        "name": "delivery_challan",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_rdydel_dl010",
+        "name": "ready_for_delivery_qty",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "noDecimal": false }
+      },
+      {
+        "system": false,
+        "id": "field_lbsmp_dl011",
+        "name": "lab_samp_qty",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "noDecimal": false }
+      },
+      {
+        "system": false,
+        "id": "field_subfct_dl012",
+        "name": "sub_factory",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      }
+    ],
+    "indexes": [],
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": null,
+    "deleteRule": null,
+    "options": {}
+  },
+  {
+    "name": "buyer_data_bank",
+    "type": "base",
+    "system": false,
+    "id": "collection_datbnk000003",
+    "schema": [
+      {
+        "system": false,
+        "id": "field_erporder_bb001",
+        "name": "erp_order",
+        "type": "relation",
+        "required": true,
+        "presentable": false,
+        "unique": true,
+        "options": {
+          "collectionId": "collection_erp_order001",
+          "cascadeDelete": false,
+          "minSelect": null,
+          "maxSelect": 1,
+          "displayFields": null
+        }
+      },
+      {
+        "system": false,
+        "id": "field_buyer_bb002",
+        "name": "buyer",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_file_bb003",
+        "name": "file_no",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_style_bb004",
+        "name": "style_no",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_ordqty_bb005",
+        "name": "order_qty",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "noDecimal": true }
+      },
+      {
+        "system": false,
+        "id": "field_totrcv_bb006",
+        "name": "total_received",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "noDecimal": true }
+      },
+      {
+        "system": false,
+        "id": "field_totdel_bb007",
+        "name": "total_delivered",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "noDecimal": true }
+      },
+      {
+        "system": false,
+        "id": "field_clsdate_bb008",
+        "name": "close_date",
+        "type": "date",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": "", "max": "" }
+      },
+      {
+        "system": false,
+        "id": "field_findel_bb009",
+        "name": "final_delivered_qty",
+        "type": "number",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "noDecimal": true }
+      },
+      {
+        "system": false,
+        "id": "field_washtyp_bb010",
+        "name": "wash_type",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_sewflr_bb011",
+        "name": "sew_floor",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_clsby_bb012",
+        "name": "closed_by",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": null, "max": null, "pattern": "" }
+      },
+      {
+        "system": false,
+        "id": "field_islock_bb013",
+        "name": "is_locked",
+        "type": "bool",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {}
+      },
+      {
+        "system": false,
+        "id": "field_lockat_bb014",
+        "name": "locked_at",
+        "type": "date",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": { "min": "", "max": "" }
+      }
+    ],
+    "indexes": ["CREATE UNIQUE INDEX `idx_erporder_unique` ON `buyer_data_bank` (`erp_order`)"],
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": null,
+    "deleteRule": null,
+    "options": {}
+  }
+]
