@@ -4,7 +4,8 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import multer from "multer";
-import * as XLSX from "xlsx";
+import pkgXLSX from "xlsx";
+const XLSX = pkgXLSX;
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
@@ -115,8 +116,8 @@ const handleLogin = async (req: any, res: any) => {
 
         res.cookie("auth_token", token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            secure: true,
+            sameSite: "none",
             path: "/",
             maxAge: 24 * 60 * 60 * 1000 // 24h
         });
@@ -155,8 +156,8 @@ app.post("/api/auth/login", handleLogin); // Support alternative path
 app.post("/api/logout", (req, res) => {
     res.clearCookie("auth_token", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: true,
+        sameSite: "none",
         path: "/"
     });
     res.json({ success: true });
@@ -401,10 +402,14 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  if (!process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
 }
 
 startServer();
+
+export default app;
 

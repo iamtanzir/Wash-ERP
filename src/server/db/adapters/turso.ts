@@ -1,4 +1,7 @@
-import { createClient, Client } from "@libsql/client";
+import * as libsql from "@libsql/client";
+import type { Client } from "@libsql/client";
+const { createClient } = (libsql as any).default || libsql;
+import { randomUUID } from "node:crypto";
 import type { DatabaseAdapter } from "../index.ts";
 
 export class TursoAdapter implements DatabaseAdapter {
@@ -6,16 +9,20 @@ export class TursoAdapter implements DatabaseAdapter {
   private initPromise: Promise<void>;
 
   constructor() {
-    const url = process.env.TURSO_DATABASE_URL;
-    const authToken = process.env.TURSO_AUTH_TOKEN;
+    let url = process.env.TURSO_DATABASE_URL || "";
+    let authToken = process.env.TURSO_AUTH_TOKEN || "";
+
+    // Sanitize URLs that might be wrapped in quotes
+    url = url.replace(/^['"](.*)['"]$/, '$1');
+    authToken = authToken.replace(/^['"](.*)['"]$/, '$1');
 
     if (!url || !authToken) {
       console.warn("[TURSO] Missing environment variables. Connection may fail.");
     }
 
     this.client = createClient({
-      url: url || "",
-      authToken: authToken || "",
+      url,
+      authToken,
     });
 
     this.initPromise = this.init();
@@ -205,7 +212,7 @@ export class TursoAdapter implements DatabaseAdapter {
   }
 
   async addDoc(collection: string, data: any): Promise<string> {
-    const id = crypto.randomUUID();
+    const id = randomUUID();
     await this.setDoc(collection, id, { ...data, id });
     return id;
   }
