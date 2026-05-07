@@ -26,24 +26,33 @@ A simplified, robust enterprise resource planning system with basic internal aut
 - [x] **Auditability**: Every login attempt is logged with IP and timestamp.
 - [x] **Zero-Leakage**: Protected routes throw 401/403 errors before any data fetch.
 
-## 📦 Deployment Guide
-### Local Setup
-1. `npm install`
-2. Create a `.env` file and set `DATABASE_MODE` to `sqlite`, `turso`, `supabase`, or `pocketbase`.
-3. If using `turso`, provide `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`.
-4. `npm run dev`
-5. Login with `admin` and `admin`. You will be prompted to change your password.
+## 📦 Deployment Guide (Vercel + Turso)
 
-### Production
-1. This app is designed to run in AI Studio Build or exported to Cloud Run.
-2. The `server.ts` handles static file serving automatically.
-3. No environment variables are strictly required for the auth system to function, making it easy to migrate.
+### 1. Preparation (Files to Remove)
+When pushing to GitHub or uploading to Vercel, **DO NOT** include these folders/files:
+- `node_modules/` (Vercel installs these automatically)
+- `dist/` (Generated during build)
+- `test.db` (Local database file, used only for local development)
+- `.env` (Never share secrets in your code repository)
+
+### 2. Vercel Environment Variables
+In your Vercel Dashboard, go to **Settings > Environment Variables** and add:
+- `DATABASE_MODE`: `turso`
+- `TURSO_DATABASE_URL`: (Your Turso Database URL)
+- `TURSO_AUTH_TOKEN`: (Your Turso Auth Token)
+- `JWT_SECRET`: (Any long random string for session security)
+
+### 3. Vercel Configuration Notes
+- **Entry Point**: The backend is mapped via `/api/index.ts`.
+- **Static Assets**: Frontend is built into `dist/` and served by Vercel's static router.
+- **Rewrites**: All `/api/*` calls are automatically routed to the serverless function.
 
 ---
 ## 📄 License
 MIT License - feel free to use for your organization Wash ERP.
 
 - **Built with ❤️ Tanzir Ahmed**
+- **Optimized for Vercel + Turso Integration**
 
 
 
