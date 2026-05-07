@@ -39,7 +39,10 @@ A simplified, robust enterprise resource planning system with basic internal aut
 3. No environment variables are strictly required for the auth system to function, making it easy to migrate.
 
 ---
-📄 License
-MIT License - feel free to use for your organization
-Built with ❤️ Tanzir Ahmed
-*Built with precision for INCTL Wash ERP*
+## 📄 License
+MIT License - feel free to use for your organization Wash ERP.
+
+- **Built with ❤️ Tanzir Ahmed**
+
+
+
