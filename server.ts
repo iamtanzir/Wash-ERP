@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config({ override: true });
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
@@ -5,38 +7,10 @@ import multer from "multer";
 import * as XLSX from "xlsx";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
-import admin from "firebase-admin";
-import { initializeApp as initializeClientApp } from "firebase/app";
-import { 
-    getFirestore as getClientFirestore, 
-    doc, 
-    getDoc, 
-    setDoc, 
-    addDoc,
-    updateDoc,
-    deleteDoc,
-    query, 
-    collection, 
-    where, 
-    limit, 
-    getDocs, 
-    orderBy,
-    serverTimestamp,
-    FieldValue as ClientFieldValue
-} from "firebase/firestore";
-import firebaseConfig from "./firebase-applet-config.json" with { type: "json" };
+import { getDatabase } from "./src/server/db/index.ts";
 
-// Initialize Firebase Admin (for other things if needed)
-if (!admin.apps.length) {
-  admin.initializeApp({
-    projectId: firebaseConfig.projectId
-  });
-}
-
-// Initialize Client SDK (works better for Firestore in this environment)
-const clientApp = initializeClientApp(firebaseConfig);
-const db = getClientFirestore(clientApp, firebaseConfig.firestoreDatabaseId);
-
+const db = getDatabase();
+console.log(`[SEED] Database Adapter Class: ${db.constructor.name}`);
 const app = express();
 const PORT = 3000;
 const upload = multer({ storage: multer.memoryStorage() });
@@ -48,33 +22,32 @@ app.use(cookieParser(JWT_SECRET)); // Use secret for signed cookies
 // Seeding: Default Admin
 const seedAdmin = async () => {
     try {
-        console.log(`[SEED] Checking admin in db: ${firebaseConfig.firestoreDatabaseId} using Client SDK`);
-        const adminRef = doc(db, "users", "admin");
-        const docSnap = await getDoc(adminRef);
-        if (!docSnap.exists()) {
-            console.log("[SEED] Admin not found, creating...");
+        console.log(`[SEED] Starting seeding... Database Type: ${db.constructor.name}`);
+        console.log(`[SEED] Checking admin in db...`);
+        const adminUser = await db.getDoc("users", "admin");
+        if (!adminUser) {
+            console.log("[SEED] Admin not found, creating account...");
             const hashedPassword = await bcrypt.hash("admin", 10);
-            await setDoc(adminRef, {
+            await db.setDoc("users", "admin", {
                 username: "admin",
                 password_hash: hashedPassword,
                 role: "admin",
                 status: "active",
-                created_at: serverTimestamp(),
-                updated_at: serverTimestamp()
+                created_at: new Date(),
+                updated_at: new Date()
             });
-            console.log("[SEED] ✅ Default admin (admin/admin) seeded.");
+            console.log("[SEED] ✅ Default admin (admin/admin) seeded successfully.");
         } else {
-            console.log("[SEED] ℹ️ Admin user already exists.");
+            console.log("[SEED] ℹ️ Admin user already exists. Status:", adminUser.status);
         }
     } catch (err: any) {
-        console.error("[SEED] ❌ Error:", err.code, err.message);
+        console.error("[SEED] ❌ Error:", err.message);
     }
 };
 seedAdmin();
 
 // Middleware: Auth Check
 const authenticate = async (req: any, res: any, next: any) => {
-    // Check both signed and unsigned for robustness during transition
     let session = req.signedCookies.session || req.cookies.session;
     
     if (!session) {
@@ -83,7 +56,7 @@ const authenticate = async (req: any, res: any, next: any) => {
     }
 
     try {
-        const userData = JSON.parse(session);
+        const userData = typeof session === 'string' ? JSON.parse(session) : session;
         req.user = userData;
         next();
     } catch (error) {
@@ -107,18 +80,28 @@ app.post("/api/login", async (req, res) => {
     if (!username || !password) return res.status(400).json({ error: "Username and password required" });
 
     try {
-        const userRef = doc(db, "users", username.toLowerCase());
-        const userDocSnap = await getDoc(userRef);
+        console.log(`[LOGIN] Attempt: username="${username}"`);
+        const userData = await db.getDoc("users", username.toLowerCase());
         
-        if (!userDocSnap.exists()) return res.status(401).json({ error: "Invalid credentials" });
-        const userData = userDocSnap.data()!;
-        if (userData.status !== "active") return res.status(403).json({ error: "Account deactivated" });
+        if (!userData) {
+            console.log(`[LOGIN] User "${username.toLowerCase()}" not found in DB`);
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
+        
+        console.log(`[LOGIN] Found user record: id="${userData.id}", user="${userData.username}", status="${userData.status}"`);
+        
+        if (userData.status !== "active") {
+            console.log(`[LOGIN] User is inactive`);
+            return res.status(403).json({ error: "Account deactivated" });
+        }
 
         const validPassword = await bcrypt.compare(password, userData.password_hash);
+        console.log(`[LOGIN] Password comparison result: ${validPassword}`);
+        
         if (!validPassword) return res.status(401).json({ error: "Invalid credentials" });
 
         const sessionPayload = {
-            id: userDocSnap.id,
+            id: userData.id,
             username: userData.username,
             role: userData.role
         };
@@ -131,8 +114,7 @@ app.post("/api/login", async (req, res) => {
             maxAge: 24 * 60 * 60 * 1000 // 24h
         });
 
-        console.log(`[LOGIN] User ${username} successfully authenticated. Role: ${userData.role}`);
-        console.log("[LOGIN] Session cookie set with SameSite=None; Secure; Path=/");
+        console.log(`[LOGIN] Auth Success for ${username}`);
 
         res.json({
             success: true,
@@ -141,10 +123,9 @@ app.post("/api/login", async (req, res) => {
 
         // Audit Log
         try {
-            await addDoc(collection(db, "audit_logs"), {
+            await db.addDoc("audit_logs", {
                 action: "login",
-                userId: userDocSnap.id,
-                timestamp: serverTimestamp(),
+                userId: userData.id,
                 ip: req.ip
             });
         } catch (auditErr) {
@@ -175,14 +156,12 @@ app.get("/api/me", authenticate, (req: any, res) => {
 // User Management API
 app.get("/api/admin/users", authenticate, authorize(["admin"]), async (req, res) => {
     try {
-        const usersQuery = query(collection(db, "users"), orderBy("created_at", "desc"));
-        const snapshot = await getDocs(usersQuery);
-        const users = snapshot.docs.map(docSnap => {
-            const data = docSnap.data();
-            delete data.password_hash; // Security
-            return { id: docSnap.id, ...data };
+        const users = await db.getDocs("users");
+        const sanitizedUsers = users.map(user => {
+            const { password_hash, ...rest } = user;
+            return rest;
         });
-        res.json(users);
+        res.json(sanitizedUsers);
     } catch (error) {
         console.error("Fetch users error:", error);
         res.status(500).json({ error: "Failed to fetch users" });
@@ -194,19 +173,18 @@ app.post("/api/admin/users", authenticate, authorize(["admin"]), async (req, res
     if (!username || !password || !role) return res.status(400).json({ error: "Missing fields" });
 
     try {
-        const userRef = doc(db, "users", username.toLowerCase());
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) return res.status(400).json({ error: "User already exists" });
+        const existingUser = await db.getDoc("users", username.toLowerCase());
+        if (existingUser) return res.status(400).json({ error: "User already exists" });
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        await setDoc(userRef, {
+        await db.setDoc("users", username.toLowerCase(), {
             username: username.toLowerCase(),
             password_hash: hashedPassword,
             role,
             status: "active",
             created_by: (req as any).user.id,
-            created_at: serverTimestamp(),
-            updated_at: serverTimestamp()
+            created_at: new Date(),
+            updated_at: new Date()
         });
 
         res.status(201).json({ success: true });
@@ -222,9 +200,8 @@ app.post("/api/update-password", authenticate, async (req: any, res) => {
 
     try {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await updateDoc(doc(db, "users", req.user.id), {
-            password_hash: hashedPassword,
-            updated_at: serverTimestamp()
+        await db.updateDoc("users", req.user.id, {
+            password_hash: hashedPassword
         });
         res.json({ success: true });
     } catch (error) {
@@ -243,22 +220,17 @@ app.patch("/api/admin/users/:id", authenticate, authorize(["admin"]), async (req
 
     try {
         if (status === "inactive" || role !== "admin") {
-            const adminQuery = query(
-                collection(db, "users"),
-                where("role", "==", "admin"),
-                where("status", "==", "active")
-            );
-            const adminSnapshot = await getDocs(adminQuery);
+            const users = await db.getDocs("users");
+            const activeAdmins = users.filter(u => u.role === "admin" && u.status === "active");
             
-            if (adminSnapshot.size <= 1 && adminSnapshot.docs[0].id === id) {
+            if (activeAdmins.length <= 1 && activeAdmins[0].id === id) {
                 return res.status(400).json({ error: "System must have at least one active admin" });
             }
         }
 
-        await updateDoc(doc(db, "users", id), {
+        await db.updateDoc("users", id, {
             ...(role && { role }),
-            ...(status && { status }),
-            updated_at: serverTimestamp()
+            ...(status && { status })
         });
         res.json({ success: true });
     } catch (error) {
@@ -274,18 +246,14 @@ app.delete("/api/admin/users/:id", authenticate, authorize(["admin"]), async (re
     }
 
     try {
-        const adminQuery = query(
-            collection(db, "users"),
-            where("role", "==", "admin"),
-            where("status", "==", "active")
-        );
-        const adminSnapshot = await getDocs(adminQuery);
+        const users = await db.getDocs("users");
+        const activeAdmins = users.filter(u => u.role === "admin" && u.status === "active");
         
-        if (adminSnapshot.size <= 1 && adminSnapshot.docs[0].id === id) {
+        if (activeAdmins.length <= 1 && activeAdmins[0].id === id) {
             return res.status(400).json({ error: "Cannot delete the last active admin" });
         }
 
-        await deleteDoc(doc(db, "users", id));
+        await db.deleteDoc("users", id);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: "Deletion failed" });
