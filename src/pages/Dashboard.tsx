@@ -245,7 +245,6 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Link to="/new-plan" className="group bg-blue-600 p-6 rounded-2xl shadow-xl shadow-blue-500/20 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
           <div className="text-white">
-            <p className="text-xs font-bold text-blue-100 uppercase tracking-widest opacity-80">Module 01</p>
             <h4 className="text-xl font-black mt-1">NEXT ERP PLAN</h4>
           </div>
           <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white group-hover:rotate-12 transition-transform">
@@ -254,7 +253,6 @@ export default function Dashboard() {
         </Link>
         <Link to="/cpl-report" className="group bg-slate-900 p-6 rounded-2xl shadow-xl shadow-slate-500/20 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
           <div className="text-white">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest opacity-80">Module 02</p>
             <h4 className="text-xl font-black mt-1">CPL FABRIC REPORT</h4>
           </div>
           <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white group-hover:rotate-12 transition-transform">
@@ -263,7 +261,6 @@ export default function Dashboard() {
         </Link>
         <Link to="/data-bank" className="group bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-xl shadow-slate-500/5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
           <div className="text-slate-900">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest opacity-80">Module 03</p>
             <h4 className="text-xl font-black mt-1">BUYER DATA BANK (DB)</h4>
           </div>
           <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900 group-hover:rotate-12 transition-transform border border-slate-200">

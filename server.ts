@@ -7,17 +7,19 @@ import multer from "multer";
 import * as XLSX from "xlsx";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
+import { SignJWT, jwtVerify } from "jose";
 import { getDatabase } from "./src/server/db/index.ts";
 
 const db = getDatabase();
-console.log(`[SEED] Database Adapter Class: ${db.constructor.name}`);
 const app = express();
 const PORT = 3000;
 const upload = multer({ storage: multer.memoryStorage() });
-const JWT_SECRET = "inctl-internal-security-secret-key-2024";
+
+const JWT_SECRET_KEY = process.env.JWT_SECRET || "inctl-internal-security-secret-key-2024";
+const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_KEY);
 
 app.use(express.json());
-app.use(cookieParser(JWT_SECRET)); // Use secret for signed cookies
+app.use(cookieParser(JWT_SECRET_KEY));
 
 // Seeding: Default Admin
 const seedAdmin = async () => {
@@ -48,19 +50,19 @@ seedAdmin();
 
 // Middleware: Auth Check
 const authenticate = async (req: any, res: any, next: any) => {
-    let session = req.signedCookies.session || req.cookies.session;
+    const token = req.cookies.auth_token;
     
-    if (!session) {
-        console.warn(`[AUTH] No session cookie found for request: ${req.path}`);
+    if (!token) {
+        console.warn(`[AUTH] No auth_token cookie found for request: ${req.path}`);
         return res.status(401).json({ error: "Unauthorized" });
     }
 
     try {
-        const userData = typeof session === 'string' ? JSON.parse(session) : session;
-        req.user = userData;
+        const { payload } = await jwtVerify(token, JWT_SECRET);
+        req.user = payload;
         next();
     } catch (error) {
-        console.error("[AUTH] Failed to parse session cookie:", error);
+        console.error("[AUTH] Failed to verify JWT:", error);
         res.status(401).json({ error: "Invalid session" });
     }
 };
@@ -75,9 +77,12 @@ const authorize = (roles: string[]) => {
 };
 
 // API: Login
-app.post("/api/login", async (req, res) => {
+const handleLogin = async (req: any, res: any) => {
     const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: "Username and password required" });
+    
+    if (!username || !password) {
+        return res.status(400).json({ error: "Username and password required" });
+    }
 
     try {
         console.log(`[LOGIN] Attempt: username="${username}"`);
@@ -88,28 +93,30 @@ app.post("/api/login", async (req, res) => {
             return res.status(401).json({ error: "Invalid credentials" });
         }
         
-        console.log(`[LOGIN] Found user record: id="${userData.id}", user="${userData.username}", status="${userData.status}"`);
-        
         if (userData.status !== "active") {
-            console.log(`[LOGIN] User is inactive`);
             return res.status(403).json({ error: "Account deactivated" });
         }
 
         const validPassword = await bcrypt.compare(password, userData.password_hash);
-        console.log(`[LOGIN] Password comparison result: ${validPassword}`);
-        
-        if (!validPassword) return res.status(401).json({ error: "Invalid credentials" });
+        if (!validPassword) {
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
 
-        const sessionPayload = {
+        // Create JWT token
+        const token = await new SignJWT({
             id: userData.id,
             username: userData.username,
             role: userData.role
-        };
+        })
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime("24h")
+        .sign(JWT_SECRET);
 
-        res.cookie("session", JSON.stringify(sessionPayload), {
+        res.cookie("auth_token", token, {
             httpOnly: true,
-            secure: true, 
-            sameSite: "none",
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
             path: "/",
             maxAge: 24 * 60 * 60 * 1000 // 24h
         });
@@ -118,7 +125,11 @@ app.post("/api/login", async (req, res) => {
 
         res.json({
             success: true,
-            user: sessionPayload
+            user: {
+                id: userData.id,
+                username: userData.username,
+                role: userData.role
+            }
         });
 
         // Audit Log
@@ -136,13 +147,16 @@ app.post("/api/login", async (req, res) => {
         console.error("Login Error:", error);
         res.status(500).json({ error: "Internal server error", details: error.message });
     }
-});
+};
+
+app.post("/api/login", handleLogin);
+app.post("/api/auth/login", handleLogin); // Support alternative path
 
 app.post("/api/logout", (req, res) => {
-    res.clearCookie("session", {
+    res.clearCookie("auth_token", {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
         path: "/"
     });
     res.json({ success: true });
@@ -276,10 +290,10 @@ app.post("/api/erp/upload", authenticate, authorize(["admin", "editor"]), upload
       return {
         buyer: row[0] || "",
         erp_ship_date: row[1] || "",
-        file_name: row[2] || "",
+        file_no: row[2] || "",
         style_no: row[3] || "",
         cpl_qty_kg: Number(String(row[4]).replace(/,/g, "")) || 0,
-        order_qty_pcs: Number(String(row[5]).replace(/,/g, "")) || 0,
+        order_qty: Number(String(row[5]).replace(/,/g, "")) || 0,
         floor: row[6] || "",
         wash_type: row[7] || "",
         status: row[8] || "New",
@@ -287,7 +301,7 @@ app.post("/api/erp/upload", authenticate, authorize(["admin", "editor"]), upload
         source_ref: row[10] || "",
         remarks: row[11] || ""
       };
-    }).filter(row => row.buyer && row.file_name);
+    }).filter(row => row.buyer && row.file_no);
 
     res.json({ 
       success: true, 
@@ -298,6 +312,78 @@ app.post("/api/erp/upload", authenticate, authorize(["admin", "editor"]), upload
     console.error("Upload error:", error);
     res.status(500).json({ error: "Failed to parse Excel file" });
   }
+});
+
+// Generic Database API (Proxy for Adapters)
+app.get("/api/db/:collection", authenticate, async (req, res) => {
+    try {
+        const data = await db.getDocs(req.params.collection);
+        res.json(data);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get("/api/db/:collection/:id", authenticate, async (req, res) => {
+    try {
+        const data = await db.getDoc(req.params.collection, req.params.id);
+        if (!data) return res.status(404).json({ error: "Not found" });
+        res.json(data);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post("/api/db/:collection", authenticate, async (req, res) => {
+    try {
+        const id = await db.addDoc(req.params.collection, req.body);
+        res.status(201).json({ id });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.put("/api/db/:collection/:id", authenticate, async (req, res) => {
+    try {
+        await db.setDoc(req.params.collection, req.params.id, req.body);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.patch("/api/db/:collection/:id", authenticate, async (req, res) => {
+    try {
+        await db.updateDoc(req.params.collection, req.params.id, req.body);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete("/api/db/:collection/:id", authenticate, authorize(["admin"]), async (req, res) => {
+    try {
+        await db.deleteDoc(req.params.collection, req.params.id);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post("/api/db/batch/:collection", authenticate, async (req, res) => {
+    try {
+        const { operations } = req.body; // Array of { type: 'set', id: string, data: any }
+        if (!Array.isArray(operations)) return res.status(400).json({ error: "Invalid operations" });
+        
+        for (const op of operations) {
+            if (op.type === 'set') {
+                await db.setDoc(req.params.collection, op.id, op.data);
+            }
+        }
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 async function startServer() {
