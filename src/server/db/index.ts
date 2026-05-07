@@ -6,17 +6,7 @@ import { TursoAdapter } from "./adapters/turso.ts";
 import { CockroachDBAdapter } from "./adapters/cockroach.ts";
 import { XataAdapter } from "./adapters/xata.ts";
 import fs from "node:fs";
-// src/server/db/index.ts
 
-// ... (existing imports)
-
-export function getDatabase(): DatabaseAdapter {
-  const envDbType = process.env.DATABASE_MODE || process.env.DB_TYPE;
-  // Vercel-এ অনেক সময় সরাসরি DATABASE_MODE থাকে না, তাই চেক করছি Turso URL আছে কিনা
-  const dbType = envDbType || (process.env.TURSO_DATABASE_URL ? "turso" : "sqlite");
-  
-  // ... (rest of the code)
-}
 export interface DatabaseAdapter {
   getDoc(collection: string, id: string): Promise<any>;
   setDoc(collection: string, id: string, data: any): Promise<void>;
@@ -28,8 +18,6 @@ export interface DatabaseAdapter {
 
 export function getDatabase(): DatabaseAdapter {
   const envDbType = process.env.DATABASE_MODE || process.env.DB_TYPE;
-  // If we are in the AI Studio environment and no specific DB is requested,
-  // or if we want to ensure we do not use Firebase, default to sqlite.
   const dbType = envDbType || "sqlite";
   
   console.log(`[DB] Using Database Mode: "${dbType}"`);
@@ -49,14 +37,12 @@ export function getDatabase(): DatabaseAdapter {
     case "pocketbase":
       return new PocketBaseAdapter();
     case "supabase":
-      // Only use Supabase if keys are likely present
       if (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) {
           return new SupabaseAdapter();
       }
       console.warn("[DB] Supabase requested but keys missing, falling back to SQLite");
       return new SQLiteAdapter();
     case "firebase":
-      // Check if config file exists
       try {
         if (fs.existsSync("./firebase-applet-config.json")) {
             return new FirebaseAdapter();
@@ -68,7 +54,6 @@ export function getDatabase(): DatabaseAdapter {
     case "sqlite":
       return new SQLiteAdapter();
     default:
-      // Default to firebase if config exists, otherwise sqlite
       try {
         if (fs.existsSync("./firebase-applet-config.json")) {
             console.log("[DB] Defaulting to Firebase adapter (config found)");
