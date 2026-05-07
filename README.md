@@ -29,9 +29,10 @@ A simplified, robust enterprise resource planning system with basic internal aut
 ## 📦 Deployment Guide
 ### Local Setup
 1. `npm install`
-2. Create a `.env` file with `DB_TYPE=sqlite`.
-3. `npm run dev`
-4. Login with `admin` and `admin`. You will be prompted to change your password.
+2. Create a `.env` file and set `DATABASE_MODE` to `sqlite`, `turso`, `supabase`, or `pocketbase`.
+3. If using `turso`, provide `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`.
+4. `npm run dev`
+5. Login with `admin` and `admin`. You will be prompted to change your password.
 
 ### Production
 1. This app is designed to run in AI Studio Build or exported to Cloud Run.

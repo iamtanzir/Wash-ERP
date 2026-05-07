@@ -2,6 +2,7 @@ import { PocketBaseAdapter } from "./adapters/pocketbase.ts";
 import { SupabaseAdapter } from "./adapters/supabase.ts";
 import { FirebaseAdapter } from "./adapters/firebase.ts";
 import { SQLiteAdapter } from "./adapters/sqlite.ts";
+import { TursoAdapter } from "./adapters/turso.ts";
 
 export interface DatabaseAdapter {
   getDoc(collection: string, id: string): Promise<any>;
@@ -13,19 +14,25 @@ export interface DatabaseAdapter {
 }
 
 export function getDatabase(): DatabaseAdapter {
-  const envDbType = process.env.DB_TYPE;
+  const envDbType = process.env.DATABASE_MODE || process.env.DB_TYPE;
   // If we are in the AI Studio environment and no specific DB is requested,
   // or if we want to ensure we do not use Firebase, default to sqlite.
   const dbType = envDbType || "sqlite";
   
-  console.log(`[DB] process.env.DB_TYPE: "${envDbType}", Decided on: "${dbType}"`);
+  console.log(`[DB] Using Database Mode: "${dbType}"`);
 
   switch (dbType.toLowerCase()) {
+    case "turso":
+      if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) {
+          return new TursoAdapter();
+      }
+      console.warn("[DB] Turso requested but keys missing, falling back to SQLite");
+      return new SQLiteAdapter();
     case "pocketbase":
       return new PocketBaseAdapter();
     case "supabase":
       // Only use Supabase if keys are likely present
-      if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+      if (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) {
           return new SupabaseAdapter();
       }
       console.warn("[DB] Supabase requested but keys missing, falling back to SQLite");

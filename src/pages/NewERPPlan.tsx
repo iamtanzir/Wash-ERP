@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import { ArrowLeft, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { collection, writeBatch, doc } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { api } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function NewERPPlan() {
@@ -43,22 +42,20 @@ export default function NewERPPlan() {
       const result = await response.json();
       
       if (result.success && result.data.length > 0) {
-        // Bulk upsert into Firestore
-        const batch = writeBatch(db);
-        const erpCollection = collection(db, "erp_orders");
-
-        result.data.forEach((row: any) => {
-          // Use file_name + style_no as a unique key for upsert
-          const docId = `${row.file_name}_${row.style_no}`.replace(/[\/\s]/g, "_");
-          const docRef = doc(erpCollection, docId);
-          batch.set(docRef, {
-            ...row,
-            uploaded_by: user?.email,
-            updatedAt: new Date().toISOString()
-          }, { merge: true });
+        // Bulk upsert into DB via our proxy
+        const operations = result.data.map((row: any) => {
+          const docId = `${row.file_no}_${row.style_no}`.replace(/[\/\s]/g, "_");
+          return {
+            id: docId,
+            data: {
+              ...row,
+              uploaded_by: user?.username,
+              updated_at: new Date().toISOString()
+            }
+          };
         });
 
-        await batch.commit();
+        await api.batchSetOrders(operations);
         setSummary({ count: result.data.length, skipped: 0 });
         toast.success(`Successfully uploaded ${result.data.length} records`);
       } else {
