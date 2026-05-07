@@ -34,6 +34,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
             password_hash TEXT,
             role TEXT,
             status TEXT,
+            created_by TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
