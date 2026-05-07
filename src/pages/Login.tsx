@@ -56,8 +56,8 @@ export default function Login() {
           </div>
           
           <div className="text-center space-y-1.5">
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">INCTL WASH ERP</h1>
-            <p className="text-slate-400 font-bold tracking-[0.15em] text-[10px] uppercase">Internal Resource Management</p>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">WASH ERP</h1>
+            <p className="text-slate-400 font-bold tracking-[0.15em] text-[10px] uppercase">Internal Data Management</p>
           </div>
         </div>
 
@@ -75,7 +75,7 @@ export default function Login() {
                   value={username}
                   onChange={e => setUsername(e.target.value)}
                   className="w-full bg-slate-50 border-none rounded-2xl pl-14 pr-6 py-4.5 focus:bg-white focus:ring-2 focus:ring-blue-600/10 outline-none transition-all font-semibold text-slate-700 placeholder:text-slate-300"
-                  placeholder="inctlwash"
+                  placeholder="User ID Name"
                 />
               </div>
             </div>
@@ -119,14 +119,17 @@ export default function Login() {
                <ShieldAlert size={14} className="text-amber-600" />
             </div>
             <p className="text-[11px] leading-relaxed text-amber-800 font-semibold opacity-90">
-              Verification required. Access is restricted to authorized company IDs only. System activity is monitored and logged in accordance with the IT Audit policy.
+              System activity monitoring and logged in as per company policy required authorized IDs only.
             </p>
           </div>
+          <p className="text-[11px] leading-relaxed text-amber-800 font-semibold opacity-90">
+              Built with ❤️ Tanzir Ahmed.
+            </p>
         </form>
 
         {/* Footer Version */}
         <div className="text-center pt-4">
-          <p className="text-[10px] text-slate-300 font-black uppercase tracking-[0.2em]">Version 2.4.0-ERP-PRIME</p>
+          <p className="text-[10px] text-slate-300 font-black uppercase tracking-[0.2em]">Version 2.4.0-ERP</p>
         </div>
       </div>
     </div>
