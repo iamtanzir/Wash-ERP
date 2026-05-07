@@ -26,23 +26,52 @@ A simplified, robust enterprise resource planning system with basic internal aut
 - [x] **Auditability**: Every login attempt is logged with IP and timestamp.
 - [x] **Zero-Leakage**: Protected routes throw 401/403 errors before any data fetch.
 
-## 📦 Deployment Guide (Vercel + Turso)
+## 📦 Deployment Guide (Vercel + Database Options)
 
-### 1. Preparation (Files to Remove)
-When pushing to GitHub or uploading to Vercel, **DO NOT** include these folders/files:
-- `node_modules/` (Vercel installs these automatically)
-- `dist/` (Generated during build)
-- `test.db` (Local database file, used only for local development)
-- `.env` (Never share secrets in your code repository)
+### 1. Preparation (General)
+When pushing to GitHub or uploading to Vercel, **DO NOT** include:
+- `node_modules/`, `dist/`, `.env`, and any local `.db` or `.sqlite` files.
 
-### 2. Vercel Environment Variables
-In your Vercel Dashboard, go to **Settings > Environment Variables** and add:
+### 2. Choose Your Database Provider
+Set `DATABASE_MODE` to your preferred provider and add its required variables in Vercel:
+
+#### 🟢 Turso (Recommended)
 - `DATABASE_MODE`: `turso`
-- `TURSO_DATABASE_URL`: (Your Turso Database URL)
-- `TURSO_AUTH_TOKEN`: (Your Turso Auth Token)
-- `JWT_SECRET`: (Any long random string for session security)
+- `TURSO_DATABASE_URL`: `libsql://your-db-name.turso.io`
+- `TURSO_AUTH_TOKEN`: (Your Auth Token)
 
-### 3. Vercel Configuration Notes
+#### 🟠 CockroachDB
+- `DATABASE_MODE`: `cockroach`
+- `COCKROACH_DATABASE_URL`: `postgresql://user:pass@host:port/db?sslmode=verify-full`
+
+#### 🔵 Supabase
+- `DATABASE_MODE`: `supabase`
+- `SUPABASE_URL`: (Project URL)
+- `SUPABASE_ANON_KEY`: (Anon/Public Key)
+
+#### 🟣 Xata
+- `DATABASE_MODE`: `xata`
+- `XATA_DATABASE_URL`: (Database URL)
+- `XATA_API_KEY`: (Your API Key)
+
+#### 🟡 PocketBase
+- `DATABASE_MODE`: `pocketbase`
+- `POCKETBASE_URL`: (Your hosted PocketBase URL)
+
+#### 🔴 Firebase
+- `DATABASE_MODE`: `firebase`
+- **Setup**: You must include `firebase-applet-config.json` in your root directory. This file contains your Firebase project credentials.
+
+#### ⚪ SQLite (Not recommended for Vercel)
+- `DATABASE_MODE`: `sqlite`
+- **Note**: SQLite is file-based and will reset on every Vercel deployment/serverless cold start. Only use for temporary testing.
+
+### 3. Shared Environment Variables
+Always set these for any deployment:
+- `JWT_SECRET`: (A random string like `openssl rand -hex 32`)
+- `NODE_ENV`: `production`
+
+### 4. Vercel Configuration Notes
 - **Entry Point**: The backend is mapped via `/api/index.ts`.
 - **Static Assets**: Frontend is built into `dist/` and served by Vercel's static router.
 - **Rewrites**: All `/api/*` calls are automatically routed to the serverless function.
