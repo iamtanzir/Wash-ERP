@@ -29,7 +29,16 @@ export default function Login() {
         credentials: "include",
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get("content-type");
+      let data: any = {};
+      
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else if (!res.ok) {
+        const textError = await res.text();
+        console.error("Server Error Response:", textError);
+        throw new Error(`Server Error (${res.status}). This usually means Turso credentials are not set in Vercel environment variables.`);
+      }
 
       if (res.ok) {
         toast.success("Login successful");
