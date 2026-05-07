@@ -6,7 +6,17 @@ import { TursoAdapter } from "./adapters/turso.ts";
 import { CockroachDBAdapter } from "./adapters/cockroach.ts";
 import { XataAdapter } from "./adapters/xata.ts";
 import fs from "node:fs";
+// src/server/db/index.ts
 
+// ... (existing imports)
+
+export function getDatabase(): DatabaseAdapter {
+  const envDbType = process.env.DATABASE_MODE || process.env.DB_TYPE;
+  // Vercel-এ অনেক সময় সরাসরি DATABASE_MODE থাকে না, তাই চেক করছি Turso URL আছে কিনা
+  const dbType = envDbType || (process.env.TURSO_DATABASE_URL ? "turso" : "sqlite");
+  
+  // ... (rest of the code)
+}
 export interface DatabaseAdapter {
   getDoc(collection: string, id: string): Promise<any>;
   setDoc(collection: string, id: string, data: any): Promise<void>;
