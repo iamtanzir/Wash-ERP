@@ -1,12 +1,18 @@
-import { createClient } from "@supabase/supabase-js";
+import * as supabasePkg from "@supabase/supabase-js";
+const { createClient } = (supabasePkg as any).default || supabasePkg;
 import type { DatabaseAdapter } from "../index.ts";
 
 export class SupabaseAdapter implements DatabaseAdapter {
   private supabase: any;
 
   constructor() {
-    const url = process.env.SUPABASE_URL || "";
-    const key = process.env.SUPABASE_ANON_KEY || "";
+    let url = process.env.SUPABASE_URL || "";
+    let key = process.env.SUPABASE_ANON_KEY || "";
+    
+    // Sanitize quotes
+    url = url.replace(/^['"](.*)['"]$/, '$1');
+    key = key.replace(/^['"](.*)['"]$/, '$1');
+
     this.supabase = createClient(url, key);
   }
 

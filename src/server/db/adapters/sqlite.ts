@@ -1,15 +1,17 @@
-import knex, { Knex } from "knex";
+import * as knexPkg from "knex";
+const knex = (knexPkg as any).default || knexPkg;
+import type { Knex } from "knex";
+import { randomUUID } from "node:crypto";
 import type { DatabaseAdapter } from "../index.ts";
 import path from "path";
-import fs from "fs";
 
 export class SQLiteAdapter implements DatabaseAdapter {
   private db: Knex;
-
   private initPromise: Promise<void>;
+  private CORE_TABLES = ['users', 'erp_orders', 'daily_logs', 'buyer_data_bank', 'audit_logs'];
 
   constructor() {
-    const filename = process.env.SQLITE_FILENAME || "erp_database.sqlite";
+    const filename = process.env.SQLITE_FILENAME || "wash_erp.sqlite";
     const dbPath = path.resolve(process.cwd(), filename);
     
     this.db = knex({
@@ -25,21 +27,73 @@ export class SQLiteAdapter implements DatabaseAdapter {
 
   private async init() {
     try {
-        console.log(`[SQLITE] Initializing database to: ${path.resolve(process.cwd(), process.env.SQLITE_FILENAME || "erp_database.sqlite")}`);
-        
         await this.db.raw(`
           CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
-            username TEXT UNIQUE,
-            password_hash TEXT,
-            role TEXT,
-            status TEXT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'viewer',
+            status TEXT NOT NULL DEFAULT 'active',
             created_by TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
         `);
-        console.log(`[SQLITE] Users table ensured.`);
+
+        await this.db.raw(`
+          CREATE TABLE IF NOT EXISTS erp_orders (
+            id TEXT PRIMARY KEY,
+            buyer TEXT,
+            erp_date TEXT,
+            job_ref TEXT,
+            style_no TEXT,
+            file_no TEXT,
+            color TEXT,
+            cpl_qty_kg REAL,
+            order_qty INTEGER,
+            sew_floor TEXT,
+            item TEXT,
+            wash_type TEXT,
+            wash_status TEXT DEFAULT 'Pending',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+
+        await this.db.raw(`
+          CREATE TABLE IF NOT EXISTS daily_logs (
+            id TEXT PRIMARY KEY,
+            erp_order TEXT,
+            log_date TEXT,
+            received_qty REAL,
+            delivered_qty REAL,
+            unit TEXT,
+            ready_for_delivery_qty REAL,
+            remarks TEXT,
+            created_by TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+
+        await this.db.raw(`
+          CREATE TABLE IF NOT EXISTS buyer_data_bank (
+            id TEXT PRIMARY KEY,
+            erp_order TEXT,
+            buyer TEXT,
+            file_no TEXT,
+            style_no TEXT,
+            color TEXT,
+            order_qty INTEGER,
+            total_received REAL,
+            total_delivered REAL,
+            close_date TEXT,
+            final_delivered_qty REAL,
+            wash_type TEXT,
+            closed_by TEXT,
+            is_locked INTEGER DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
 
         await this.db.raw(`
           CREATE TABLE IF NOT EXISTS audit_logs (
@@ -50,16 +104,18 @@ export class SQLiteAdapter implements DatabaseAdapter {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
         `);
+        console.log(`[SQLITE] All ERP tables ensured.`);
     } catch (err: any) {
-        console.error(`[SQLITE] ❌ Initialization Error:`, err.message);
+        console.error(`[SQLITE] Initialization Error:`, err.message);
     }
   }
 
   private async ensureTable(col: string) {
       await this.initPromise;
+      if (this.CORE_TABLES.includes(col)) return;
       try {
           const tableExists = await this.db.raw(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`, [col]);
-          if (tableExists.length === 0) {
+          if (tableExists.response?.length === 0 || (Array.isArray(tableExists) && tableExists.length === 0)) {
               await this.db.raw(`
                 CREATE TABLE IF NOT EXISTS ${col} (
                   id TEXT PRIMARY KEY,
@@ -78,48 +134,53 @@ export class SQLiteAdapter implements DatabaseAdapter {
     await this.initPromise;
     if (col === 'users') {
         const user = await this.db(col).where({ id }).orWhere({ username: id }).first();
-        return user;
+        return user || null;
     }
     await this.ensureTable(col);
     const row = await this.db(col).where({ id }).first();
-    return row ? { id: row.id, ...JSON.parse(row.data) } : null;
+    if (!row) return null;
+    
+    if (this.CORE_TABLES.includes(col)) return row;
+    return { id: row.id, ...JSON.parse(row.data) };
   }
 
   async setDoc(col: string, id: string, data: any) {
     await this.initPromise;
-    if (col === 'users') {
-        const existing = await this.db(col).where({ id }).first();
-        if (existing) {
-            const { id: _, ...updateData } = data;
-            await this.db(col).where({ id }).update({ ...updateData, updated_at: this.db.fn.now() });
-        } else {
-            await this.db(col).insert({ ...data, id, created_at: this.db.fn.now(), updated_at: this.db.fn.now() });
-        }
-        return;
-    }
     await this.ensureTable(col);
     const existing = await this.db(col).where({ id }).first();
-    const jsonStr = JSON.stringify(data);
-    if (existing) {
-        await this.db(col).where({ id }).update({ data: jsonStr, updated_at: this.db.fn.now() });
+    
+    if (this.CORE_TABLES.includes(col)) {
+        if (existing) {
+            await this.db(col).where({ id }).update({ ...data, updated_at: this.db.fn.now() });
+        } else {
+            await this.db(col).insert({ ...data, id });
+        }
     } else {
-        await this.db(col).insert({ id, data: jsonStr, created_at: this.db.fn.now(), updated_at: this.db.fn.now() });
+        const jsonStr = JSON.stringify(data);
+        if (existing) {
+            await this.db(col).where({ id }).update({ data: jsonStr, updated_at: this.db.fn.now() });
+        } else {
+            await this.db(col).insert({ id, data: jsonStr, created_at: this.db.fn.now(), updated_at: this.db.fn.now() });
+        }
     }
   }
 
   async addDoc(col: string, data: any) {
-    const id = Math.random().toString(36).substring(2, 12);
+    const id = randomUUID();
     await this.setDoc(col, id, data);
     return id;
   }
 
   async updateDoc(col: string, id: string, data: any) {
+      await this.initPromise;
+      await this.ensureTable(col);
       const existing = await this.getDoc(col, id);
       if (!existing) throw new Error("Not found");
       await this.setDoc(col, id, { ...existing, ...data });
   }
 
   async deleteDoc(col: string, id: string) {
+      await this.initPromise;
       await this.ensureTable(col);
       await this.db(col).where({ id }).delete();
   }
@@ -127,7 +188,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
   async getDocs(col: string) {
     await this.ensureTable(col);
     const rows = await this.db(col).select("*").orderBy('created_at', 'desc');
-    if (col === 'users') return rows;
+    if (this.CORE_TABLES.includes(col)) return rows;
     return rows.map(r => ({ id: r.id, ...JSON.parse(r.data) }));
   }
 }

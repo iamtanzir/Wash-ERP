@@ -3,6 +3,9 @@ import { SupabaseAdapter } from "./adapters/supabase.ts";
 import { FirebaseAdapter } from "./adapters/firebase.ts";
 import { SQLiteAdapter } from "./adapters/sqlite.ts";
 import { TursoAdapter } from "./adapters/turso.ts";
+import { CockroachDBAdapter } from "./adapters/cockroach.ts";
+import { XataAdapter } from "./adapters/xata.ts";
+import fs from "node:fs";
 
 export interface DatabaseAdapter {
   getDoc(collection: string, id: string): Promise<any>;
@@ -28,6 +31,11 @@ export function getDatabase(): DatabaseAdapter {
       }
       console.warn("[DB] Turso requested but keys missing, falling back to SQLite");
       return new SQLiteAdapter();
+    case "cockroach":
+    case "cockroachdb":
+      return new CockroachDBAdapter();
+    case "xata":
+      return new XataAdapter();
     case "pocketbase":
       return new PocketBaseAdapter();
     case "supabase":
@@ -37,12 +45,29 @@ export function getDatabase(): DatabaseAdapter {
       }
       console.warn("[DB] Supabase requested but keys missing, falling back to SQLite");
       return new SQLiteAdapter();
+    case "firebase":
+      // Check if config file exists
+      try {
+        if (fs.existsSync("./firebase-applet-config.json")) {
+            return new FirebaseAdapter();
+        }
+      } catch (err) {
+        console.warn("[DB] Firebase requested but config check failed, falling back to SQLite");
+      }
+      return new SQLiteAdapter();
     case "sqlite":
       return new SQLiteAdapter();
-    case "firebase":
     default:
-      // Prevent accidental Firebase usage as requested by user
-      console.log("[DB] Defaulting to SQLite adapter");
+      // Default to firebase if config exists, otherwise sqlite
+      try {
+        if (fs.existsSync("./firebase-applet-config.json")) {
+            console.log("[DB] Defaulting to Firebase adapter (config found)");
+            return new FirebaseAdapter();
+        }
+      } catch (err) {
+          // ignore
+      }
+      console.log(`[DB] No matching provider for "${dbType}" and no Firebase config, defaulting to SQLite adapter`);
       return new SQLiteAdapter();
   }
 }
