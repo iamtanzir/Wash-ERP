@@ -1,10 +1,8 @@
 {
-  "projectId": "earnest-dogfish-368813",
-  "appId": "1:539663390866:web:e088dcfcc0aa4596646e4b",
-  "apiKey": "AIzaSyDrlLxFjvcHyQOLijXMw4dJDLXZVOMK6FI",
-  "authDomain": "earnest-dogfish-368813.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-7ab49e64-6fe9-4afa-95b4-74a535cd82b5",
-  "storageBucket": "earnest-dogfish-368813.firebasestorage.app",
-  "messagingSenderId": "539663390866",
-  "measurementId": ""
+  "apiKey": "AIzaSyAhDryYBKj5Jq8yNWkemRNcTHAgafm2PPo",
+  "authDomain": "studio-5953552341-8d281.firebaseapp.com",
+  "projectId": "studio-5953552341-8d281",
+  "storageBucket": "studio-5953552341-8d281.firebasestorage.app",
+  "messagingSenderId": "82961948143",
+  "appId": "1:82961948143:web:277398335997069c93aa1a"
 }

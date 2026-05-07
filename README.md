@@ -1,4 +1,4 @@
-# Wash ERP Module
+# Wash ERP
 
 A simplified, robust enterprise resource planning system with basic internal authentication, built for secure environments.
 
@@ -6,10 +6,10 @@ A simplified, robust enterprise resource planning system with basic internal aut
 - **Internal Authentication**: Simple username/password login.
 - **Default Admin**: Access out-of-the-box with `admin / admin`.
 - **RBAC (Role Based Access Control)**:
-  - **Admin**: User directory management, role assignment, status toggling.
-  - **Editor**: Data entry, ERP Excel plan uploads.
-  - **Viewer**: Read-only access to dashboards and reports.
-  - **Operator**: Access for daily log entries.
+- **Admin**: User directory management, role assignment, status toggling.
+- **Editor**: Data entry, ERP Excel plan uploads.
+- **Viewer**: Read-only access to dashboards and reports.
+- **Operator**: Access for daily log entries.
 - **Excel-to-ERP Engine**: Server-side parsing of master ERP plans.
 - **Audit Logging**: Mandatory trail of all login and data modification events.
 
@@ -29,7 +29,7 @@ A simplified, robust enterprise resource planning system with basic internal aut
 ## 📦 Deployment Guide
 ### Local Setup
 1. `npm install`
-2. Ensure you have your Firestore configuration in `firebase-applet-config.json`.
+2. Create a `.env` file with `DB_TYPE=sqlite`.
 3. `npm run dev`
 4. Login with `admin` and `admin`. You will be prompted to change your password.
 
@@ -39,4 +39,7 @@ A simplified, robust enterprise resource planning system with basic internal aut
 3. No environment variables are strictly required for the auth system to function, making it easy to migrate.
 
 ---
+📄 License
+MIT License - feel free to use for your organization
+Built with ❤️ Tanzir Ahmed
 *Built with precision for INCTL Wash ERP*
