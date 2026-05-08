@@ -37,8 +37,8 @@ Set `DATABASE_MODE` to your preferred provider and add its required variables in
 
 #### 🟢 Turso (Recommended)
 - `DATABASE_MODE`: `turso`
-- `TURSO_DATABASE_URL`: `libsql://your-db-name.turso.io`
-- `TURSO_AUTH_TOKEN`: (Your Auth Token)
+- `TURSO_DATABASE_URL`: `libsql://your-db-name.turso.io` (⚠️ **DO NOT** use the dashboard URL from your browser address bar)
+- `TURSO_AUTH_TOKEN`: (Your Auth Token from the 'Connect' tab)
 
 #### 🟠 CockroachDB
 - `DATABASE_MODE`: `cockroach`
@@ -59,12 +59,27 @@ Set `DATABASE_MODE` to your preferred provider and add its required variables in
 - `POCKETBASE_URL`: (Your hosted PocketBase URL)
 
 #### 🔴 Firebase
-- `DATABASE_MODE`: `firebase`
-- **Setup**: You must include `firebase-applet-config.json` in your root directory. This file contains your Firebase project credentials.
+- **`DATABASE_MODE`**: `firebase`
+- **Environment Variables (Required for Production/Vercel)**:
+  - `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_APP_ID`.
+- **Deployment via Git/Zip**:
+  - The local `firebase-applet-config.json` is typically ignored or not recommended for Git. 
+  - **Always** set the environment variables mentioned above in your Vercel/Production dashboard. The code is designed to check for these variables before looking for the file.
 
-#### ⚪ SQLite (Not recommended for Vercel)
-- `DATABASE_MODE`: `sqlite`
-- **Note**: SQLite is file-based and will reset on every Vercel deployment/serverless cold start. Only use for temporary testing.
+### 🚩 Troubleshooting Common Issues
+
+#### 1. Turso 404 Error
+- **Cause**: You pasted the URL from your browser address bar (e.g., `turso.io/organizations/...`).
+- **Fix**: Go to Turso > Select Database > **Connect** tab. Copy the URL that starts with `libsql://`.
+
+#### 2. Firebase Config Missing
+- **Cause**: Running the code from a Zip/Git download without the `firebase-applet-config.json` helper file.
+- **Fix**: Set the `FIREBASE_*` environment variables in your deployment platform (Vercel, Railway, etc.).
+
+#### 3. Default Login (Admin)
+- **User ID**: `admin`
+- **User Pass**: `admin`
+- *(Note: The system automatically seeds this account on the first successful database connection.)*
 
 ### 3. Shared Environment Variables
 Always set these for any deployment:
@@ -77,11 +92,45 @@ Always set these for any deployment:
 - **Rewrites**: All `/api/*` calls are automatically routed to the serverless function.
 
 ---
+## 🇧🇩 Vercel Deployment & Database Connection Guide (Bengali Version)
+
+Google AI Studio থেকে অ্যাপটি ডাউনলোড করে বা GitHub এর মাধ্যমে Vercel এ ডিপ্লয় করার সময় নিচের পদক্ষেপগুলো অনুসরণ করুন:
+
+### ১. যা যা Git বা Zip এ রাখা যাবে না (Excluded Files)
+- `.env` ফাইল (যাতে আপনার সিক্রেট কী থাকে)।
+- `node_modules/` এবং `dist/` ফোল্ডার।
+- `firebase-applet-config.json` (এটি AI Studio এর লোকাল কনফিগ, প্রোডাকশনে Environment Variables ব্যবহার করা ভালো)।
+- লোকাল ডাটাবেস ফাইল যেমন `*.db` বা `*.sqlite`।
+
+### ২. Vercel এ ডাটাবেস কানেকশন সেটআপ
+Vercel ড্যাশবোর্ড এ গিয়ে আপনার প্রোজেক্টে নিচের Environment Variables গুলো যোগ করুন:
+
+#### **Firebase এর জন্য:**
+- `DATABASE_MODE`: `firebase`
+- `FIREBASE_API_KEY`: (আপনার Firebase API Key)
+- `FIREBASE_PROJECT_ID`: (প্রোজেক্ট আইডি)
+- `FIREBASE_AUTH_DOMAIN`: (অথ ডোমেইন)
+- `FIREBASE_APP_ID`: (অ্যাপ আইডি)
+
+#### **Turso (Managed SQLite) এর জন্য:**
+- `DATABASE_MODE`: `turso`
+- `TURSO_DATABASE_URL`: `libsql://your-db-org.turso.io` 
+- **⚠️ গুরুত্বপূর্ণ সতর্কতা:** ব্রাউজারের অ্যাড্রেস বার থেকে লিঙ্ক কপি করবেন না (যেমন `https://turso.io/...`)। এটি ভুল। আপনাকে অবশ্যই আপনার ডাটাবেসের **Connect** ট্যাব থেকে `libsql://` দিয়ে শুরু হওয়া লিঙ্কটি নিতে হবে।
+- `TURSO_AUTH_TOKEN`: (টারসো ড্যাশবোর্ড থেকে পাওয়া Full Access টোকেন)
+
+### ৩. ডিফল্ট লগইন ইউজার
+সফলভাবে ডাটাবেস কানেক্ট হলে প্রথমবার লগইন করার জন্য নিচের তথ্য ব্যবহার করুন:
+- **Username**: `admin`
+- **Password**: `admin`
+*(সিস্টেমটি প্রথম কানেকশনে অটোমেটিক এই অ্যাকাউন্টটি আপনার ডাটাবেসে তৈরি করে দিবে)*
+
+### ৪. লগইন বা ৪০৪ এরর ফিক্স
+যদি আপনি ৪০৪ এরর দেখেন, তবে নিশ্চিত করুন যে আপনার `DATABASE_URL` সঠিক আছে এবং তা ব্রাউজারের ড্যাশবোর্ড ইউআরএল নয়।
+
+---
 ## 📄 License
 MIT License - feel free to use for your organization Wash ERP.
 
 - **Built with ❤️ Tanzir Ahmed**
 - **Optimized for Vercel + Turso Integration**
-
-
 

@@ -18,17 +18,39 @@ export interface DatabaseAdapter {
 
 export function getDatabase(): DatabaseAdapter {
   const envDbType = process.env.DATABASE_MODE || process.env.DB_TYPE;
-  const dbType = envDbType || "sqlite";
   
-  console.log(`[DB] Using Database Mode: "${dbType}"`);
+  // 1. Auto-detection: If no mode is set, check for environment variables
+  if (!envDbType) {
+    if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) {
+      console.log("[DB] ⚡ Auto-detected Turso configuration");
+      return new TursoAdapter();
+    }
+    
+    if (process.env.FIREBASE_PROJECT_ID || fs.existsSync("./firebase-applet-config.json")) {
+       console.log("[DB] ⚡ Auto-detected Firebase configuration");
+       return new FirebaseAdapter();
+    }
+    
+    if (process.env.POCKETBASE_URL) {
+      console.log("[DB] ⚡ Auto-detected PocketBase configuration");
+      return new PocketBaseAdapter();
+    }
 
-  switch (dbType.toLowerCase()) {
+    if (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.log("[DB] ⚡ Auto-detected Supabase configuration");
+      return new SupabaseAdapter();
+    }
+    
+    console.log("[DB] No database environment variables found, defaulting to SQLite");
+    return new SQLiteAdapter();
+  }
+
+  const dbType = envDbType.toLowerCase();
+  console.log(`[DB] Using Explicit Database Mode: "${dbType}"`);
+
+  switch (dbType) {
     case "turso":
-      if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) {
-          return new TursoAdapter();
-      }
-      console.warn("[DB] Turso requested but keys missing, falling back to SQLite");
-      return new SQLiteAdapter();
+      return new TursoAdapter();
     case "cockroach":
     case "cockroachdb":
       return new CockroachDBAdapter();
@@ -37,32 +59,13 @@ export function getDatabase(): DatabaseAdapter {
     case "pocketbase":
       return new PocketBaseAdapter();
     case "supabase":
-      if (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) {
-          return new SupabaseAdapter();
-      }
-      console.warn("[DB] Supabase requested but keys missing, falling back to SQLite");
-      return new SQLiteAdapter();
+      return new SupabaseAdapter();
     case "firebase":
-      try {
-        if (fs.existsSync("./firebase-applet-config.json")) {
-            return new FirebaseAdapter();
-        }
-      } catch (err) {
-        console.warn("[DB] Firebase requested but config check failed, falling back to SQLite");
-      }
-      return new SQLiteAdapter();
+      return new FirebaseAdapter();
     case "sqlite":
       return new SQLiteAdapter();
     default:
-      try {
-        if (fs.existsSync("./firebase-applet-config.json")) {
-            console.log("[DB] Defaulting to Firebase adapter (config found)");
-            return new FirebaseAdapter();
-        }
-      } catch (err) {
-          // ignore
-      }
-      console.log(`[DB] No matching provider for "${dbType}" and no Firebase config, defaulting to SQLite adapter`);
+      console.warn(`[DB] Unsupported database mode "${dbType}", falling back to SQLite`);
       return new SQLiteAdapter();
   }
 }

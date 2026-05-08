@@ -20,7 +20,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 
 const navItems = [
-  { name: "WASH DASHBOARD (DB)", href: "/", icon: LayoutDashboard },
+  { name: "WASH DASHBOARD", href: "/", icon: LayoutDashboard },
   { name: "NEXT ERP PLAN", href: "/new-plan", icon: PlusCircle },
   { name: "GARMENTS R&D LOG", href: "/daily-update", icon: ClipboardCheck },
   { name: "CPL FABRIC REPORT", href: "/cpl-report", icon: FileText },
@@ -70,7 +70,7 @@ export default function Layout() {
             <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
               <span className="text-white font-bold text-xl leading-none">I</span>
             </div>
-            <h1 className="text-white font-bold text-lg tracking-tight uppercase">INCTL WASH</h1>
+            <h1 className="text-white font-bold text-lg tracking-tight uppercase">WASH ERP</h1>
           </div>
           <button 
             className="md:hidden text-slate-400 hover:text-white"
@@ -149,12 +149,12 @@ export default function Layout() {
               <Menu size={24} />
             </button>
             <h2 className="text-base md:text-lg font-semibold text-slate-800 uppercase tracking-wide truncate">{getPageTitle()}</h2>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium bg-green-100 text-green-700 whitespace-nowrap hidden sm:inline-block">Live Sync Active</span>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium bg-green-100 text-green-700 whitespace-nowrap hidden sm:inline-block">Auto Sync</span>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
-            <span className="sm:hidden px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 whitespace-nowrap">Sync</span>
+            <span className="sm:hidden px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 whitespace-nowrap">Auto Sync</span>
             <div className="flex flex-col items-end hidden sm:flex">
-              <p className="text-xs text-slate-400">Server Time</p>
+              <p className="text-xs text-slate-400">Real Time</p>
               <p className="text-sm font-mono font-medium text-slate-700 text-right">
                 {new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute:'2-digit', hour12: true }).toUpperCase().replace(',', ' |')}
               </p>
@@ -177,8 +177,8 @@ export default function Layout() {
             <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500"></div> Tailscale Connected</span>
           </div>
           <div className="flex gap-2 md:gap-4 italic items-center">
-            <span title="সব রিসিভ এবং ডেলিভারি সম্পন্ন হলে ক্লোজ করুন">Bengali hints (hover)</span>
-            <span className="font-semibold text-slate-600 uppercase hidden sm:inline">Planning Terminal 01</span>
+            <span title="সব রিসিভ এবং ডেলিভারি সম্পন্ন হলে ক্লোজ করুন">Hints (hover)</span>
+            <span className="font-semibold text-slate-600 uppercase hidden sm:inline">Wash Planning</span>
           </div>
         </footer>
       </main>
