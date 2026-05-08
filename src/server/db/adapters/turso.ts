@@ -7,39 +7,114 @@ import type { DatabaseAdapter } from "../index.ts";
 export class TursoAdapter implements DatabaseAdapter {
   private client: Client;
   private initPromise: Promise<void>;
+  private url: string;
 
   constructor() {
     let url = process.env.TURSO_DATABASE_URL || "";
     let authToken = process.env.TURSO_AUTH_TOKEN || "";
 
     // Sanitize URLs that might be wrapped in quotes or have whitespace
-    url = (url || "").trim().replace(/^['"](.*)['"]$/, '$1');
-    authToken = (authToken || "").trim().replace(/^['"](.*)['"]$/, '$1');
+    url = (url || "").trim().replace(/^['"](.*)['"]$/, '$1').replace(/\/+$/, "").replace(/\s+/g, ""); // Remove trailing slashes and ALL whitespace
+    authToken = (authToken || "").trim().replace(/^['"](.*)['"]$/, '$1').replace(/\s+/g, "");
+
+    // Handle common misconfiguration: User pasting the dashboard URL instead of connection URL
+    if (url.includes("turso.io/")) {
+      const parts = url.split("/");
+      const orgIndex = parts.indexOf("organizations");
+      const dbIndex = parts.indexOf("databases");
+      const projIndex = parts.indexOf("projects");
+      
+      let dbName = "";
+      let orgName = "";
+
+      if (orgIndex !== -1 && parts[orgIndex + 1]) {
+        orgName = parts[orgIndex + 1].split(/[?#]/)[0].replace(/_/g, "-");
+      } 
+
+      if (dbIndex !== -1 && parts[dbIndex + 1]) {
+        dbName = parts[dbIndex + 1].split(/[?#]/)[0].replace(/_/g, "-");
+      }
+      
+      // Special case for dashboard URLs
+      if (url.startsWith("https://") && (orgIndex !== -1 || projIndex !== -1) && dbIndex !== -1) {
+        console.warn(`[TURSO] 🚨 Detected Dashboard URL instead of Connection URL.`);
+        
+        // If we don't have orgName but have projIndex, use that
+        if (!orgName && projIndex !== -1 && parts[projIndex + 1]) {
+           orgName = parts[projIndex + 1].split(/[?#]/)[0].replace(/_/g, "-");
+        }
+
+        if (dbName && orgName) {
+            url = `libsql://${dbName}-${orgName}.turso.io`;
+            console.warn(`[TURSO] 💡 Attempting auto-fix to: ${url}`);
+        } else if (dbName) {
+            console.warn(`[TURSO] ⚠️ Could not determine organization name from URL. Please copy the 'libsql://' URL from the 'Connect' tab.`);
+        }
+      }
+    }
+
+    // Handle common misconfiguration: User pasting 'libsql://' URL but accidentally prepending 'https://'
+    if (url.startsWith("https://libsql://")) {
+        url = url.replace("https://", "");
+    }
+    
+    // Ensure we don't have double protocols
+    if (url.startsWith("libsql://libsql://")) {
+        url = url.replace("libsql://libsql://", "libsql://");
+    }
 
     // Handle common misconfiguration: User pasting the whole variable assignment
     if (url.startsWith("TURSO_DATABASE_URL=")) {
-      url = url.split("=")[1].replace(/^['"](.*)['"]$/, '$1');
+      url = url.split("=")[1].trim().replace(/^['"](.*)['"]$/, '$1');
     }
     if (authToken.startsWith("TURSO_AUTH_TOKEN=")) {
-      authToken = authToken.split("=")[1].replace(/^['"](.*)['"]$/, '$1');
+      authToken = authToken.split("=")[1].trim().replace(/^['"](.*)['"]$/, '$1');
+    }
+
+    // Ensure URL doesn't have common mistakes
+    if (url.includes("https://turso.io") && !url.includes(".turso.io/")) {
+        console.error("[TURSO] 🚨 The URL points to the main Turso website, not your database instance.");
     }
 
     if (!url || !authToken) {
-      console.warn("[TURSO] ⚠️ Missing environment variables (TURSO_DATABASE_URL/TURSO_AUTH_TOKEN). Connection will likely fail.");
+      console.warn("[TURSO] ⚠️ Missing or empty environment variables.");
     }
 
-    // Ensure URL has protocol and is optimized for the environment
-    if (url && !url.includes("://")) {
+    // Ensure URL has protocol and is correctly formatted for the environment
+    if (url && !url.includes("://") && !url.startsWith("http")) {
         url = `libsql://${url}`;
     }
+
+    // Handle cases where the user pasted the URL with an embedded token but also provided the env var
+    if (url.includes("authToken=") && authToken) {
+        try {
+            const urlObj = new URL(url.replace("libsql://", "http://"));
+            if (urlObj.searchParams.has("authToken")) {
+                console.warn("[TURSO] ⚠️ Auth token found in both URL and TURSO_AUTH_TOKEN. Prioritizing environment variable.");
+                urlObj.searchParams.delete("authToken");
+                url = urlObj.toString().replace("http://", "libsql://").replace(/\/$/, "");
+            }
+        } catch (e) {
+            // Ignore URL parsing errors here
+        }
+    }
     
-    // Some serverless environments prefer https:// over libsql:// for firewall reasons
-    if (url.startsWith("libsql://") && (process.env.VERCEL || process.env.NODE_ENV === "production")) {
-        console.log("[TURSO] 💡 Serverless environment detected, using https transport");
+    // Check for common prefix mistakes
+    if (url.startsWith("libsql://") && url.includes(".turso.io")) {
+        // Correct format usually
+    } else if (url && !url.includes(".turso.io") && !url.includes("localhost") && !url.includes("127.0.0.1")) {
+        console.warn(`[TURSO] ⚠️ The URL "${url}" does not look like a standard Turso URL.`);
+    }
+    
+    // Only use https if explicitly requested or on Vercel
+    if (url.startsWith("libsql://") && process.env.VERCEL) {
+        console.log("[TURSO] 💡 Vercel environment detected, using https transport");
         url = url.replace("libsql://", "https://");
     }
 
-    console.log(`[TURSO] 🔌 Connecting to: ${url.split('@').pop()?.split('?')[0]} (masked)`);
+    const maskedUrl = url.replace(/\/\/([^:]+):[^@]+@/, "//$1:****@").replace(/authToken=[^&]+/, "authToken=****");
+    console.log(`[TURSO] 🔌 Connecting to: ${maskedUrl}`);
+    this.url = url;
 
     this.client = createClient({
       url,
@@ -144,9 +219,38 @@ export class TursoAdapter implements DatabaseAdapter {
           // console.log(`[TURSO] ✅ Table ensured: ${table.name}`);
         } catch (tableErr: any) {
           console.error(`[TURSO] ❌ Failed to ensure table "${table.name}":`, tableErr.message);
+          
+          const maskedUrl = this.url.replace(/\/\/([^:]+):[^@]+@/, "//$1:****@").replace(/authToken=[^&]+/, "authToken=****");
+
+          // Handle Fetch Failed (Network/DNS issues)
+          if (tableErr.message.includes("fetch failed")) {
+            throw new Error(`Database Network Error: Failed to reach the database server. 
+            
+Original error: fetch failed.
+Attempted URL: ${maskedUrl}
+
+Possible causes:
+1. The host "${maskedUrl.split('//')[1]?.split('.')[0] || 'your-db'}" does not exist.
+2. There is a network restriction preventing the app from reaching Turso.
+3. Your TURSO_DATABASE_URL is missing the '.turso.io' suffix or organization name.`);
+          }
+
           // If connection is 404, we'll know here
           if (tableErr.message.includes("404")) {
-              throw new Error(`Turso URL is wrong or database doesn't exist (404).`);
+              let host = "unknown";
+              try {
+                const urlObj = new URL(this.url.replace("libsql://", "http://"));
+                host = urlObj.host;
+              } catch (e) {}
+              throw new Error(`Turso Connection Error (404). Host "${host}" was reached but the database was not found. 
+              
+Possible reasons:
+1. Typo in database or organization name in your TURSO_DATABASE_URL.
+2. You used a Dashboard URL instead of a Connection URL.
+3. Your TURSO_DATABASE_URL format is wrong.
+
+Current Attempted URL: ${maskedUrl}
+Expected Format: libsql://your-db-name-your-org-name.turso.io`);
           }
         }
       }

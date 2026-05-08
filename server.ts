@@ -57,20 +57,44 @@ const handleLogin = async (req: any, res: any) => {
     }
 
     try {
-        const userData = await db.getDoc("users", username.toLowerCase());
+        console.log(`[AUTH] Attempting login for: ${username}`);
+        let userData = await db.getDoc("users", username.toLowerCase());
         
+        // AUTO-SEED: If no admin exists and someone tries to log in as admin, create it now
+        if (!userData && username.toLowerCase() === "admin") {
+            console.log("[AUTH] Admin account missing, creating default admin/admin...");
+            const hashedPassword = await bcrypt.hash("admin", 10);
+            const newAdmin = {
+                id: "admin",
+                username: "admin",
+                password_hash: hashedPassword,
+                role: "admin",
+                status: "active",
+                created_at: new Date(),
+                updated_at: new Date()
+            };
+            await db.setDoc("users", "admin", newAdmin);
+            userData = newAdmin;
+            console.log("[AUTH] Admin account created successfully.");
+        }
+
         if (!userData) {
+            console.warn(`[AUTH] User not found: ${username}`);
             return res.status(401).json({ error: "Invalid credentials" });
         }
         
         if (userData.status !== "active") {
+            console.warn(`[AUTH] Account deactivated: ${username}`);
             return res.status(403).json({ error: "Account deactivated" });
         }
 
         const validPassword = await bcrypt.compare(password, userData.password_hash);
         if (!validPassword) {
+            console.warn(`[AUTH] Password mismatch for user: ${username}`);
             return res.status(401).json({ error: "Invalid credentials" });
         }
+
+        console.log(`[AUTH] Login successful: ${username}`);
 
         // Create JWT token
         const token = await new SignJWT({
@@ -112,7 +136,21 @@ const handleLogin = async (req: any, res: any) => {
 
     } catch (error: any) {
         console.error("Login Error:", error);
-        res.status(500).json({ error: "Internal server error", details: error.message });
+        
+        // Check for common Turso errors to give better feedback
+        let errorMessage = `[DB Mode: ${process.env.DATABASE_MODE || "sqlite"}] Internal server error`;
+        if (error.message?.includes("404")) {
+            errorMessage = `Database Connection Error (404). Possible causes:\n1. Your TURSO_DATABASE_URL is a dashboard browser URL instead of a connection URL.\n2. The database name or organization name in the URL is slightly wrong.\n\nOriginal error: ${error.message}`;
+        } else if (error.message?.includes("unauthorized") || error.message?.includes("401")) {
+            errorMessage = `Database Auth Error (401): Please check your TURSO_AUTH_TOKEN.\n\nOriginal error: ${error.message}`;
+        } else if (error.message?.includes("fetch")) {
+            errorMessage = `Database Network Error: Failed to reach the database server.\n\nOriginal error: ${error.message}`;
+        }
+
+        res.status(500).json({ 
+            error: errorMessage,
+            details: error.message 
+        });
     }
 };
 
@@ -273,8 +311,10 @@ app.delete("/api/db/:collection/:id", authenticate, authorize(["admin"]), async 
 async function startServer() {
     console.log("[SERVER] Initializing...");
     try {
+        console.log("[SERVER] Checking database connection...");
         const adminUser = await db.getDoc("users", "admin");
         if (!adminUser) {
+            console.log("[SEED] Admin missing, creating default...");
             const hashedPassword = await bcrypt.hash("admin", 10);
             await db.setDoc("users", "admin", {
                 username: "admin",
@@ -285,8 +325,12 @@ async function startServer() {
                 updated_at: new Date()
             });
         }
-    } catch (err) {
-        console.error("[SEED] Error:", err);
+        console.log("[DB] Database connection verified.");
+    } catch (err: any) {
+        console.error("[DB] ❌ Database connection failed during startup.");
+        console.error(`[DB] Error detail: ${err.message}`);
+        // We don't throw here to allow the server to start and Vite to serve the frontend
+        // Error feedback will be provided in the Login page when users try to interact.
     }
 
     if (process.env.NODE_ENV !== "production") {
