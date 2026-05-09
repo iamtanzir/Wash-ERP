@@ -240,21 +240,52 @@ app.post("/api/erp/upload", authenticate, authorize(["admin", "editor"]), upload
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    const rows = data.slice(1).map((row: any) => ({
-        buyer: row[0] || "",
-        erp_ship_date: row[1] || "",
-        file_no: row[2] || "",
-        style_no: row[3] || "",
+    const data: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+    
+    // Find the actual header row index by scanning for 'Buyer'
+    let headerRowIndex = 0;
+    for (let i = 0; i < Math.min(data.length, 10); i++) {
+        const rowStr = Array.isArray(data[i]) ? data[i].join("").toLowerCase() : "";
+        if (rowStr.includes("buyer")) {
+            headerRowIndex = i;
+            break;
+        }
+    }
+
+    const rows = data.slice(headerRowIndex + 1).map((row: any) => {
+      // Map columns based on assumed typical Next plan layout
+      // A: Buyer (0)
+      // B: ERP Ship Date (1)
+      // C: Job Ref / File Name (2)
+      // D: Style No / Developing Name (3)
+      // E: CPL Qty (4)
+      // F: Order Qty (5)
+      // G: Sew Floor (6)
+      // H: Item List / Color (7)
+      // I: Wash Type (8)
+      // J: Wash Status (9)
+      // K: Plan (10)
+      // L: Print/Emb (11)
+      // M: Source Ref (12)
+      // N: Remarks (13)
+      return {
+        buyer: String(row[0] || "").trim(),
+        erp_ship_date: String(row[1] || "").trim(),
+        file_no: String(row[2] || "").trim(),
+        style_no: String(row[3] || "").trim(),
         cpl_qty_kg: Number(String(row[4]).replace(/,/g, "")) || 0,
         order_qty: Number(String(row[5]).replace(/,/g, "")) || 0,
-        floor: row[6] || "",
-        wash_type: row[7] || "",
-        status: row[8] || "New",
-        plan: row[9] || "",
-        source_ref: row[10] || "",
-        remarks: row[11] || ""
-    })).filter(row => row.buyer && row.file_no);
+        floor: String(row[6] || "").trim(),
+        color: String(row[7] || "").trim(), // Treat item list as color/item interchangeably
+        item: String(row[7] || "").trim(),
+        wash_type: String(row[8] || "").trim(),
+        status: String(row[9] || "New").trim(),
+        plan: String(row[10] || "").trim(),
+        print_emb: String(row[11] || "").trim(),
+        source_ref: String(row[12] || "").trim(),
+        remarks: String(row[13] || "").trim()
+      };
+    }).filter(row => row.buyer && row.file_no);
     res.json({ success: true, count: rows.length, data: rows });
   } catch (error) {
     res.status(500).json({ error: "Failed to parse Excel file" });

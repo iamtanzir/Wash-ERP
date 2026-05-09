@@ -6,13 +6,17 @@ export interface Order {
   order_qty: number;
   wash_type: string;
   sew_floor: string;
+  floor?: string;
   status: string;
   color: string;
   erp_date?: string;
+  erp_ship_date?: string;
   cpl_qty_kg?: number;
   item?: string;
+  plan?: string;
   remarks?: string;
   source_ref?: string;
+  print_emb?: string;
   uploaded_by?: string;
   created_at?: string;
   updated_at?: string;
@@ -45,7 +49,12 @@ const fetchJSON = async (url: string, options: RequestInit = {}) => {
     const errorData = await res.json().catch(() => ({}));
     throw new Error(errorData.error || `Request failed with status ${res.status}`);
   }
-  return res.json();
+  
+  try {
+    return await res.json();
+  } catch (e) {
+    throw new Error(`Server returned an invalid response. This often happens if a request takes too long (timeout) or a payload is too large. (Status: ${res.status})`);
+  }
 };
 
 export const api = {
