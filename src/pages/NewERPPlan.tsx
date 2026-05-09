@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { api } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import * as XLSX from "xlsx";
+import { useQuery } from '@tanstack/react-query';
+import { formatNumber, formatDate } from '../lib/utils';
 
 export default function NewERPPlan() {
   const navigate = useNavigate();
@@ -12,6 +14,11 @@ export default function NewERPPlan() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [summary, setSummary] = useState<{ count: number; skipped: number } | null>(null);
+
+  const { data: activeOrders, isLoading: loadingOrders, refetch } = useQuery({
+    queryKey: ['erpPlans'],
+    queryFn: () => api.getActiveOrders()
+  });
 
   const handleDownloadTemplate = () => {
     const ws = XLSX.utils.aoa_to_sheet([
@@ -84,6 +91,7 @@ export default function NewERPPlan() {
         await api.batchSetOrders(operations);
         setSummary({ count: result.data.length, skipped: 0 });
         toast.success(`Successfully uploaded ${result.data.length} records`);
+        refetch();
       } else {
         toast.info("No valid rows found in Excel sheet");
       }
@@ -95,8 +103,10 @@ export default function NewERPPlan() {
     }
   };
 
+  const sortedOrders = activeOrders ? [...activeOrders].sort((a,b) => new Date(a.erp_date || '').getTime() - new Date(b.erp_date || '').getTime()) : [];
+
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-8">
+    <div className="w-full max-w-7xl mx-auto space-y-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button 
@@ -106,8 +116,8 @@ export default function NewERPPlan() {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">NEXT ERP Plan Upload</h1>
-            <p className="text-slate-500 text-sm italic">Import master ERP records via Excel (.xlsx)</p>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">NEXT ERP Plan</h1>
+            <p className="text-slate-500 text-sm italic">Import master ERP records via Excel (.xlsx) and view plans</p>
           </div>
         </div>
         <button
@@ -213,18 +223,57 @@ export default function NewERPPlan() {
         </div>
       </div>
 
-      <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-        <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <AlertCircle size={18} className="text-amber-500" />
-          Import Guidelines
-        </h4>
-        <ul className="text-sm text-slate-600 space-y-2 list-disc pl-5">
-          <li>System uses <strong>Job Ref / File Name</strong> and <strong>Style No</strong> combined as unique key.</li>
-          <li>Existing records with matching keys will be <strong>updated</strong> (Upsert).</li>
-          <li>Dates should be in standard Excel date format.</li>
-          <li>Numeric fields (Qty) should not contain characters other than numbers and commas.</li>
-        </ul>
+      {/* ERP Plan Table Display */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full min-h-[500px]">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-700 uppercase">NEXT ERP Plan List</h3>
+        </div>
+        <div className="flex-1 overflow-auto">
+          <table className="w-full text-left border-collapse whitespace-nowrap min-w-max text-xs">
+            <thead className="bg-[#f0e68c] sticky top-0 z-10 border-b border-yellow-300">
+              <tr>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Buyer</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">ERP Date</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Job Ref</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Style No</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold text-right">CPL Qty (kg)</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold text-right">Order Qty (pcs)</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Sew Floor</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Item List</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Type of Wash</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Wash Status</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">P.P/ Plan</th>
+                <th className="px-3 py-3 text-red-600 font-bold">Remarks/ 1st TOD</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 bg-white">
+              {loadingOrders ? (
+                <tr><td colSpan={12} className="px-6 py-12 text-center text-slate-500 italic">Loading ERP Plans...</td></tr>
+              ) : sortedOrders.length === 0 ? (
+                <tr><td colSpan={12} className="px-6 py-12 text-center text-slate-500 italic">No ERP Plans found. Import a plan to see it here.</td></tr>
+              ) : (
+                sortedOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-blue-50/50">
+                    <td className="px-3 py-2 border-r border-slate-200 font-medium">{order.buyer}</td>
+                    <td className="px-3 py-2 border-r border-slate-200">{order.erp_date ? formatDate(order.erp_date) : '-'}</td>
+                    <td className="px-3 py-2 border-r border-slate-200 font-mono text-blue-600">{order.file_no}</td>
+                    <td className="px-3 py-2 border-r border-slate-200">{order.style_no}</td>
+                    <td className="px-3 py-2 border-r border-slate-200 text-right tabular-nums">{order.cpl_qty_kg ? formatNumber(order.cpl_qty_kg) : '-'}</td>
+                    <td className="px-3 py-2 border-r border-slate-200 text-right tabular-nums">{formatNumber(order.order_qty)}</td>
+                    <td className="px-3 py-2 border-r border-slate-200 text-center">{order.sew_floor}</td>
+                    <td className="px-3 py-2 border-r border-slate-200">{order.item || '-'}</td>
+                    <td className="px-3 py-2 border-r border-slate-200">{order.wash_type}</td>
+                    <td className="px-3 py-2 border-r border-slate-200 text-center">{order.status}</td>
+                    <td className="px-3 py-2 border-r border-slate-200">{order.plan || '-'}</td>
+                    <td className="px-3 py-2 text-slate-500">{order.remarks || '-'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
     </div>
   );
 }
