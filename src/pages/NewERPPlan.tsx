@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { ArrowLeft, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -77,11 +77,15 @@ export default function NewERPPlan() {
       if (result.success && result.data.length > 0) {
         // Bulk upsert into DB via our proxy
         const operations = result.data.map((row: any) => {
-          const docId = `${row.file_no}_${row.style_no}`.replace(/[\/\s]/g, "_");
+          // Robust unique key: Buyer + File + Style + Color (sanitized)
+          const sanitize = (s: string) => String(s || '').trim().toUpperCase().replace(/[\/\s]/g, "_");
+          const docId = `${sanitize(row.buyer)}_${sanitize(row.file_no)}_${sanitize(row.style_no)}_${sanitize(row.color)}`;
           return {
             id: docId,
             data: {
               ...row,
+              id: docId,
+              status: row.status || 'Pending',
               uploaded_by: user?.username,
               updated_at: new Date().toISOString()
             }
@@ -90,8 +94,9 @@ export default function NewERPPlan() {
 
         await api.batchSetOrders(operations);
         setSummary({ count: result.data.length, skipped: 0 });
-        toast.success(`Successfully uploaded ${result.data.length} records`);
+        toast.success(`Successfully uploaded/updated ${result.data.length} records`);
         refetch();
+        setFile(null); // Clear file after successful upload
       } else {
         toast.info("No valid rows found in Excel sheet");
       }
@@ -103,7 +108,32 @@ export default function NewERPPlan() {
     }
   };
 
-  const sortedOrders = activeOrders ? [...activeOrders].sort((a,b) => new Date(a.erp_date || '').getTime() - new Date(b.erp_date || '').getTime()) : [];
+  // Enhanced statistics for the table
+  const { data: allLogs } = useQuery({
+    queryKey: ['allLogsForStats'],
+    queryFn: () => api.getRecentLogs(5000),
+    enabled: !!activeOrders
+  });
+
+  const orderStats = useMemo(() => {
+    if (!activeOrders || !allLogs?.items) return new Map();
+    const statsMap = new Map();
+    
+    allLogs.items.forEach(log => {
+      const current = statsMap.get(log.erp_order) || { rcv: 0, del: 0 };
+      current.rcv += (log.received_qty || 0);
+      current.del += (log.delivered_qty || 0);
+      statsMap.set(log.erp_order, current);
+    });
+    
+    return statsMap;
+  }, [activeOrders, allLogs]);
+
+  const sortedOrders = activeOrders ? [...activeOrders].sort((a,b) => {
+    const dateA = new Date(a.erp_ship_date || a.erp_date || '').getTime();
+    const dateB = new Date(b.erp_ship_date || b.erp_date || '').getTime();
+    return dateA - dateB;
+  }) : [];
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-8">
@@ -229,20 +259,20 @@ export default function NewERPPlan() {
             <h3 className="text-sm font-bold text-slate-700 uppercase">NEXT ERP Plan List</h3>
         </div>
         <div className="flex-1 overflow-auto">
-          <table className="w-full text-left border-collapse whitespace-nowrap min-w-max text-xs">
+          <table className="w-full text-left border-collapse whitespace-nowrap min-w-max text-[11px]">
             <thead className="bg-[#f0e68c] sticky top-0 z-10 border-b border-yellow-300">
               <tr>
                 <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Buyer</th>
-                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">ERP Date</th>
-                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Job Ref</th>
-                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Style No</th>
-                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold text-right">CPL Qty (kg)</th>
-                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold text-right">Order Qty (pcs)</th>
-                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Sew Floor</th>
-                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Item List</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold text-center">ERP Date</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Job Ref / File</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Style / Color</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold text-right">Order Qty</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold text-right">Rcv Qty</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold text-right">Del Qty</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold text-right">Balance</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold text-center">Status</th>
                 <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Type of Wash</th>
-                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Wash Status</th>
-                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">P.P/ Plan</th>
+                <th className="px-3 py-3 border-r border-[#d8cf7e] text-slate-800 font-bold">Floor</th>
                 <th className="px-3 py-3 text-red-600 font-bold">Remarks/ 1st TOD</th>
               </tr>
             </thead>
@@ -252,22 +282,38 @@ export default function NewERPPlan() {
               ) : sortedOrders.length === 0 ? (
                 <tr><td colSpan={12} className="px-6 py-12 text-center text-slate-500 italic">No ERP Plans found. Import a plan to see it here.</td></tr>
               ) : (
-                sortedOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-blue-50/50">
-                    <td className="px-3 py-2 border-r border-slate-200 font-medium">{order.buyer}</td>
-                    <td className="px-3 py-2 border-r border-slate-200">{order.erp_date ? formatDate(order.erp_date) : '-'}</td>
-                    <td className="px-3 py-2 border-r border-slate-200 font-mono text-blue-600">{order.file_no}</td>
-                    <td className="px-3 py-2 border-r border-slate-200">{order.style_no}</td>
-                    <td className="px-3 py-2 border-r border-slate-200 text-right tabular-nums">{order.cpl_qty_kg ? formatNumber(order.cpl_qty_kg) : '-'}</td>
-                    <td className="px-3 py-2 border-r border-slate-200 text-right tabular-nums">{formatNumber(order.order_qty)}</td>
-                    <td className="px-3 py-2 border-r border-slate-200 text-center">{order.sew_floor}</td>
-                    <td className="px-3 py-2 border-r border-slate-200">{order.item || '-'}</td>
-                    <td className="px-3 py-2 border-r border-slate-200">{order.wash_type}</td>
-                    <td className="px-3 py-2 border-r border-slate-200 text-center">{order.status}</td>
-                    <td className="px-3 py-2 border-r border-slate-200">{order.plan || '-'}</td>
-                    <td className="px-3 py-2 text-slate-500">{order.remarks || '-'}</td>
-                  </tr>
-                ))
+                sortedOrders.map((order) => {
+                  const stats = orderStats.get(order.id) || { rcv: 0, del: 0 };
+                  const balance = stats.rcv - stats.del;
+                  const isRunning = stats.rcv > 0 || stats.del > 0;
+                  
+                  return (
+                    <tr key={order.id} className="hover:bg-blue-50/50">
+                      <td className="px-3 py-2 border-r border-slate-200 font-bold italic font-serif tracking-tight">{order.buyer}</td>
+                      <td className="px-3 py-2 border-r border-slate-200 text-center font-medium">{order.erp_date || order.erp_ship_date || '-'}</td>
+                      <td className="px-3 py-2 border-r border-slate-200 font-mono text-blue-600 font-bold">{order.file_no}</td>
+                      <td className="px-3 py-2 border-r border-slate-200 flex flex-col">
+                        <span className="font-bold text-slate-800">{order.style_no}</span>
+                        {order.color && <span className="text-[9px] text-slate-400 italic font-sans">{order.color}</span>}
+                      </td>
+                      <td className="px-3 py-2 border-r border-slate-200 text-right tabular-nums font-bold">{formatNumber(order.order_qty)}</td>
+                      <td className="px-3 py-2 border-r border-slate-200 text-right tabular-nums text-emerald-600 font-bold">{stats.rcv > 0 ? formatNumber(stats.rcv) : '-'}</td>
+                      <td className="px-3 py-2 border-r border-slate-200 text-right tabular-nums text-orange-600 font-bold">{stats.del > 0 ? formatNumber(stats.del) : '-'}</td>
+                      <td className="px-3 py-2 border-r border-slate-200 text-right tabular-nums font-black bg-slate-50 text-slate-900">{balance > 0 ? formatNumber(balance) : '-'}</td>
+                      <td className="px-3 py-2 border-r border-slate-200 text-center">
+                        <span className={`
+                          px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider
+                          ${isRunning ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}
+                        `}>
+                          {isRunning ? 'Running' : (order.status || 'Pending')}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 border-r border-slate-200 font-medium italic">{order.wash_type}</td>
+                      <td className="px-3 py-2 border-r border-slate-200 text-center uppercase font-bold text-slate-500">{order.floor || order.sew_floor || '-'}</td>
+                      <td className="px-3 py-2 text-slate-500 italic max-w-[200px] truncate" title={order.remarks}>{order.remarks || '-'}</td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

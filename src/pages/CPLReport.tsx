@@ -259,7 +259,7 @@ export default function CplReport() {
                   <FilterSelect column="color" options={filterOptions.color} label="COLOR" />
                 </th>
                 <th className="px-2 py-3 text-[11px] font-bold text-[#1E5D7B] uppercase tracking-wider text-center border-r border-[#FFD700] align-top">
-                  <FilterSelect column="erpShipDate" options={filterOptions.erpShipDate} label={<>ERP SHIP<br/>DATE</>} />
+                  <FilterSelect column="erpShipDate" options={filterOptions.erpShipDate} label="ERP DATE" />
                 </th>
                 <th className="px-2 py-3 text-[11px] font-bold text-[#1E5D7B] uppercase tracking-wider text-right border-r border-[#FFD700] align-top">
                   <FilterSelect column="ordQty" options={filterOptions.ordQty} label={<>ORDER QTY<br/>(KG)</>} />

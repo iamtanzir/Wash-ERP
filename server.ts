@@ -252,38 +252,52 @@ app.post("/api/erp/upload", authenticate, authorize(["admin", "editor"]), upload
         }
     }
 
+    // Improved mapping with header detection
+    const headers = data[headerRowIndex].map((h: any) => String(h || "").toLowerCase().trim());
+    
+    const findCol = (possibleNames: string[]) => {
+      const idx = headers.findIndex(h => possibleNames.some(name => h.includes(name.toLowerCase())));
+      return idx;
+    };
+
+    const colMap = {
+      buyer: findCol(['buyer']),
+      shipDate: findCol(['ship date', 'erp date', 'date']),
+      fileNo: findCol(['file', 'job ref', 'file no']),
+      styleNo: findCol(['style']),
+      color: findCol(['color', 'item', 'item list']),
+      cplQty: findCol(['cpl qty', 'cpl']),
+      orderQty: findCol(['order qty', 'qty']),
+      floor: findCol(['floor', 'sew floor']),
+      washType: findCol(['wash type', 'type of wash']),
+      status: findCol(['status', 'wash status']),
+      plan: findCol(['plan', 'p.p/ plan']),
+      remarks: findCol(['remarks', '1st tod', 'remark']),
+      printEmb: findCol(['print', 'emb']),
+      sourceRef: findCol(['source'])
+    };
+
     const rows = data.slice(headerRowIndex + 1).map((row: any) => {
-      // Map columns based on assumed typical Next plan layout
-      // A: Buyer (0)
-      // B: ERP Ship Date (1)
-      // C: Job Ref / File Name (2)
-      // D: Style No / Developing Name (3)
-      // E: CPL Qty (4)
-      // F: Order Qty (5)
-      // G: Sew Floor (6)
-      // H: Item List / Color (7)
-      // I: Wash Type (8)
-      // J: Wash Status (9)
-      // K: Plan (10)
-      // L: Print/Emb (11)
-      // M: Source Ref (12)
-      // N: Remarks (13)
+      const getValue = (idx: number) => idx !== -1 ? String(row[idx] || "").trim() : "";
+      
       return {
-        buyer: String(row[0] || "").trim(),
-        erp_ship_date: String(row[1] || "").trim(),
-        file_no: String(row[2] || "").trim(),
-        style_no: String(row[3] || "").trim(),
-        cpl_qty_kg: Number(String(row[4]).replace(/,/g, "")) || 0,
-        order_qty: Number(String(row[5]).replace(/,/g, "")) || 0,
-        floor: String(row[6] || "").trim(),
-        color: String(row[7] || "").trim(), // Treat item list as color/item interchangeably
-        item: String(row[7] || "").trim(),
-        wash_type: String(row[8] || "").trim(),
-        status: String(row[9] || "New").trim(),
-        plan: String(row[10] || "").trim(),
-        print_emb: String(row[11] || "").trim(),
-        source_ref: String(row[12] || "").trim(),
-        remarks: String(row[13] || "").trim()
+        buyer: getValue(colMap.buyer),
+        erp_ship_date: getValue(colMap.shipDate),
+        erp_date: getValue(colMap.shipDate),
+        file_no: getValue(colMap.fileNo),
+        style_no: getValue(colMap.styleNo),
+        color: getValue(colMap.color),
+        item: getValue(colMap.color),
+        cpl_qty_kg: Number(getValue(colMap.cplQty).replace(/,/g, "")) || 0,
+        order_qty: Number(getValue(colMap.orderQty).replace(/,/g, "")) || 0,
+        floor: getValue(colMap.floor),
+        sew_floor: getValue(colMap.floor),
+        wash_type: getValue(colMap.washType),
+        status: getValue(colMap.status) || "New",
+        plan: getValue(colMap.plan),
+        print_emb: getValue(colMap.printEmb),
+        source_ref: getValue(colMap.sourceRef),
+        remarks: getValue(colMap.remarks)
       };
     }).filter(row => row.buyer && row.file_no);
     res.json({ success: true, count: rows.length, data: rows });

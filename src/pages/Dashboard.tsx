@@ -272,7 +272,7 @@ export default function Dashboard() {
       {/* Orders Table */}
       <div className="flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-full min-h-[420px]">
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-700 uppercase">Wash Garments Received & Delivery Report</h3>
+          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Garments Wash Status Report (GMT)</h3>
           <div className="flex gap-2">
             <input 
               type="text" 
@@ -307,6 +307,9 @@ export default function Dashboard() {
                 </th>
                 <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
                   <FilterSelect column="color" options={filterOptions.color} label="Color" />
+                </th>
+                <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-center border-r border-yellow-200 align-top">
+                  <span>ERP Date</span>
                 </th>
                 <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
                   <FilterSelect column="ordQty" options={filterOptions.ordQty} label={<>Ord Qty<br/>(pcs)</>} />
@@ -368,8 +371,9 @@ export default function Dashboard() {
                           <td className="px-2 py-3 text-center border-r border-slate-200 whitespace-nowrap">{stat.firstRcvDate ? formatDate(stat.firstRcvDate) : '-'}</td>
                           <td className="px-3 py-3 border-r border-slate-200">{stat.order.style_no || '-'}</td>
                           <td className="px-3 py-3 border-r border-slate-200 font-medium italic font-serif">{stat.order.buyer}</td>
-                          <td className="px-3 py-3 border-r border-slate-200 font-mono text-blue-600">{stat.order.file_no}</td>
+                          <td className="px-3 py-3 border-r border-slate-200 font-mono text-blue-600 font-bold">{stat.order.file_no}</td>
                           <td className="px-3 py-3 border-r border-slate-200">{stat.order.color || '-'}</td>
+                          <td className="px-2 py-3 text-center border-r border-slate-200 whitespace-nowrap text-slate-500">{stat.order.erp_date ? formatDate(stat.order.erp_date) : '-'}</td>
                           <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{formatNumber(stat.order.order_qty)}</td>
                           <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.todayRcv > 0 ? formatNumber(stat.todayRcv) : 0}</td>
                           <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.totalRcv > 0 ? formatNumber(stat.totalRcv) : 0}</td>
