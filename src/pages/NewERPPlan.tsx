@@ -117,7 +117,7 @@ export default function NewERPPlan() {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">NEXT ERP Plan</h1>
-            <p className="text-slate-500 text-sm italic">Import master ERP records via Excel (.xlsx) and view plans</p>
+            <p className="text-slate-500 text-sm italic">Import ERP via Excel (.xlsx) List Plans</p>
           </div>
         </div>
         <button
