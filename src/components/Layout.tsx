@@ -67,8 +67,11 @@ export default function Layout() {
       )}>
         <div className="p-6 flex items-center justify-between overflow-hidden">
           <div className="flex items-center gap-3 min-w-max">
-            <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
-              <span className="text-white font-bold text-xl leading-none">I</span>
+            <div className="w-8 h-8 rounded flex items-center justify-center overflow-hidden">
+                <img src="/logo.png" alt="WASH ERP" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                <div className="hidden w-full h-full bg-blue-500 flex items-center justify-center">
+                    <span className="text-white font-bold text-xl leading-none">I</span>
+                </div>
             </div>
             <h1 className="text-white font-bold text-lg tracking-tight uppercase">WASH ERP</h1>
           </div>

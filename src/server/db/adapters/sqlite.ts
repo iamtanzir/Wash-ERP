@@ -2,7 +2,7 @@ import * as knexPkg from "knex";
 const knex = (knexPkg as any).default || knexPkg;
 import type { Knex } from "knex";
 import { randomUUID } from "node:crypto";
-import type { DatabaseAdapter } from "../index.ts";
+import type { DatabaseAdapter } from "../index.js";
 import path from "path";
 
 export class SQLiteAdapter implements DatabaseAdapter {

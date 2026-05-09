@@ -2,7 +2,7 @@ import * as libsql from "@libsql/client";
 import type { Client } from "@libsql/client";
 const { createClient } = (libsql as any).default || libsql;
 import { randomUUID } from "node:crypto";
-import type { DatabaseAdapter } from "../index.ts";
+import type { DatabaseAdapter } from "../index.js";
 
 export class TursoAdapter implements DatabaseAdapter {
   private client: Client;

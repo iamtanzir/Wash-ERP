@@ -1,6 +1,6 @@
 import * as supabasePkg from "@supabase/supabase-js";
 const { createClient } = (supabasePkg as any).default || supabasePkg;
-import type { DatabaseAdapter } from "../index.ts";
+import type { DatabaseAdapter } from "../index.js";
 
 export class SupabaseAdapter implements DatabaseAdapter {
   private supabase: any;

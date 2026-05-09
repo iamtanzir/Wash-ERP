@@ -1,7 +1,7 @@
 import * as xataPkg from "@xata.io/client";
 const { buildClient } = (xataPkg as any).default || xataPkg;
 import { randomUUID } from "node:crypto";
-import type { DatabaseAdapter } from "../index.ts";
+import type { DatabaseAdapter } from "../index.js";
 
 export class XataAdapter implements DatabaseAdapter {
   private xata: any;

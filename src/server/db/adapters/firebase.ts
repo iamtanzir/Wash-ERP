@@ -16,7 +16,7 @@ import {
 import { initializeApp } from "firebase/app";
 import fs from "fs";
 import path from "path";
-import type { DatabaseAdapter } from "../index.ts";
+import type { DatabaseAdapter } from "../index.js";
 
 export class FirebaseAdapter implements DatabaseAdapter {
   private db: any;
