@@ -33,15 +33,11 @@ export default function App() {
               <Route path="close-order" element={<CloseOrder />} />
               <Route path="data-bank" element={<DataBank />} />
               
-              {/* Editor/Admin Only */}
-              <Route element={<ProtectedRoute role="editor" />}>
-                <Route path="new-plan" element={<NewERPPlan />} />
-              </Route>
+              {/* Open to all authenticated users, but read-only for viewers */}
+              <Route path="new-plan" element={<NewERPPlan />} />
               
-              {/* Admin Only */}
-              <Route element={<ProtectedRoute role="admin" />}>
-                <Route path="admin" element={<Admin />} />
-              </Route>
+              {/* Admin Only for management, but listing open to all */}
+              <Route path="admin" element={<Admin />} />
             </Route>
           </Route>
           

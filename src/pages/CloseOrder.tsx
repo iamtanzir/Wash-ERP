@@ -4,9 +4,11 @@ import { api, Order, DailyLog as DBLog } from '../lib/api';
 import { formatNumber } from '../lib/utils';
 import { toast } from 'sonner';
 import { CheckCircle, Lock, AlertCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function CloseOrder() {
   const queryClient = useQueryClient();
+  const { isEditor, isAdmin } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderLogs, setOrderLogs] = useState<DBLog[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,12 +112,18 @@ export default function CloseOrder() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleOpenModal(order)}
-                        className="text-red-600 font-semibold text-[10px] uppercase tracking-wider hover:underline"
-                      >
-                        Close File
-                      </button>
+                      {(isEditor || isAdmin) ? (
+                        <button
+                          onClick={() => handleOpenModal(order)}
+                          className="text-red-600 font-semibold text-[10px] uppercase tracking-wider hover:underline"
+                        >
+                          Close File
+                        </button>
+                      ) : (
+                        <span className="text-slate-300 font-semibold text-[10px] uppercase tracking-wider cursor-not-allowed">
+                          Read Only
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

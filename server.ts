@@ -308,6 +308,22 @@ app.delete("/api/db/:collection/:id", authenticate, authorize(["admin"]), async 
     }
 });
 
+app.post("/api/db/batch/:collection", authenticate, async (req, res) => {
+    try {
+        const { operations } = req.body;
+        if (!Array.isArray(operations)) return res.status(400).json({ error: "Operations must be an array" });
+        
+        for (const op of operations) {
+            if (op.type === 'set') {
+                await db.setDoc(req.params.collection, op.id, op.data);
+            }
+        }
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 async function startServer() {
     console.log("[SERVER] Initializing...");
     try {

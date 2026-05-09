@@ -7,7 +7,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 export default function NewERPPlan() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isEditor } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [summary, setSummary] = useState<{ count: number; skipped: number } | null>(null);
@@ -153,20 +153,27 @@ export default function NewERPPlan() {
           )}
 
           <div className="flex justify-end pt-4">
-            <button
-              onClick={handleUpload}
-              disabled={!file || uploading}
-              className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 disabled:shadow-none transition-all flex items-center gap-2"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 size={20} className="animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                "Import ERP Plan"
-              )}
-            </button>
+            {!isEditor ? (
+              <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-4 py-2 rounded-lg text-xs font-bold border border-amber-100">
+                <AlertCircle size={14} />
+                READ-ONLY: Upload is restricted for Viewer role.
+              </div>
+            ) : (
+              <button
+                onClick={handleUpload}
+                disabled={!file || uploading}
+                className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:opacity-50 disabled:shadow-none transition-all flex items-center gap-2"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 size={20} className="animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Import ERP Plan"
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

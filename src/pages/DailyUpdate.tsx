@@ -4,9 +4,11 @@ import { api } from '../lib/api';
 import { formatNumber, formatDate } from '../lib/utils';
 import { toast } from 'sonner';
 import { PlusCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function DailyUpdate() {
   const queryClient = useQueryClient();
+  const { isEditor } = useAuth();
   const [formData, setFormData] = useState({
     erp_order: '',
     log_date: new Date().toISOString().split('T')[0],
@@ -236,10 +238,10 @@ export default function DailyUpdate() {
 
             <button 
               type="submit"
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || !isEditor}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2 rounded transition-colors"
             >
-              {mutation.isPending ? 'Saving...' : 'Save Log Entry'}
+              {mutation.isPending ? 'Saving...' : !isEditor ? 'Read-Only (Viewer)' : 'Save Log Entry'}
             </button>
           </form>
         </div>

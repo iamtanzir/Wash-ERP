@@ -1,5 +1,7 @@
 # Wash ERP
 
+[![Open in Google AI Studio](https://img.shields.io/badge/Open%20in-Google%20AI%20Studio-blue?logo=google&logoColor=white)](https://ai.studio/build)
+
 A simplified, robust enterprise resource planning system with basic internal authentication, built for secure environments.
 
 ## 🚀 Key Features
@@ -25,6 +27,13 @@ A simplified, robust enterprise resource planning system with basic internal aut
 - [x] **Session isolation**: Cookies are flagged as httpOnly and SameSite=Strict.
 - [x] **Auditability**: Every login attempt is logged with IP and timestamp.
 - [x] **Zero-Leakage**: Protected routes throw 401/403 errors before any data fetch.
+
+## 🛠️ GitHub Integrations
+This repository is configured with several GitHub-native integrations to ensure code quality and community collaboration:
+- **GitHub Actions (CI)**: Automated linting and build checks on every push and pull request.
+- **Issue Templates**: Pre-configured templates for Bug Reports and Feature Requests.
+- **PR Template**: A standardized checklist for contributing code.
+- **Community Standards**: Includes `LICENSE`, `CONTRIBUTING.md`, and recommended repository health files.
 
 ## 📦 Deployment Guide (Vercel + Database Options)
 

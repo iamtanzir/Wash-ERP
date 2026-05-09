@@ -112,14 +112,31 @@ export class TursoAdapter implements DatabaseAdapter {
         url = url.replace("libsql://", "https://");
     }
 
+    if (!url) {
+      console.warn("[TURSO] ⚠️ TURSO_DATABASE_URL is missing. Database operations will fail.");
+      // Fallback to a dummy URL to prevent createClient from throwing at load time
+      url = "libsql://missing-url.turso.io";
+    }
+
     const maskedUrl = url.replace(/\/\/([^:]+):[^@]+@/, "//$1:****@").replace(/authToken=[^&]+/, "authToken=****");
     console.log(`[TURSO] 🔌 Connecting to: ${maskedUrl}`);
     this.url = url;
 
-    this.client = createClient({
-      url,
-      authToken,
-    });
+    try {
+      this.client = createClient({
+        url,
+        authToken,
+      });
+    } catch (err: any) {
+      console.error("[TURSO] 🚨 Failed to create client:", err.message);
+      // Create a dummy client object to avoid type errors, but it will fail on use
+      this.client = {
+        execute: () => { throw new Error("Turso client not initialized correctly due to missing URL"); },
+        batch: () => { throw new Error("Turso client not initialized correctly due to missing URL"); },
+        close: () => {},
+        sync: () => { throw new Error("Turso client not initialized correctly due to missing URL"); }
+      } as any;
+    }
 
     this.initPromise = this.init();
   }
