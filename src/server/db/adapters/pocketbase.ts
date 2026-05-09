@@ -1,6 +1,6 @@
 import * as PocketBasePkg from 'pocketbase';
 const PocketBase = (PocketBasePkg as any).default || PocketBasePkg;
-import type { DatabaseAdapter } from "../index.ts";
+import type { DatabaseAdapter } from "../index.js";
 
 export class PocketBaseAdapter implements DatabaseAdapter {
   private pb: any;

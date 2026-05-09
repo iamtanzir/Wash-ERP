@@ -2,7 +2,7 @@ import * as pg from 'pg';
 const Client = (pg as any).default?.Client || pg.Client;
 import type { Client as ClientType } from 'pg';
 import { randomUUID } from "node:crypto";
-import type { DatabaseAdapter } from "../index.ts";
+import type { DatabaseAdapter } from "../index.js";
 
 export class CockroachDBAdapter implements DatabaseAdapter {
   private client: ClientType;

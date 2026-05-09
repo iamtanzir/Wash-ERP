@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogIn, ShieldAlert, KeyRound, User, Loader2, Shield } from "lucide-react";
+import { LogIn, ShieldAlert, KeyRound, User, Loader2, Shield, WashingMachine } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
 import { motion } from "motion/react";
@@ -69,8 +69,9 @@ export default function Login() {
           <div className="flex flex-col items-center text-center space-y-2">
             <div className="relative">
               <div className="absolute inset-0 bg-blue-500/10 blur-xl rounded-full" />
-              <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-[16px] shadow-lg flex items-center justify-center text-white">
-                <LogIn size={24} strokeWidth={2.5} />
+              <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-[16px] shadow-lg flex items-center justify-center text-white overflow-hidden">
+                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                <WashingMachine size={24} strokeWidth={2.5} className="hidden" />
               </div>
             </div>
             

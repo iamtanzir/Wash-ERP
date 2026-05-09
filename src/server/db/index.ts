@@ -1,10 +1,10 @@
-import { PocketBaseAdapter } from "./adapters/pocketbase.ts";
-import { SupabaseAdapter } from "./adapters/supabase.ts";
-import { FirebaseAdapter } from "./adapters/firebase.ts";
-import { SQLiteAdapter } from "./adapters/sqlite.ts";
-import { TursoAdapter } from "./adapters/turso.ts";
-import { CockroachDBAdapter } from "./adapters/cockroach.ts";
-import { XataAdapter } from "./adapters/xata.ts";
+import { PocketBaseAdapter } from "./adapters/pocketbase.js";
+import { SupabaseAdapter } from "./adapters/supabase.js";
+import { FirebaseAdapter } from "./adapters/firebase.js";
+import { SQLiteAdapter } from "./adapters/sqlite.js";
+import { TursoAdapter } from "./adapters/turso.js";
+import { CockroachDBAdapter } from "./adapters/cockroach.js";
+import { XataAdapter } from "./adapters/xata.js";
 import fs from "node:fs";
 
 export interface DatabaseAdapter {

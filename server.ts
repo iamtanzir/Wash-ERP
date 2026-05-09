@@ -9,7 +9,7 @@ const XLSX = pkgXLSX;
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
-import { getDatabase } from "./src/server/db/index.ts";
+import { getDatabase } from "./src/server/db/index.js";
 
 const db = getDatabase();
 const app = express();
