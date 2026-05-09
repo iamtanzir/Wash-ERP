@@ -22,6 +22,7 @@ export default function DailyUpdate() {
     sub_factory: '',
     remarks: ''
   });
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: activeOrders } = useQuery({
     queryKey: ['activeOrders'],
@@ -64,6 +65,7 @@ export default function DailyUpdate() {
         lab_samp_qty: 0,
         remarks: ''
       }));
+      setSearchQuery('');
     },
     onError: (err: any) => {
       toast.error(err.message || 'Failed to add daily log');
@@ -101,17 +103,42 @@ export default function DailyUpdate() {
           <form onSubmit={handleSubmit} className="space-y-4 text-sm">
             <div>
               <label className="block font-medium text-slate-700 mb-1" title="ফাইল নির্বাচন করুন">File No (ERP Order) *</label>
-              <select 
-                value={formData.erp_order}
-                onChange={e => setFormData({ ...formData, erp_order: e.target.value })}
+              <input
+                type="text"
+                list="erp-orders-list"
+                value={searchQuery}
+                onChange={e => {
+                  setSearchQuery(e.target.value);
+                  const val = e.target.value;
+                  const matched = activeOrders?.find((o: any) => 
+                     `${o.file_no}${o.color ? ` - ${o.color}` : ''} ${o.floor ? `[${o.floor}]` : ''} (${o.buyer})` === val
+                  );
+                  setFormData({ ...formData, erp_order: matched ? matched.id : "" });
+                }}
                 className="w-full border border-slate-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700"
+                placeholder="-- Type or Select Order --"
                 required
-              >
-                <option value="">-- Select Order --</option>
-                {activeOrders?.map(o => (
-                  <option key={o.id} value={o.id}>{o.file_no}{o.color ? ` - ${o.color}` : ''} ({o.buyer})</option>
+              />
+              <datalist id="erp-orders-list">
+                {activeOrders?.map((o: any) => (
+                  <option key={o.id} value={`${o.file_no}${o.color ? ` - ${o.color}` : ''} ${o.floor ? `[${o.floor}]` : ''} (${o.buyer})`} />
                 ))}
-              </select>
+              </datalist>
+              {formData.erp_order && (
+                <div className="mt-2 text-xs text-slate-500 bg-slate-50 p-2 rounded border border-slate-100">
+                  {(() => {
+                    const selected = activeOrders?.find((o: any) => o.id === formData.erp_order);
+                    if (!selected) return null;
+                    return (
+                      <div className="flex flex-col gap-1">
+                        <div><span className="font-semibold text-slate-600">Garment Sew Floor:</span> {selected.floor || 'N/A'}</div>
+                        <div><span className="font-semibold text-slate-600">Color/Item:</span> {selected.color || 'N/A'}</div>
+                        <div><span className="font-semibold text-slate-600">Wash Type:</span> {selected.wash_type || 'N/A'}</div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
 
             <div>

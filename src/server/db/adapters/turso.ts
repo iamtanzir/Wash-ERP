@@ -169,6 +169,7 @@ export class TursoAdapter implements DatabaseAdapter {
             id TEXT PRIMARY KEY,
             buyer TEXT,
             erp_date TEXT,
+            erp_ship_date TEXT,
             job_ref TEXT,
             style_no TEXT,
             file_no TEXT,
@@ -176,9 +177,16 @@ export class TursoAdapter implements DatabaseAdapter {
             cpl_qty_kg REAL,
             order_qty INTEGER,
             sew_floor TEXT,
+            floor TEXT,
             item TEXT,
             wash_type TEXT,
             wash_status TEXT DEFAULT 'Pending' COLLATE BINARY,
+            status TEXT DEFAULT 'New',
+            plan TEXT,
+            print_emb TEXT,
+            source_ref TEXT,
+            remarks TEXT,
+            uploaded_by TEXT,
             created_at TEXT DEFAULT (datetime('now')),
             updated_at TEXT DEFAULT (datetime('now'))
           )`
@@ -269,6 +277,30 @@ Possible reasons:
 Current Attempted URL: ${maskedUrl}
 Expected Format: libsql://your-db-name-your-org-name.turso.io`);
           }
+        }
+      }
+
+      // Migrations for newly added columns
+      const migrations = [
+        "ALTER TABLE erp_orders ADD COLUMN erp_ship_date TEXT",
+        "ALTER TABLE erp_orders ADD COLUMN floor TEXT",
+        "ALTER TABLE erp_orders ADD COLUMN status TEXT DEFAULT 'New'",
+        "ALTER TABLE erp_orders ADD COLUMN plan TEXT",
+        "ALTER TABLE erp_orders ADD COLUMN print_emb TEXT",
+        "ALTER TABLE erp_orders ADD COLUMN source_ref TEXT",
+        "ALTER TABLE erp_orders ADD COLUMN remarks TEXT",
+        "ALTER TABLE erp_orders ADD COLUMN uploaded_by TEXT"
+      ];
+
+      for (const stmt of migrations) {
+        try {
+          await this.client.execute(stmt);
+        } catch (e: any) {
+             // Ignore "duplicate column name" errors
+             if (!e.message.includes("duplicate column name")) {
+                // log unexpected errors but don't crash
+                // console.error("Migration skipped/error:", e.message); 
+             }
         }
       }
 
@@ -363,6 +395,7 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
         }
     } catch (err: any) {
         console.error(`[TURSO] Error in setDoc for ${collection}:`, err.message);
+        throw err;
     }
   }
 

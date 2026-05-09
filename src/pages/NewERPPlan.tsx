@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { ArrowLeft, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { api } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
+import * as XLSX from "xlsx";
 
 export default function NewERPPlan() {
   const navigate = useNavigate();
@@ -11,6 +12,16 @@ export default function NewERPPlan() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [summary, setSummary] = useState<{ count: number; skipped: number } | null>(null);
+
+  const handleDownloadTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["Buyer Name", "ERP Ship Date", "Job Ref / File Name", "Style No / Developing Name", "CPL Qty (kg)", "Order Qty (pcs)", "Sew Floor", "Item List", "Type of Wash", "Wash Status", "P.P/ Plan", "Print/ Emb", "Source.Ref", "Remarks/ 1st TOD"],
+      ["Example Buyer", "2024-05-10", "F-12345", "STL-99", "500", "12000", "Floor-A", "74-202", "Enzyme Wash", "Pending", "Sample Plan", "Print/Emb Details", "Source Reference", "Sample Remark"]
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+    XLSX.writeFile(wb, "ERP_Upload_Template.xlsx");
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -32,14 +43,29 @@ export default function NewERPPlan() {
 
       const response = await fetch("/api/erp/upload", {
         method: "POST",
+        headers: {
+          "Accept": "application/json"
+        },
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error("Failed to parse file on server");
+        let errorMsg = "Failed to parse file on server";
+        try {
+           const errJson = await response.json();
+           if (errJson.error) errorMsg = errJson.error;
+        } catch (e) {
+           errorMsg = `Server error ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMsg);
       }
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch (e) {
+        throw new Error(`Server returned an invalid response (not JSON). Please ensure your file size is small and the template matches perfectly. (Status: ${response.status})`);
+      }
       
       if (result.success && result.data.length > 0) {
         // Bulk upsert into DB via our proxy
@@ -71,17 +97,26 @@ export default function NewERPPlan() {
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-8">
-      <div className="flex items-center gap-4">
-        <button 
-          onClick={() => navigate(-1)}
-          className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">NEXT ERP Plan Upload</h1>
-          <p className="text-slate-500 text-sm italic">Import master ERP records via Excel (.xlsx)</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">NEXT ERP Plan Upload</h1>
+            <p className="text-slate-500 text-sm italic">Import master ERP records via Excel (.xlsx)</p>
+          </div>
         </div>
+        <button
+          onClick={handleDownloadTemplate}
+          className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium text-sm transition-colors border border-slate-300"
+        >
+          <Download size={16} />
+          <span>Download Template</span>
+        </button>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -91,7 +126,7 @@ export default function NewERPPlan() {
             <div className="text-sm text-blue-800 space-y-1">
               <p className="font-bold">Required Excel Header Order:</p>
               <p className="font-mono text-[10px] break-all bg-white/50 p-2 rounded">
-                Buyer Name | ERP Ship Date | Job Ref / File Name | Style No / Developing Name | CPL Qty (kg) | Order Qty (pcs) | Sew Floor Item List | Type of Wash | Wash Status | P.P/ Plan | Print/ Emb Source.Ref | Remarks/ 1st TOD
+                Buyer Name | ERP Ship Date | Job Ref / File Name | Style No / Developing Name | CPL Qty (kg) | Order Qty (pcs) | Sew Floor | Item List | Type of Wash | Wash Status | P.P/ Plan | Print/ Emb | Source.Ref | Remarks/ 1st TOD
               </p>
             </div>
           </div>
