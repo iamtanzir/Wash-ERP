@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Users, UserPlus, Shield, UserMinus, ShieldAlert, CheckCircle2, KeyRound, User } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "../lib/utils";
+import { useAuth } from "../contexts/AuthContext";
 
 interface UserRecord {
   id: string;
@@ -12,6 +13,7 @@ interface UserRecord {
 }
 
 export default function Admin() {
+  const { user, isAdmin } = useAuth();
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -116,13 +118,15 @@ export default function Admin() {
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">User Management</h1>
           <p className="text-slate-500 italic">Configure roles and access permissions</p>
         </div>
-        <button 
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg active:scale-95"
-        >
-          <UserPlus size={20} />
-          Whitelist User
-        </button>
+        {isAdmin && (
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg active:scale-95"
+          >
+            <UserPlus size={20} />
+            Whitelist User
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -195,9 +199,10 @@ export default function Admin() {
                     <td className="px-6 py-4">
                       <select 
                         value={user.role}
+                        disabled={!isAdmin}
                         onChange={(e) => handleUpdateRole(user.id, e.target.value)}
                         className={cn(
-                          "text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border-2 transition-all",
+                          "text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border-2 transition-all disabled:opacity-80",
                           user.role === 'admin' ? "bg-red-50 text-red-700 border-red-200" :
                           user.role === 'editor' ? "bg-amber-50 text-amber-700 border-amber-200" :
                           user.role === 'operator' ? "bg-purple-50 text-purple-700 border-purple-200" :
@@ -212,8 +217,9 @@ export default function Admin() {
                     </td>
                     <td className="px-6 py-4">
                         <button 
+                            disabled={!isAdmin}
                             onClick={() => handleToggleStatus(user.id, user.status)}
-                            className="flex items-center group"
+                            className="flex items-center group disabled:cursor-not-allowed"
                         >
                             <span className={cn(
                                 "w-2 h-2 rounded-full inline-block mr-2 group-hover:scale-125 transition-transform",
@@ -223,12 +229,14 @@ export default function Admin() {
                         </button>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => handleDeleteUser(user.id)}
-                        className="text-slate-300 hover:text-red-600 transition-colors p-2"
-                      >
-                        <UserMinus size={18} />
-                      </button>
+                      {isAdmin && (
+                        <button 
+                          onClick={() => handleDeleteUser(user.id)}
+                          className="text-slate-300 hover:text-red-600 transition-colors p-2"
+                        >
+                          <UserMinus size={18} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
