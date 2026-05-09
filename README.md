@@ -1,19 +1,36 @@
 # Wash ERP
 
+![Wash ERP Logo](https://placehold.co/600x150/1e293b/ffffff?text=WASH+ERP+v2.1)
+
 [![Open in Google AI Studio](https://img.shields.io/badge/Open%20in-Google%20AI%20Studio-blue?logo=google&logoColor=white)](https://ai.studio/build)
 
-A simplified, robust enterprise resource planning system with basic internal authentication, built for secure environments.
+A high-performance ERP system specifically designed for Garment Wash industry tracking.
+
+## 🖼️ Screenshots
+| Dashboard | ERP Planning | Data Bank |
+|-----------|--------------|-----------|
+| ![Dashboard](https://placehold.co/400x250/slate/white?text=Dashboard+Report) | ![Planning](https://placehold.co/400x250/slate/white?text=Next+ERP+Plan) | ![History](https://placehold.co/400x250/slate/white?text=Transaction+History) |
 
 ## 🚀 Key Features
-- **Internal Authentication**: Simple username/password login.
-- **Default Admin**: Access out-of-the-box with `admin / admin`.
-- **RBAC (Role Based Access Control)**:
-- **Admin**: User directory management, role assignment, status toggling.
-- **Editor**: Data entry, ERP Excel plan uploads.
-- **Viewer**: Read-only access to dashboards and reports.
-- **Operator**: Access for daily log entries.
-- **Excel-to-ERP Engine**: Server-side parsing of master ERP plans.
-- **Audit Logging**: Mandatory trail of all login and data modification events.
+- **Next ERP Plan Logic**: Robust duplicate checking (Buyer + File + Style + Color). Retains the latest records.
+- **GMT & CPL Sync**: Real-time status tracking between production floors and the wash plan.
+- **Transaction History**: "First Recv" and "Last Delivery" timestamps preserved for every order.
+- **Data Archiving**: Automated "Buyer Data Bank" for closed orders with full itemized logs.
+- **Role-Based Access**: Secure internal authentication for Admin, Editor, and Operators.
+
+## 📈 Version Changelog
+
+### [v2.1.0] - 2026-05-09
+- **🚀 Feature**: Added "All Buyer Data Bank" with detailed transaction history modals.
+- **🚀 Feature**: Robust Excel Import mapping (supports multiple header names).
+- **🔧 Fix**: Resolved `sqlite3` driver conflicts and `TURSO` 404 connection bugs.
+- **🎨 Design**: New high-contrast sidebar and "WASH ERP" branding.
+
+### [v2.0.0] - 2026-05-08
+- **Initial Release**: Basic Dashboard and Daily Log functionality.
+- **Database**: Turso/SQLite unified adapter.
+
+---
 
 ## 🔐 Security Configuration
 - **Cookie Sessions**: Uses signed, httpOnly cookies with a 24-hour expiry.
