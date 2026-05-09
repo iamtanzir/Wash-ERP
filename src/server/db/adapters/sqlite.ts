@@ -45,6 +45,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
             id TEXT PRIMARY KEY,
             buyer TEXT,
             erp_date TEXT,
+            erp_ship_date TEXT,
             job_ref TEXT,
             style_no TEXT,
             file_no TEXT,
@@ -52,13 +53,40 @@ export class SQLiteAdapter implements DatabaseAdapter {
             cpl_qty_kg REAL,
             order_qty INTEGER,
             sew_floor TEXT,
+            floor TEXT,
             item TEXT,
             wash_type TEXT,
             wash_status TEXT DEFAULT 'Pending',
+            status TEXT DEFAULT 'New',
+            plan TEXT,
+            print_emb TEXT,
+            source_ref TEXT,
+            remarks TEXT,
+            uploaded_by TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
         `);
+
+        // Migration logic for existing tables if they were created with the old schema
+        const erpOrderColumns = [
+            { name: 'erp_ship_date', type: 'TEXT' },
+            { name: 'floor', type: 'TEXT' },
+            { name: 'status', type: 'TEXT DEFAULT "New"' },
+            { name: 'plan', type: 'TEXT' },
+            { name: 'print_emb', type: 'TEXT' },
+            { name: 'source_ref', type: 'TEXT' },
+            { name: 'remarks', type: 'TEXT' },
+            { name: 'uploaded_by', type: 'TEXT' }
+        ];
+
+        for (const col of erpOrderColumns) {
+            try {
+                await this.db.raw(`ALTER TABLE erp_orders ADD COLUMN ${col.name} ${col.type}`);
+            } catch (e: any) {
+                // Ignore "duplicate column name" errors
+            }
+        }
 
         await this.db.raw(`
           CREATE TABLE IF NOT EXISTS daily_logs (

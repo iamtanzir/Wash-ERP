@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../lib/api';
-import { Download, Filter, Search } from 'lucide-react';
+import { api, DailyLog } from '../lib/api';
+import { Download, Filter, Search, History, X, Calendar, FileText, CheckCircle2 } from 'lucide-react';
 import { formatNumber, formatDate } from '../lib/utils';
 import { BUYERS } from '../lib/constants';
 import { toast } from 'sonner';
@@ -15,10 +15,17 @@ export default function DataBank() {
     file_no: '',
     wash_type: ''
   });
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   const { data: archiveData, isLoading } = useQuery({
     queryKey: ['archiveData', filters],
     queryFn: () => api.getArchiveData(filters)
+  });
+
+  const { data: orderLogs, isLoading: loadingLogs } = useQuery({
+    queryKey: ['orderLogs', selectedOrderId],
+    queryFn: () => api.getOrderLogs(selectedOrderId!),
+    enabled: !!selectedOrderId
   });
 
   const handleExport = () => {
@@ -61,13 +68,11 @@ export default function DataBank() {
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 flex flex-col h-[calc(100vh-8rem)]">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
-        <div className="hidden">
-          <h1 className="text-2xl font-bold text-slate-900">All Buyer Data</h1>
-          <p className="text-slate-500 text-sm mt-1">Immutable archive of closed ERP orders.</p>
-        </div>
-        <div className="flex items-center gap-2">
-           <Filter className="w-4 h-4 text-slate-400" />
-           <h3 className="font-bold text-slate-700 uppercase text-xs tracking-wider">Filter Archive</h3>
+        <div>
+           <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-slate-400" />
+              <h3 className="font-bold text-slate-700 uppercase text-xs tracking-wider">Filter Archive</h3>
+           </div>
         </div>
         <button 
           onClick={handleExport}
@@ -158,7 +163,7 @@ export default function DataBank() {
                 <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Final Del</th>
                 <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Close Date</th>
                 <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Wash Type</th>
-                <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Floor</th>
+                <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center min-w-[80px]">History</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm bg-white">
@@ -174,7 +179,7 @@ export default function DataBank() {
                 </tr>
               ) : (
                 archiveData?.map((item) => (
-                  <tr key={item.id} className="hover:bg-blue-50 transition-colors">
+                  <tr key={item.id} className="hover:bg-blue-50 transition-colors group">
                     <td className="px-6 py-4 font-medium text-slate-700 italic font-serif">{item.buyer}</td>
                     <td className="px-6 py-4 text-blue-600 font-medium font-mono">{item.file_no}</td>
                     <td className="px-6 py-4 flex flex-col">
@@ -186,10 +191,18 @@ export default function DataBank() {
                     <td className="px-6 py-4 text-right tabular-nums text-orange-600 font-medium">{formatNumber(item.total_delivered)}</td>
                     <td className="px-6 py-4 text-right tabular-nums font-bold text-slate-800 bg-slate-50/50">{formatNumber(item.final_delivered_qty)}</td>
                     <td className="px-6 py-4 text-center text-slate-600 tabular-nums">{formatDate(item.close_date)}</td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="px-2 py-1 bg-slate-100 rounded text-[10px] uppercase font-bold text-slate-600 tracking-wider font-mono">{item.wash_type}</span>
+                    <td className="px-6 py-4 text-center font-mono">
+                       <span className="px-2 py-1 bg-slate-100 rounded text-[9px] uppercase font-bold text-slate-600">{item.wash_type}</span>
                     </td>
-                    <td className="px-6 py-4 text-center text-slate-500 uppercase text-[10px] font-bold tracking-wider">{item.sew_floor}</td>
+                    <td className="px-6 py-4 text-center">
+                      <button 
+                        onClick={() => setSelectedOrderId(item.erp_order)}
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
+                        title="View Detailed Transaction Logs"
+                      >
+                        <History size={16} />
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -197,6 +210,111 @@ export default function DataBank() {
           </table>
         </div>
       </div>
+
+      {/* History Modal */}
+      {selectedOrderId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in transition-all">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col scale-in-95 duration-200">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
+                  <History size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800">Order Logs History</h3>
+                  <p className="text-xs text-slate-500">Comprehensive transaction record for ERP ID: {selectedOrderId.substring(0, 8)}...</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedOrderId(null)}
+                className="p-2 hover:bg-slate-200 rounded-full text-slate-400 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-auto p-6">
+              {loadingLogs ? (
+                <div className="flex items-center justify-center h-48">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : orderLogs?.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 italic">No transaction records found for this order</div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-3 gap-4 mb-8">
+                     <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">First Receive</p>
+                        <p className="text-lg font-bold text-emerald-900">{formatDate(orderLogs![orderLogs!.length - 1].log_date)}</p>
+                     </div>
+                     <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
+                        <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider mb-1">Last Delivery</p>
+                        <p className="text-lg font-bold text-orange-900">{formatDate(orderLogs![0].log_date)}</p>
+                     </div>
+                     <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                        <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">Total Logs</p>
+                        <p className="text-lg font-bold text-blue-900">{orderLogs?.length || 0} Entries</p>
+                     </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {orderLogs?.map((log, idx) => (
+                      <div key={log.id} className="relative pl-8 border-l border-slate-100 pb-4">
+                        <div className="absolute left-[-5px] top-0 w-[9px] h-[9px] rounded-full bg-blue-500 border-2 border-white"></div>
+                        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                          <div className="flex items-center justify-between mb-2">
+                             <div className="flex items-center gap-2 text-slate-500 text-xs">
+                               <Calendar size={12} />
+                               <span className="font-medium">{formatDate(log.log_date)}</span>
+                             </div>
+                             <span className="text-[9px] px-2 py-0.5 bg-slate-100 rounded-full font-bold uppercase text-slate-500">{log.unit}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-8">
+                             <div className="flex items-center gap-3">
+                               <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                                 <PlusCircle size={14} className="rotate-0" />
+                               </div>
+                               <div>
+                                 <p className="text-[10px] font-bold text-slate-400 uppercase">Received</p>
+                                 <p className="font-bold text-emerald-600">{formatNumber(log.received_qty)}</p>
+                               </div>
+                             </div>
+                             <div className="flex items-center gap-3">
+                               <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
+                                 <History size={14} className="rotate-180" />
+                               </div>
+                               <div>
+                                 <p className="text-[10px] font-bold text-slate-400 uppercase">Delivered</p>
+                                 <p className="font-bold text-orange-600">{formatNumber(log.delivered_qty)}</p>
+                               </div>
+                             </div>
+                          </div>
+                          {log.remarks && (
+                            <div className="mt-3 pt-3 border-t border-slate-50 flex items-start gap-2 italic text-slate-400 text-[11px]">
+                               <FileText size={12} className="mt-0.5 shrink-0" />
+                               <span>{log.remarks}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => setSelectedOrderId(null)}
+                className="px-6 py-2 bg-slate-800 text-white rounded-xl font-bold shadow-lg hover:bg-slate-900 transition-all active:scale-95"
+              >
+                Close History
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -184,9 +184,29 @@ export const api = {
 
   async getArchiveData(filters?: any) {
     let url = "/api/db/buyer_data_bank";
-    // We could append query params here if the server supported them,
-    // but for now we'll fetch all and filter in the frontend if needed,
-    // or just return all and let the component handle it.
-    return fetchJSON(url);
+    const data = await fetchJSON(url);
+    
+    if (!filters) return data;
+
+    return data.filter((item: any) => {
+      const matchBuyer = !filters.buyer || item.buyer === filters.buyer;
+      const matchFile = !filters.file_no || item.file_no.toLowerCase().includes(filters.file_no.toLowerCase());
+      const matchWash = !filters.wash_type || item.wash_type === filters.wash_type;
+      
+      let matchDate = true;
+      if (filters.from_date || filters.to_date) {
+        const closeDate = new Date(item.close_date).getTime();
+        if (filters.from_date && closeDate < new Date(filters.from_date).getTime()) matchDate = false;
+        if (filters.to_date && closeDate > new Date(filters.to_date).getTime() + 86400000) matchDate = false;
+      }
+
+      return matchBuyer && matchFile && matchWash && matchDate;
+    });
+  },
+
+  async getOrderLogs(orderId: string): Promise<DailyLog[]> {
+    const logs = await fetchJSON("/api/db/daily_logs");
+    return logs.filter((l: DailyLog) => l.erp_order === orderId)
+               .sort((a, b) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime());
   }
 };
