@@ -1,15 +1,11 @@
 # Wash ERP
 
-![Wash ERP Logo](https://placehold.co/600x150/1e293b/ffffff?text=WASH+ERP+v2.1)
+![Wash ERP Logo](https://pngtree.com/freepng/electric-clothes-washing-machine_8953152.html)
 
 [![Open in Google AI Studio](https://img.shields.io/badge/Open%20in-Google%20AI%20Studio-blue?logo=google&logoColor=white)](https://ai.studio/build)
 
-A high-performance ERP system specifically designed for the garment wash industry tracking.
+A high-performance ERP system specifically designed for Garment Wash industry tracking.
 
-## 🖼️ Screenshots
-| Dashboard | ERP Planning | Data Bank |
-|-----------|--------------|-----------|
-| ![Dashboard](./docs/dashboard.png) | ![Planning](./docs/planning.png) | ![History](./docs/history.png) |
 
 ## 🚀 Key Features
 - **Next ERP Plan Logic**: Robust duplicate checking (Buyer + File + Style + Color). Retains the latest records.
