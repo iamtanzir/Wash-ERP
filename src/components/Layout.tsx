@@ -69,13 +69,7 @@ export default function Layout() {
         <div className="p-6 flex items-center justify-between overflow-hidden">
           <div className="flex items-center gap-3 min-w-max">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-900/40 shrink-0 overflow-hidden">
-                <img 
-                  src="/logo.png" 
-                  alt="WASH ERP" 
-                  className="w-full h-full object-contain"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
-                />
-                <WashingMachine size={20} className="hidden text-white" />
+                <WashingMachine size={20} className="text-white" />
             </div>
             <div className="flex flex-col">
               <h1 className="text-white font-black text-xl tracking-tighter leading-none">WASH</h1>
