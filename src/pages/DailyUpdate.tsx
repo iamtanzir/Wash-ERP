@@ -96,11 +96,11 @@ export default function DailyUpdate() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">DAILY DATA ENTRY</h1>
-          <p className="text-slate-500 text-sm">Log production updates for active ERP plans</p>
+          <p className="text-slate-500 text-sm">Wash R&D updates for active ERP plans</p>
         </div>
         <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg border border-blue-100 flex items-center gap-2">
           <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-          <span className="text-xs font-bold uppercase tracking-wider">Live Sync Active</span>
+          <span className="text-xs font-bold uppercase tracking-wider">Sync Active</span>
         </div>
       </div>
 
@@ -189,7 +189,7 @@ export default function DailyUpdate() {
                     <select value={cplUnit} onChange={e => setCplUnit(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 font-bold text-slate-700">
                       <option value="INCTL">INCTL</option>
                       <option value="Textile Unit">Textile Unit</option>
-                      <option value="R&D">R&D</option>
+                      <option value="Tex R&D">Tex R&D</option>
                       <option value="NKFL">NKFL</option>
                       <option value="B2B">B2B</option>
                     </select>
@@ -201,7 +201,7 @@ export default function DailyUpdate() {
 
               {/* 4. ERP/File Reference */}
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ERP / File Reference *</label>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ERP / File Ref *</label>
                 <div className="relative group">
                   <input
                     type="text"
