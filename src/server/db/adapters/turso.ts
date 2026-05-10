@@ -229,7 +229,7 @@ export class TursoAdapter implements DatabaseAdapter {
         {
             name: "audit_logs",
             sql: `CREATE TABLE IF NOT EXISTS audit_logs (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              id TEXT PRIMARY KEY,
               action TEXT,
               userId TEXT,
               ip TEXT,
