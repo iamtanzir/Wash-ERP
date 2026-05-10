@@ -9,7 +9,7 @@ A high-performance ERP system specifically designed for Garment Wash industry tr
 ## 🖼️ Screenshots
 | Dashboard | ERP Planning | Data Bank |
 |-----------|--------------|-----------|
-| ![Dashboard](https://placehold.co/400x250/slate/white?text=Dashboard+Report) | ![Planning](https://placehold.co/400x250/slate/white?text=Next+ERP+Plan) | ![History](https://placehold.co/400x250/slate/white?text=Transaction+History) |
+| ![Dashboard](./docs/dashboard.png) | ![Planning](./docs/planning.png) | ![History](./docs/history.png) |
 
 ## 🚀 Key Features
 - **Next ERP Plan Logic**: Robust duplicate checking (Buyer + File + Style + Color). Retains the latest records.
