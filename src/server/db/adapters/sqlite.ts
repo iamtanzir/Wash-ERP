@@ -125,7 +125,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
 
         await this.db.raw(`
           CREATE TABLE IF NOT EXISTS audit_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY,
             action TEXT,
             userId TEXT,
             ip TEXT,
