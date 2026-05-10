@@ -1,6 +1,6 @@
 # Wash ERP
 
-[Wash ERP Logo](https://png.pngtree.com/png-clipart/20230213/original/pngtree-electric-clothes-washing-machine-png-image_8953152.png)
+![Wash ERP Logo](https://t4.ftcdn.net/jpg/18/65/12/63/360_F_1865126308_MfrB5yTgkGHAb0M1bbC7zhmamjh0tYvH.jpg)
 
 [![Open in Google AI Studio](https://img.shields.io/badge/Open%20in-Google%20AI%20Studio-blue?logo=google&logoColor=white)](https://ai.studio/build)
 
