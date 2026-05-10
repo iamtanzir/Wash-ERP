@@ -247,7 +247,7 @@ app.post("/api/erp/upload", authenticate, authorize(["admin", "editor"]), upload
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const data: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+    const data: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
     
     // Find the actual header row index by scanning for 'Buyer'
     let headerRowIndex = 0;

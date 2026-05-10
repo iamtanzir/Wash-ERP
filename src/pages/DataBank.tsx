@@ -180,7 +180,7 @@ export default function DataBank() {
               ) : (
                 archiveData?.map((item) => (
                   <tr key={item.id} className="hover:bg-blue-50 transition-colors group">
-                    <td className="px-6 py-4 font-medium text-slate-700 italic font-serif">{item.buyer}</td>
+                    <td className="px-6 py-4 font-bold text-slate-800">{item.buyer}</td>
                     <td className="px-6 py-4 text-blue-600 font-medium font-mono">{item.file_no}</td>
                     <td className="px-6 py-4 flex flex-col">
                       <span className="text-slate-700">{item.style_no || '-'}</span>

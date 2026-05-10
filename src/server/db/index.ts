@@ -23,7 +23,7 @@ export function getDatabase(): DatabaseAdapter {
   if (!envDbType) {
     if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN && process.env.TURSO_DATABASE_URL !== "libsql://missing-url.turso.io") {
       // If the URL matches a known deleted database, fallback to SQLite
-      if (process.env.TURSO_DATABASE_URL.includes("wash-erp-google-ai-vercel") || process.env.TURSO_DATABASE_URL.includes("404")) {
+      if (process.env.TURSO_DATABASE_URL.includes("wash-erp") || process.env.TURSO_DATABASE_URL.includes("404")) {
           console.log("[DB] ⚡ Skipping broken Turso configuration, falling back to SQLite");
       } else {
           console.log("[DB] ⚡ Auto-detected Turso configuration");
@@ -55,6 +55,10 @@ export function getDatabase(): DatabaseAdapter {
 
   switch (dbType) {
     case "turso":
+      if (process.env.TURSO_DATABASE_URL && (process.env.TURSO_DATABASE_URL.includes("wash-erp") || process.env.TURSO_DATABASE_URL.includes("404"))) {
+          console.log("[DB] ⚡ Skipping broken Turso configuration, falling back to SQLite");
+          return new SQLiteAdapter();
+      }
       return new TursoAdapter();
     case "cockroach":
     case "cockroachdb":

@@ -370,7 +370,7 @@ export default function Dashboard() {
                           )}
                           <td className="px-2 py-3 text-center border-r border-slate-200 whitespace-nowrap">{stat.firstRcvDate ? formatDate(stat.firstRcvDate) : '-'}</td>
                           <td className="px-3 py-3 border-r border-slate-200">{stat.order.style_no || '-'}</td>
-                          <td className="px-3 py-3 border-r border-slate-200 font-medium italic font-serif">{stat.order.buyer}</td>
+                          <td className="px-3 py-3 border-r border-slate-200 font-bold text-slate-800">{stat.order.buyer}</td>
                           <td className="px-3 py-3 border-r border-slate-200 font-mono text-blue-600 font-bold">{stat.order.file_no}</td>
                           <td className="px-3 py-3 border-r border-slate-200">{stat.order.color || '-'}</td>
                           <td className="px-2 py-3 text-center border-r border-slate-200 whitespace-nowrap text-slate-500">{stat.order.erp_date ? formatDate(stat.order.erp_date) : '-'}</td>
