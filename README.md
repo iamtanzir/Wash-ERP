@@ -1,7 +1,7 @@
 # Wash ERP
 
 <p align="center">
-  <img src="https://t4.ftcdn.net/jpg/18/65/12/63/360_F_1865126308_MfrB5yTgkGHAb0M1bbC7zhmamjh0tYvH.jpg" width="120" height="120" style="border-radius: 20px" alt="Wash ERP Logo" />
+  <img src="./public/logo.svg" width="120" height="120" alt="Wash ERP Logo" />
 </p>
 
 <p align="center">
