@@ -95,7 +95,7 @@ export default function CloseOrder() {
                 {activeOrders?.map((order) => (
                   <tr key={order.id} className="hover:bg-blue-50 transition-colors">
                     <td className="px-6 py-4 text-blue-600 font-mono">{order.file_no}</td>
-                    <td className="px-6 py-4 font-medium text-slate-700 italic font-serif">{order.buyer}</td>
+                    <td className="px-6 py-4 font-bold text-slate-800">{order.buyer}</td>
                     <td className="px-6 py-4">
                       <div className="text-slate-500">{order.style_no}</div>
                       {order.color && <div className="text-xs text-slate-400 mt-0.5">{order.color}</div>}

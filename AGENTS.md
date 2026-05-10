@@ -6,4 +6,3 @@ You will always:
 - Avoid using complex gradients; prefer clean, flat, or subtly shaded modern designs.
 - Ensure all ERP data logic follows the "First Recv and Last Delivery" log preservation rule.
 - Maintain the "Next Plan" clear logic where data is archived in the Buyer Data Bank instead of deleted.
-- NEVER change the logo in `src/components/Layout.tsx` to the washing machine image. ALWAYS keep the default `Database` icon.

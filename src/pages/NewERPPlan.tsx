@@ -289,8 +289,8 @@ export default function NewERPPlan() {
                   
                   return (
                     <tr key={order.id} className="hover:bg-blue-50/50">
-                      <td className="px-3 py-2 border-r border-slate-200 font-bold italic font-serif tracking-tight">{order.buyer}</td>
-                      <td className="px-3 py-2 border-r border-slate-200 text-center font-medium">{order.erp_date || order.erp_ship_date || '-'}</td>
+                      <td className="px-3 py-2 border-r border-slate-200 font-bold text-slate-800">{order.buyer}</td>
+                      <td className="px-3 py-2 border-r border-slate-200 text-center font-medium">{formatDate(order.erp_date || order.erp_ship_date || '') || '-'}</td>
                       <td className="px-3 py-2 border-r border-slate-200 font-mono text-blue-600 font-bold">{order.file_no}</td>
                       <td className="px-3 py-2 border-r border-slate-200 flex flex-col">
                         <span className="font-bold text-slate-800">{order.style_no}</span>

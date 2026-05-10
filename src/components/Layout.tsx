@@ -13,7 +13,8 @@ import {
   History,
   ClipboardCheck,
   Package,
-  FileText
+  FileText,
+  WashingMachine
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
@@ -67,13 +68,14 @@ export default function Layout() {
       )}>
         <div className="p-6 flex items-center justify-between overflow-hidden">
           <div className="flex items-center gap-3 min-w-max">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-900/40 shrink-0">
-                <div className="relative">
-                  <Database className="text-white w-6 h-6" />
-                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                  </div>
-                </div>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-900/40 shrink-0 overflow-hidden">
+                <img 
+                  src="/logo.png" 
+                  alt="WASH ERP" 
+                  className="w-full h-full object-contain"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+                />
+                <WashingMachine size={20} className="hidden text-white" />
             </div>
             <div className="flex flex-col">
               <h1 className="text-white font-black text-xl tracking-tighter leading-none">WASH</h1>

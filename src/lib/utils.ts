@@ -7,6 +7,20 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatDate(dateString: string) {
   if (!dateString) return "";
+  
+  // Handle Excel serial date numbers (e.g. 46110)
+  if (/^\d{4,5}$/.test(dateString.toString().trim())) {
+    const serial = parseInt(dateString.toString().trim(), 10);
+    const date = new Date(Math.round((serial - 25569) * 864e5));
+    if (!isNaN(date.getTime())) {
+      return new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: '2-digit'
+      }).format(date);
+    }
+  }
+
   const date = new Date(dateString);
   if (isNaN(date.getTime())) {
     // If it's already a nicely formatted string (e.g. 09-May-24), return it as is
