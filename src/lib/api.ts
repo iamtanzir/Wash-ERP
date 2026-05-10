@@ -68,21 +68,16 @@ export const api = {
   },
 
   async getRecentLogs(limitVal = 50): Promise<{ items: DailyLog[] }> {
-    const logs = await fetchJSON("/api/db/daily_logs");
+    const [logs, orders] = await Promise.all([
+      fetchJSON("/api/db/daily_logs"),
+      fetchJSON("/api/db/erp_orders")
+    ]);
+    
     const limitedLogs = logs.slice(0, limitVal);
-    
-    // Manual Expansion
-    const orderIds = Array.from(new Set(limitedLogs.map((l: DailyLog) => l.erp_order)));
     const ordersMap: Record<string, Order> = {};
-    
-    await Promise.all(orderIds.map(async (id: any) => {
-        try {
-            const order = await this.getOrder(id);
-            ordersMap[id] = order;
-        } catch (e) {
-            console.error(`Failed to fetch order ${id}`, e);
-        }
-    }));
+    orders.forEach((o: Order) => {
+      ordersMap[o.id] = o;
+    });
 
     return {
         items: limitedLogs.map((l: DailyLog) => ({

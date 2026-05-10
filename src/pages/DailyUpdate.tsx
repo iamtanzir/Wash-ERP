@@ -3,23 +3,24 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { formatNumber, formatDate } from '../lib/utils';
 import { toast } from 'sonner';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, History } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function DailyUpdate() {
   const queryClient = useQueryClient();
   const { isEditor } = useAuth();
+  
+  // Tree Structure States
+  const [transactionType, setTransactionType] = useState<'received' | 'delivery'>('received');
+  const [entryCategory, setEntryCategory] = useState<'GMT' | 'CPL'>('GMT');
+  const [gmtFloor, setGmtFloor] = useState('G.F (INCTL)');
+  const [cplUnit, setCplUnit] = useState('INCTL');
+  const [entryQuantity, setEntryQuantity] = useState<number>(0);
+  const [displayColor, setDisplayColor] = useState('');
+
   const [formData, setFormData] = useState({
     erp_order: '',
     log_date: new Date().toISOString().split('T')[0],
-    received_qty: 0,
-    receive_challan: '',
-    delivered_qty: 0,
-    delivery_challan: '',
-    ready_for_delivery_qty: 0,
-    lab_samp_qty: 0,
-    unit: 'INCTL',
-    sub_factory: '',
     remarks: ''
   });
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,10 +35,9 @@ export default function DailyUpdate() {
     queryFn: () => api.getRecentLogs(50)
   });
 
-  // Calculate generic total balances per order dynamically for the form
   const selectedOrderLogs = useMemo(() => {
     if (!formData.erp_order || !recentLogs?.items) return null;
-    return recentLogs.items.filter(l => l.erp_order === formData.erp_order);
+    return recentLogs.items.filter(l => l.expand?.erp_order?.id === formData.erp_order || l.erp_order === formData.erp_order);
   }, [formData.erp_order, recentLogs]);
 
   const existingWip = useMemo(() => {
@@ -47,7 +47,7 @@ export default function DailyUpdate() {
     return rcv - del;
   }, [selectedOrderLogs]);
 
-  const currentWip = existingWip + formData.received_qty - formData.delivered_qty;
+  const currentWip = existingWip + (transactionType === 'received' ? entryQuantity : 0) - (transactionType === 'delivery' ? entryQuantity : 0);
 
   const mutation = useMutation({
     mutationFn: (data: any) => api.submitDailyLog(data),
@@ -57,15 +57,11 @@ export default function DailyUpdate() {
       queryClient.invalidateQueries({ queryKey: ['activeOrders'] });
       setFormData(prev => ({
         ...prev,
-        received_qty: 0,
-        receive_challan: '',
-        delivered_qty: 0,
-        delivery_challan: '',
-        ready_for_delivery_qty: 0,
-        lab_samp_qty: 0,
         remarks: ''
       }));
+      setEntryQuantity(0);
       setSearchQuery('');
+      setDisplayColor('');
     },
     onError: (err: any) => {
       toast.error(err.message || 'Failed to add daily log');
@@ -78,240 +74,307 @@ export default function DailyUpdate() {
       toast.error("Please select an ERP Order");
       return;
     }
-    if (formData.delivered_qty > formData.received_qty + existingWip) {
-       // warning but may allow if there are logs we didn't fetch
+    if (entryQuantity <= 0) {
+      toast.error("Please enter a valid quantity");
+      return;
+    }
+    if (transactionType === 'delivery' && entryQuantity > existingWip) {
        toast.warning("Delivery is more than known WIP, but submitting anyway.");
     }
 
     mutation.mutate({
       ...formData,
+      received_qty: transactionType === 'received' ? entryQuantity : 0,
+      delivered_qty: transactionType === 'delivery' ? entryQuantity : 0,
+      unit: entryCategory === 'GMT' ? gmtFloor : cplUnit,
       created_by: "operator" // In a real app derived from auth
     });
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6">
+    <div className="w-full max-w-7xl mx-auto space-y-6 pb-20">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">DAILY DATA ENTRY</h1>
+          <p className="text-slate-500 text-sm">Log production updates for active ERP plans</p>
+        </div>
+        <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg border border-blue-100 flex items-center gap-2">
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+          <span className="text-xs font-bold uppercase tracking-wider">Live Sync Active</span>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Entry Form */}
-        <div className="lg:col-span-1 bg-white rounded-xl border border-slate-200 shadow-sm p-5 h-fit">
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
-            <PlusCircle className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-slate-800">New Entry</h2>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Entry Form - Bento Style */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="bg-white rounded-2xl border-2 border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
+            <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <PlusCircle className="w-5 h-5 text-blue-400" />
+                <h2 className="text-sm font-black text-white uppercase tracking-widest">Entry Panel</h2>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono italic">v2.1 Stable</span>
+            </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 text-sm">
-            <div>
-              <label className="block font-medium text-slate-700 mb-1" title="ফাইল নির্বাচন করুন">File No (ERP Order) *</label>
-              <input
-                type="text"
-                list="erp-orders-list"
-                value={searchQuery}
-                onChange={e => {
-                  setSearchQuery(e.target.value);
-                  const val = e.target.value;
-                  const matched = activeOrders?.find((o: any) => 
-                     `${o.file_no}${o.color ? ` - ${o.color}` : ''} ${o.floor ? `[${o.floor}]` : ''} (${o.buyer})` === val
-                  );
-                  setFormData({ ...formData, erp_order: matched ? matched.id : "" });
-                }}
-                className="w-full border border-slate-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700"
-                placeholder="-- Type or Select Order --"
-                required
-              />
-              <datalist id="erp-orders-list">
-                {activeOrders?.map((o: any) => (
-                  <option key={o.id} value={`${o.file_no}${o.color ? ` - ${o.color}` : ''} ${o.floor ? `[${o.floor}]` : ''} (${o.buyer})`} />
-                ))}
-              </datalist>
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {/* 1. Transaction Type */}
+              <div className="space-y-3">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Transaction Type *</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className={`flex items-center p-3 border-2 rounded-xl cursor-pointer transition-all ${transactionType === 'received' ? 'border-emerald-500 bg-emerald-50' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
+                    <input type="radio" name="transactionType" value="received" checked={transactionType === 'received'} onChange={() => setTransactionType('received')} className="hidden" />
+                    <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${transactionType === 'received' ? 'border-emerald-500' : 'border-slate-300'}`}>
+                      {transactionType === 'received' && <div className="w-2 h-2 rounded-full bg-emerald-500" />}
+                    </div>
+                    <span className={`text-sm font-bold ${transactionType === 'received' ? 'text-emerald-700' : 'text-slate-600'}`}>Received</span>
+                  </label>
+                  <label className={`flex items-center p-3 border-2 rounded-xl cursor-pointer transition-all ${transactionType === 'delivery' ? 'border-orange-500 bg-orange-50' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
+                    <input type="radio" name="transactionType" value="delivery" checked={transactionType === 'delivery'} onChange={() => setTransactionType('delivery')} className="hidden" />
+                    <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${transactionType === 'delivery' ? 'border-orange-500' : 'border-slate-300'}`}>
+                      {transactionType === 'delivery' && <div className="w-2 h-2 rounded-full bg-orange-500" />}
+                    </div>
+                    <span className={`text-sm font-bold ${transactionType === 'delivery' ? 'text-orange-700' : 'text-slate-600'}`}>Delivery</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="h-px bg-slate-100" />
+
+              {/* 2. Date */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Log Date *</label>
+                <input 
+                  type="date"
+                  value={formData.log_date}
+                  onChange={e => setFormData({ ...formData, log_date: e.target.value })}
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-all font-mono"
+                  required
+                />
+              </div>
+
+              {/* 3. Entry Category */}
+              <div className="space-y-3">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Entry Category *</label>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <label className={`flex items-center p-3 border-2 rounded-xl cursor-pointer transition-all ${entryCategory === 'GMT' ? 'border-blue-500 bg-blue-50' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
+                    <input type="radio" value="GMT" checked={entryCategory === 'GMT'} onChange={() => setEntryCategory('GMT')} className="hidden" />
+                    <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${entryCategory === 'GMT' ? 'border-blue-500' : 'border-slate-300'}`}>
+                      {entryCategory === 'GMT' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                    </div>
+                    <span className={`text-sm font-bold ${entryCategory === 'GMT' ? 'text-blue-700' : 'text-slate-600'}`}>GMT (Garments)</span>
+                  </label>
+                  <label className={`flex items-center p-3 border-2 rounded-xl cursor-pointer transition-all ${entryCategory === 'CPL' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
+                    <input type="radio" value="CPL" checked={entryCategory === 'CPL'} onChange={() => setEntryCategory('CPL')} className="hidden" />
+                    <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${entryCategory === 'CPL' ? 'border-indigo-500' : 'border-slate-300'}`}>
+                      {entryCategory === 'CPL' && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                    </div>
+                    <span className={`text-sm font-bold ${entryCategory === 'CPL' ? 'text-indigo-700' : 'text-slate-600'}`}>CPL (Fabric)</span>
+                  </label>
+                </div>
+
+                {entryCategory === 'GMT' ? (
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Floor Selection</label>
+                    <select value={gmtFloor} onChange={e => setGmtFloor(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 font-bold text-slate-700">
+                      <option value="G.F (INCTL)">G.F (INCTL)</option>
+                      <option value="1st.F (INCTL)">1st.F (INCTL)</option>
+                      <option value="2nd.F (INCTL)">2nd.F (INCTL)</option>
+                      <option value="K.F (NKFL)">K.F (NKFL)</option>
+                      <option value="B2B">B2B</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unit Selection</label>
+                    <select value={cplUnit} onChange={e => setCplUnit(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 font-bold text-slate-700">
+                      <option value="INCTL">INCTL</option>
+                      <option value="Textile Unit">Textile Unit</option>
+                      <option value="R&D">R&D</option>
+                      <option value="NKFL">NKFL</option>
+                      <option value="B2B">B2B</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div className="h-px bg-slate-100" />
+
+              {/* 4. ERP/File Reference */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ERP / File Reference *</label>
+                <div className="relative group">
+                  <input
+                    type="text"
+                    list="erp-orders-list"
+                    value={searchQuery}
+                    onChange={e => {
+                      setSearchQuery(e.target.value);
+                      const val = e.target.value;
+                      const matched = activeOrders?.find((o: any) => 
+                         `${o.file_no}${o.color ? ` - ${o.color}` : ''} (${o.buyer})` === val
+                      );
+                      if (matched) {
+                        setFormData({ ...formData, erp_order: matched.id });
+                        setDisplayColor(matched.color || '');
+                      } else {
+                        setFormData({ ...formData, erp_order: "" });
+                      }
+                    }}
+                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition-all font-medium text-slate-700"
+                    placeholder="Start typing file no..."
+                    required
+                  />
+                  <datalist id="erp-orders-list">
+                    {activeOrders?.map((o: any) => (
+                      <option key={o.id} value={`${o.file_no}${o.color ? ` - ${o.color}` : ''} (${o.buyer})`} />
+                    ))}
+                  </datalist>
+                </div>
+              </div>
+
+              {/* 5. Color / Combo */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Color / Combo</label>
+                <input 
+                  type="text"
+                  value={displayColor}
+                  onChange={e => setDisplayColor(e.target.value)}
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 text-slate-700"
+                  placeholder="e.g. Jet Black"
+                />
+              </div>
+
+              {/* 6. Order Quantity */}
+              <div className="space-y-2 bg-blue-50/50 p-4 rounded-xl border border-blue-100/50">
+                <label className="text-[11px] font-black text-blue-800 uppercase tracking-wider">
+                  {transactionType === 'received' ? 'Receive Quantity' : 'Delivery Quantity'} *
+                </label>
+                <div className="relative">
+                  <input 
+                    type="number"
+                    min="0"
+                    value={entryQuantity || ''}
+                    onChange={e => setEntryQuantity(parseInt(e.target.value) || 0)}
+                    className="w-full bg-white border-2 border-blue-200 rounded-xl px-4 py-3 text-lg focus:outline-none focus:border-blue-500 transition-all font-black text-blue-900 pr-12"
+                    placeholder="0"
+                    required
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-blue-400">
+                    {entryCategory === 'GMT' ? 'pcs' : 'kg'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Auto Calculation Block */}
               {formData.erp_order && (
-                <div className="mt-2 text-xs text-slate-500 bg-slate-50 p-2 rounded border border-slate-100">
-                  {(() => {
-                    const selected = activeOrders?.find((o: any) => o.id === formData.erp_order);
-                    if (!selected) return null;
-                    return (
-                      <div className="flex flex-col gap-1">
-                        <div><span className="font-semibold text-slate-600">Garment Sew Floor:</span> {selected.floor || 'N/A'}</div>
-                        <div><span className="font-semibold text-slate-600">Color/Item:</span> {selected.color || 'N/A'}</div>
-                        <div><span className="font-semibold text-slate-600">Wash Type:</span> {selected.wash_type || 'N/A'}</div>
-                      </div>
-                    );
-                  })()}
+                <div className="bg-slate-900 rounded-xl p-4 shadow-lg space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold">Total Received</span>
+                    <span className="text-xs font-mono text-emerald-400">
+                      {formatNumber(selectedOrderLogs?.reduce((sum, l) => sum + (l.received_qty || 0), 0) || 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold">Total Delivered</span>
+                    <span className="text-xs font-mono text-orange-400">
+                      {formatNumber(selectedOrderLogs?.reduce((sum, l) => sum + (l.delivered_qty || 0), 0) || 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1">
+                    <div className="flex flex-col">
+                      <span className="text-[11px] text-slate-300 uppercase font-black tracking-widest">WIP / Balance</span>
+                      <span className="text-[9px] text-slate-500">After this entry</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className={`text-xl font-black tabular-nums ${currentWip < 0 ? 'text-red-400' : 'text-blue-400'}`}>
+                        {formatNumber(currentWip)}
+                      </span>
+                      <span className="text-[9px] text-slate-500">{entryCategory === 'GMT' ? 'PCS' : 'KG'}</span>
+                    </div>
+                  </div>
                 </div>
               )}
-            </div>
 
-            <div>
-              <label className="block font-medium text-slate-700 mb-1" title="তারিখ">Log Date *</label>
-              <input 
-                type="date"
-                value={formData.log_date}
-                onChange={e => setFormData({ ...formData, log_date: e.target.value })}
-                className="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700"
-                required
-              />
-            </div>
+              <div className="h-px bg-slate-100" />
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-medium text-slate-700 mb-1" title="গ্রহণ পরিমাণ">Rcv Qty</label>
-                <input 
-                  type="number"
-                  min="0"
-                  value={formData.received_qty}
-                  onChange={e => setFormData({ ...formData, received_qty: parseInt(e.target.value) || 0 })}
-                  className="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700"
+              {/* 7. Remarks */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Remarks</label>
+                <textarea 
+                  value={formData.remarks}
+                  onChange={e => setFormData({ ...formData, remarks: e.target.value })}
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 transition-all text-slate-700 h-16 resize-none"
+                  placeholder="Optional notes..."
                 />
               </div>
-              <div>
-                <label className="block font-medium text-slate-700 mb-1" title="গ্রহণ চালান">Rcv Challan</label>
-                <input 
-                  type="text"
-                  value={formData.receive_challan}
-                  onChange={e => setFormData({ ...formData, receive_challan: e.target.value })}
-                  className="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700"
-                />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-medium text-slate-700 mb-1" title="ডেলিভারি পরিমাণ">Del Qty</label>
-                <input 
-                  type="number"
-                  min="0"
-                  value={formData.delivered_qty}
-                  onChange={e => setFormData({ ...formData, delivered_qty: parseInt(e.target.value) || 0 })}
-                  className="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700"
-                />
-              </div>
-              <div>
-                <label className="block font-medium text-slate-700 mb-1" title="ডেলিভারি চালান">Del Challan</label>
-                <input 
-                  type="text"
-                  value={formData.delivery_challan}
-                  onChange={e => setFormData({ ...formData, delivery_challan: e.target.value })}
-                  className="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-medium text-slate-700 mb-1" title="প্রস্তুত डिलीवरी">Ready For Del</label>
-                <input 
-                  type="number"
-                  min="0"
-                  value={formData.ready_for_delivery_qty}
-                  onChange={e => setFormData({ ...formData, ready_for_delivery_qty: parseInt(e.target.value) || 0 })}
-                  className="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700"
-                />
-              </div>
-              <div>
-                <label className="block font-medium text-slate-700 mb-1" title="ল্যাব/স্যাম্পল">Lab/Samp Qty</label>
-                <input 
-                  type="number"
-                  min="0"
-                  value={formData.lab_samp_qty}
-                  onChange={e => setFormData({ ...formData, lab_samp_qty: parseInt(e.target.value) || 0 })}
-                  className="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700"
-                />
-              </div>
-            </div>
-
-            {formData.erp_order && (
-              <div className="bg-slate-50 rounded p-3 text-xs border border-slate-100 flex justify-between items-center">
-                <span className="text-slate-500 font-medium">Estimated New WIP:</span>
-                <span className={`font-bold text-base tabular-nums ${currentWip < 0 ? 'text-red-500' : 'text-orange-600'}`}>{formatNumber(currentWip)}</span>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-medium text-slate-700 mb-1" title="ইউনিট">Unit</label>
-                <select 
-                  value={formData.unit}
-                  onChange={e => setFormData({ ...formData, unit: e.target.value })}
-                  className="w-full border border-slate-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700"
-                >
-                  <option value="INCTL">INCTL</option>
-                  <option value="NKFL">NKFL</option>
-                  <option value="B2B">B2B</option>
-                  <option value="Outside">Outside</option>
-                </select>
-              </div>
-              <div>
-                <label className="block font-medium text-slate-700 mb-1" title="সাব-ফ্যাক্টরি">Sub-Factory</label>
-                <input 
-                  type="text"
-                  value={formData.sub_factory}
-                  onChange={e => setFormData({ ...formData, sub_factory: e.target.value })}
-                  className="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700"
-                  placeholder="Wash Plant"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block font-medium text-slate-700 mb-1" title="মন্তব্য">Remarks</label>
-              <input 
-                type="text"
-                value={formData.remarks}
-                onChange={e => setFormData({ ...formData, remarks: e.target.value })}
-                className="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700"
-                placeholder="Optional notes..."
-              />
-            </div>
-
-            <button 
-              type="submit"
-              disabled={mutation.isPending || !isEditor}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-2 rounded transition-colors"
-            >
-              {mutation.isPending ? 'Saving...' : !isEditor ? 'Read-Only (Viewer)' : 'Save Log Entry'}
-            </button>
-          </form>
+              <button 
+                type="submit"
+                disabled={mutation.isPending || !isEditor || entryQuantity <= 0}
+                className="w-full bg-slate-900 hover:bg-black disabled:opacity-50 text-white font-black py-4 rounded-xl shadow-lg shadow-slate-900/20 transition-all active:scale-95 uppercase tracking-widest text-xs"
+              >
+                {mutation.isPending ? 'Processing...' : !isEditor ? 'Restricted Access' : 'Save & Post Entry'}
+              </button>
+            </form>
+          </div>
         </div>
 
-        {/* Recent Logs Table */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[420px]">
-          <div className="p-4 border-b border-slate-200 bg-slate-50">
-            <h2 className="text-sm font-bold text-slate-700 uppercase">Recent Transactions</h2>
+        {/* Recent Logs Table - Wide Style */}
+        <div className="lg:col-span-8 bg-white rounded-2xl border-2 border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden flex flex-col h-full min-h-[600px]">
+          <div className="px-6 py-5 border-b border-slate-100 bg-white flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-50 rounded-lg">
+                <History className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider">Transaction History</h2>
+                <p className="text-[10px] text-slate-400">Showing last 50 entries</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <div className="bg-slate-100 px-3 py-1 rounded-full text-[10px] font-bold text-slate-500 uppercase">Automated Log</div>
+            </div>
           </div>
           <div className="flex-1 overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">File No</th>
-                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Rcv Qty</th>
-                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Del Qty</th>
-                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Unit</th>
-                  <th className="px-6 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Remarks</th>
+                <tr className="bg-slate-50/50 border-b border-slate-100">
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">File Identity</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Rcv</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Del</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Unit</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Remarks</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {isLoading && <tr><td colSpan={6} className="text-center py-8 text-slate-500">Loading logs...</td></tr>}
+                {isLoading && <tr><td colSpan={6} className="text-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div></td></tr>}
                 {recentLogs?.items?.length === 0 && (
-                  <tr><td colSpan={6} className="text-center py-8 text-slate-500 italic">No recent transactions</td></tr>
+                  <tr><td colSpan={6} className="text-center py-20 text-slate-400 font-medium italic">No transactions found in this session</td></tr>
                 )}
                 {recentLogs?.items?.map((log) => (
-                  <tr key={log.id} className="hover:bg-blue-50 transition-colors">
-                    <td className="px-6 py-4 text-slate-600 whitespace-nowrap">{formatDate(log.log_date)}</td>
-                    <td className="px-6 py-4 font-medium text-blue-600 font-mono flex flex-col gap-0.5">
-                      <span>{log.expand?.erp_order?.file_no || 'Unknown'}</span>
-                      {log.expand?.erp_order?.color && <span className="text-xs text-slate-400 font-sans">{log.expand?.erp_order?.color}</span>}
+                  <tr key={log.id} className="hover:bg-slate-50/80 transition-colors group">
+                    <td className="px-6 py-4 text-slate-500 whitespace-nowrap font-mono text-xs">{formatDate(log.log_date)}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-700 tracking-tight">{log.expand?.erp_order?.file_no || '---'}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-blue-500 font-bold uppercase">{log.expand?.erp_order?.buyer}</span>
+                          <span className="text-slate-300">|</span>
+                          <span className="text-[10px] text-slate-400 italic">{log.expand?.erp_order?.color || 'No Color'}</span>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-right tabular-nums text-emerald-600 font-medium">
+                    <td className="px-6 py-4 text-right tabular-nums text-emerald-600 font-black text-xs">
                       {log.received_qty > 0 ? `+${formatNumber(log.received_qty)}` : '-'}
                     </td>
-                    <td className="px-6 py-4 text-right tabular-nums text-orange-600 font-medium">
+                    <td className="px-6 py-4 text-right tabular-nums text-orange-600 font-black text-xs">
                       {log.delivered_qty > 0 ? `+${formatNumber(log.delivered_qty)}` : '-'}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="bg-slate-100 border border-slate-200 px-2 py-1 rounded text-[10px] uppercase font-bold text-slate-600">{log.unit}</span>
+                      <span className="bg-slate-900 px-2 py-0.5 rounded text-[9px] uppercase font-black text-white">{log.unit}</span>
                     </td>
-                    <td className="px-6 py-4 text-slate-500 truncate max-w-[150px]" title={log.remarks}>{log.remarks || '-'}</td>
+                    <td className="px-6 py-4 text-slate-400 text-xs italic group-hover:text-slate-600 transition-colors">{log.remarks || '---'}</td>
                   </tr>
                 ))}
               </tbody>

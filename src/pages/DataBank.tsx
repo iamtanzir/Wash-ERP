@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, DailyLog } from '../lib/api';
-import { Download, Filter, Search, History, X, Calendar, FileText, CheckCircle2 } from 'lucide-react';
+import { Download, Filter, Search, History, X, Calendar, FileText, CheckCircle2, PlusCircle } from 'lucide-react';
 import { formatNumber, formatDate } from '../lib/utils';
 import { BUYERS } from '../lib/constants';
 import { toast } from 'sonner';

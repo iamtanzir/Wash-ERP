@@ -21,9 +21,14 @@ export function getDatabase(): DatabaseAdapter {
   
   // 1. Auto-detection: If no mode is set, check for environment variables
   if (!envDbType) {
-    if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) {
-      console.log("[DB] ⚡ Auto-detected Turso configuration");
-      return new TursoAdapter();
+    if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN && process.env.TURSO_DATABASE_URL !== "libsql://missing-url.turso.io") {
+      // If the URL matches a known deleted database, fallback to SQLite
+      if (process.env.TURSO_DATABASE_URL.includes("wash-erp-google-ai-vercel") || process.env.TURSO_DATABASE_URL.includes("404")) {
+          console.log("[DB] ⚡ Skipping broken Turso configuration, falling back to SQLite");
+      } else {
+          console.log("[DB] ⚡ Auto-detected Turso configuration");
+          return new TursoAdapter();
+      }
     }
     
     if (process.env.FIREBASE_PROJECT_ID || fs.existsSync("./firebase-applet-config.json")) {
