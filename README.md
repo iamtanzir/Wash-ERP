@@ -1,10 +1,14 @@
 # Wash ERP
 
-![Wash ERP Logo](https://t4.ftcdn.net/jpg/18/65/12/63/360_F_1865126308_MfrB5yTgkGHAb0M1bbC7zhmamjh0tYvH.jpg)
+<p align="center">
+  <img src="https://t4.ftcdn.net/jpg/18/65/12/63/360_F_1865126308_MfrB5yTgkGHAb0M1bbC7zhmamjh0tYvH.jpg" width="120" height="120" style="border-radius: 20px" alt="Wash ERP Logo" />
+</p>
+
+<p align="center">
+  <b>A high-performance ERP system specifically designed for Garment Wash industry tracking.</b>
+</p>
 
 [![Open in Google AI Studio](https://img.shields.io/badge/Open%20in-Google%20AI%20Studio-blue?logo=google&logoColor=white)](https://ai.studio/build)
-
-A high-performance ERP system specifically designed for Garment Wash industry tracking.
 
 
 ## 🚀 Key Features
