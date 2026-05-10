@@ -4,7 +4,7 @@
 
 [![Open in Google AI Studio](https://img.shields.io/badge/Open%20in-Google%20AI%20Studio-blue?logo=google&logoColor=white)](https://ai.studio/build)
 
-A high-performance ERP system specifically designed for Garment Wash industry tracking.
+A high-performance ERP system specifically designed for the garment wash industry tracking.
 
 ## 🖼️ Screenshots
 | Dashboard | ERP Planning | Data Bank |
@@ -15,7 +15,7 @@ A high-performance ERP system specifically designed for Garment Wash industry tr
 - **Next ERP Plan Logic**: Robust duplicate checking (Buyer + File + Style + Color). Retains the latest records.
 - **GMT & CPL Sync**: Real-time status tracking between production floors and the wash plan.
 - **Transaction History**: "First Recv" and "Last Delivery" timestamps preserved for every order.
-- **Data Archiving**: Automated "Buyer Data Bank" for closed orders with full itemized logs.
+- **Data Archiving**: Automated "Buyer Data Bank" for closed orders with full logs.
 - **Role-Based Access**: Secure internal authentication for Admin, Editor, and Operators.
 
 ## 📈 Version Changelog
