@@ -25,6 +25,7 @@ const navItems = [
   { name: "NEXT ERP PLAN", href: "/new-plan", icon: PlusCircle },
   { name: "GARMENTS R&D LOG", href: "/daily-update", icon: ClipboardCheck },
   { name: "CPL FABRIC REPORT", href: "/cpl-report", icon: FileText },
+  { name: "H&M SHIP RISK", href: "/hm-tod", icon: ClipboardCheck },
   { name: "CLOSE ERP ORDER", href: "/close-order", icon: Lock },
   { name: "ALL BUYER BANK", href: "/data-bank", icon: Database },
   { name: "USER MANAGEMENT", href: "/admin", icon: ShieldCheck },
@@ -51,6 +52,7 @@ export default function Layout() {
       case '/new-plan': return 'NEXT ERP Plan';
       case '/cpl-report': return 'CPL Report (Fabrics)';
       case '/daily-update': return 'Daily Update';
+      case '/hm-tod': return 'H&M Target Order Delivery';
       case '/close-order': return 'Close ERP Orders';
       case '/data-bank': return 'All Buyer Data';
       default: return 'Wash ERP';
