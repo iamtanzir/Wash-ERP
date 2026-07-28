@@ -4,7 +4,7 @@ import { formatNumber, formatDate } from '../lib/utils';
 import { useState, useMemo } from 'react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Filter, PlusCircle, Database } from 'lucide-react';
+import { Filter, PlusCircle, Database, RefreshCw } from 'lucide-react';
 
 interface OrderStats {
   order: Order;
@@ -39,15 +39,35 @@ export default function Dashboard() {
     floor: ''
   });
 
-  const { data: activeOrders, isLoading: loadingOrders } = useQuery({
+  const { 
+    data: activeOrders, 
+    isLoading: loadingOrders,
+    isFetching: fetchingOrders,
+    dataUpdatedAt,
+    refetch: refetchOrders 
+  } = useQuery({
     queryKey: ['activeOrders'],
-    queryFn: () => api.getActiveOrders()
+    queryFn: () => api.getActiveOrders(),
+    refetchInterval: 5 * 60 * 1000, // 5 minutes
   });
 
-  const { data: allLogsRes, isLoading: loadingLogs } = useQuery({
+  const { 
+    data: allLogsRes, 
+    isLoading: loadingLogs,
+    isFetching: fetchingLogs,
+    refetch: refetchLogs 
+  } = useQuery({
     queryKey: ['recentLogsDashboard'],
-    queryFn: () => api.getRecentLogs(5000) 
+    queryFn: () => api.getRecentLogs(5000),
+    refetchInterval: 5 * 60 * 1000, // 5 minutes
   });
+
+  const isRefreshing = fetchingOrders || fetchingLogs;
+
+  const handleManualRefresh = () => {
+    refetchOrders();
+    refetchLogs();
+  };
 
   const processedData = useMemo(() => {
     if (!activeOrders || !allLogsRes) return { grouped: {} as Record<string, OrderStats[]>, totalWip: 0, todayRcv: 0, todayDel: 0, grandTotals: { ordQty: 0, todayRcv: 0, totalRcv: 0, todayDel: 0, totalDel: 0, balance: 0, ready: 0 }};
@@ -221,6 +241,35 @@ export default function Dashboard() {
 
   return (
     <div className="w-full mx-auto space-y-6">
+      {/* Auto Refresh Status Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm text-xs text-slate-600">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          </span>
+          <span className="font-semibold text-slate-700">Live Auto-Sync</span>
+          <span className="text-slate-400">•</span>
+          <span className="text-slate-500">Updates every 5 mins</span>
+        </div>
+        <div className="flex items-center gap-3">
+          {dataUpdatedAt && (
+            <span className="text-slate-400 font-mono text-[11px]">
+              Last updated: {new Date(dataUpdatedAt).toLocaleTimeString()}
+            </span>
+          )}
+          <button
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-medium rounded-lg transition-colors disabled:opacity-50"
+            title="Manual Sync Now"
+          >
+            <RefreshCw size={13} className={isRefreshing ? "animate-spin text-blue-600" : ""} />
+            <span>{isRefreshing ? "Syncing..." : "Sync Now"}</span>
+          </button>
+        </div>
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
@@ -388,7 +437,7 @@ export default function Dashboard() {
                       ))}
                       {/* Unit Total Row */}
                       <tr className="bg-yellow-200/50 font-bold border-b-2 border-yellow-300">
-                        <td colSpan={5} className="px-3 py-3 text-center border-r border-slate-300">{unit} Total</td>
+                        <td colSpan={6} className="px-3 py-3 text-center border-r border-slate-300">{unit} Total</td>
                         <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.ord)}</td>
                         <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.tRcv)}</td>
                         <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.totRcv)}</td>
@@ -406,7 +455,7 @@ export default function Dashboard() {
             {Object.keys(filteredGroups).length > 0 && (
               <tfoot>
                 <tr className="bg-slate-200 font-bold border-t-2 border-slate-300 text-xs">
-                  <td colSpan={6} className="px-3 py-3 text-center border-r border-slate-300 uppercase tracking-widest">G.Total</td>
+                  <td colSpan={7} className="px-3 py-3 text-center border-r border-slate-300 uppercase tracking-widest">G.Total</td>
                   <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.ordQty)}</td>
                   <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.todayRcv)}</td>
                   <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.totalRcv)}</td>

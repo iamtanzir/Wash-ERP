@@ -17,12 +17,14 @@ import Admin from './pages/Admin';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import { Toaster } from 'sonner';
+import SupportWidget from './components/SupportWidget';
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Toaster position="top-right" richColors />
+        <SupportWidget />
         <Routes>
           <Route path="/login" element={<Login />} />
           

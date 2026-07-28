@@ -35,10 +35,11 @@ export default function DailyUpdate() {
     queryFn: () => api.getRecentLogs(50)
   });
 
-  const selectedOrderLogs = useMemo(() => {
-    if (!formData.erp_order || !recentLogs?.items) return null;
-    return recentLogs.items.filter(l => l.expand?.erp_order?.id === formData.erp_order || l.erp_order === formData.erp_order);
-  }, [formData.erp_order, recentLogs]);
+  const { data: selectedOrderLogs } = useQuery({
+    queryKey: ['orderLogs', formData.erp_order],
+    queryFn: () => api.getOrderLogs(formData.erp_order),
+    enabled: !!formData.erp_order
+  });
 
   const existingWip = useMemo(() => {
     if (!selectedOrderLogs) return 0;
@@ -55,6 +56,7 @@ export default function DailyUpdate() {
       toast.success('Daily log added successfully');
       queryClient.invalidateQueries({ queryKey: ['recentLogs'] });
       queryClient.invalidateQueries({ queryKey: ['activeOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['orderLogs'] });
       setFormData(prev => ({
         ...prev,
         remarks: ''

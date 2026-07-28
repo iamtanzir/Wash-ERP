@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Ship, AlertTriangle, CheckCircle2, Search, Filter, Download, ArrowRight, Activity } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, formatNumber } from '../lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../lib/api';
+import Papa from 'papaparse';
+import { toast } from 'sonner';
 
-// Mock data based on the provided screenshot
+// Default / fallback data structure
 const mockDataGroups = [
   {
     name: "1st.Floor ERP Plan",
@@ -67,13 +71,75 @@ const mockDataGroups = [
 export default function HMTOD() {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredGroupedData = mockDataGroups.map(group => ({
-    ...group,
-    items: group.items.filter(d => 
-      d.erpId.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      d.washType.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  })).filter(group => group.items.length > 0 || searchTerm === '');
+  const filteredGroupedData = useMemo(() => {
+    return mockDataGroups.map(group => ({
+      ...group,
+      items: group.items.filter(d => 
+        d.erpId.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        d.washType.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    })).filter(group => group.items.length > 0 || searchTerm === '');
+  }, [searchTerm]);
+
+  const summaryStats = useMemo(() => {
+    let totalShip = 0;
+    let totalDeli = 0;
+    let totalWip = 0;
+    let totalMiss = 0;
+
+    filteredGroupedData.forEach(group => {
+      group.items.forEach(item => {
+        totalShip += item.totalShipQty || 0;
+        totalDeli += item.wDeli || 0;
+        totalWip += item.wBln || 0;
+        totalMiss += item.sewPlanMiss || 0;
+      });
+    });
+
+    return { totalShip, totalDeli, totalWip, totalMiss };
+  }, [filteredGroupedData]);
+
+  const handleExport = () => {
+    const flatRows: any[] = [];
+    filteredGroupedData.forEach(group => {
+      group.items.forEach(item => {
+        flatRows.push({
+          'Floor Plan': group.name,
+          'ERP ID': item.erpId,
+          'Wash Type': item.washType,
+          'Ship Target 20-May': item.shipTargets.target1,
+          'Ship Target 30-May': item.shipTargets.target2,
+          'Ship Target 3-Jun': item.shipTargets.target3,
+          'Ship Target 6-Jun': item.shipTargets.target4,
+          'Total Ship Qty (EID)': item.totalShipQty,
+          'ERP Qty': item.erpQty,
+          'Wash Recv': item.wRecv,
+          'Wash Deli': item.wDeli,
+          'Wash WIP': item.wBln,
+          'Need RFD from Sew': item.needRfdFromSew,
+          'Need Wash Close': item.needWashClose,
+          'Sew Plan Target': item.sewPlanTarget,
+          'Sew Plan Miss Qty': item.sewPlanMiss
+        });
+      });
+    });
+
+    if (flatRows.length === 0) {
+      toast.warning("No data to export");
+      return;
+    }
+
+    const csv = Papa.unparse(flatRows);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.setAttribute('download', `hm_ship_risk_analysis_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast.success("CSV exported successfully");
+  };
 
   return (
     <div className="space-y-6">
@@ -95,11 +161,10 @@ export default function HMTOD() {
               className="w-full pl-9 pr-4 py-2 border-2 border-slate-200 rounded-xl focus:border-blue-500 outline-none transition-colors"
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 font-medium transition-colors">
-            <Filter size={18} />
-            <span className="hidden sm:inline">Filter</span>
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold transition-colors">
+          <button 
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold transition-colors"
+          >
             <Download size={18} />
             <span className="hidden sm:inline">Export</span>
           </button>
@@ -110,19 +175,19 @@ export default function HMTOD() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white border text-center p-4 rounded-2xl shadow-sm border-slate-200">
           <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total Ship Target</div>
-          <div className="text-2xl font-black text-slate-800">260,502</div>
+          <div className="text-2xl font-black text-slate-800">{formatNumber(summaryStats.totalShip)}</div>
         </div>
         <div className="bg-blue-50 border border-blue-100 text-center p-4 rounded-2xl shadow-sm">
           <div className="text-blue-600 text-xs font-bold uppercase tracking-wider mb-1">Wash Delivery (Actual)</div>
-          <div className="text-2xl font-black text-blue-800">108,450</div>
+          <div className="text-2xl font-black text-blue-800">{formatNumber(summaryStats.totalDeli)}</div>
         </div>
         <div className="bg-amber-50 border border-amber-100 text-center p-4 rounded-2xl shadow-sm">
           <div className="text-amber-600 text-xs font-bold uppercase tracking-wider mb-1">Total WIP</div>
-          <div className="text-2xl font-black text-amber-800">37,384</div>
+          <div className="text-2xl font-black text-amber-800">{formatNumber(summaryStats.totalWip)}</div>
         </div>
         <div className="bg-red-50 border border-red-100 text-center p-4 rounded-2xl shadow-sm">
           <div className="text-red-600 text-xs font-bold uppercase tracking-wider mb-1">Sew Plan Miss Qty</div>
-          <div className="text-2xl font-black text-red-800">11,953</div>
+          <div className="text-2xl font-black text-red-800">{formatNumber(summaryStats.totalMiss)}</div>
         </div>
       </div>
 

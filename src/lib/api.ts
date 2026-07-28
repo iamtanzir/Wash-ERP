@@ -93,10 +93,6 @@ export const api = {
   },
 
   async submitDailyLog(data: Partial<DailyLog>): Promise<{ id: string }> {
-    if (data.delivered_qty! > data.received_qty!) {
-      throw new Error("Delivered qty cannot exceed received qty");
-    }
-
     const log = await fetchJSON("/api/db/daily_logs", {
         method: "POST",
         body: JSON.stringify(data),
@@ -105,7 +101,7 @@ export const api = {
     // Update order status if needed
     if (data.erp_order) {
         const order = await this.getOrder(data.erp_order);
-        if (order.status === 'Pending' && (data.received_qty! > 0 || data.delivered_qty! > 0)) {
+        if (order.status === 'Pending' && ((data.received_qty || 0) > 0 || (data.delivered_qty || 0) > 0)) {
             await this.updateOrder(data.erp_order, { status: 'Running' });
         }
     }
