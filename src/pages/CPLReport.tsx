@@ -341,7 +341,7 @@ export default function CplReport() {
                       ))}
                       {/* Unit Total Row */}
                       <tr className="bg-[#FFF2B2] font-bold border-b border-[#FFD700] text-slate-900">
-                        <td colSpan={7} className="px-3 py-2 text-center border-r border-[#FFD700] uppercase tracking-widest">{unit} CPL Wash</td>
+                        <td colSpan={6} className="px-3 py-2 text-center border-r border-[#FFD700] uppercase tracking-widest">{unit} CPL Wash</td>
                         <td className="px-2 py-2 text-right border-r border-[#FFD700] tabular-nums">{formatNumber(unitGrand.ord)}</td>
                         <td className="px-2 py-2 text-right border-r border-[#FFD700] tabular-nums">{formatNumber(unitGrand.tRcv)}</td>
                         <td className="px-2 py-2 text-right border-r border-[#FFD700] tabular-nums">{formatNumber(unitGrand.totRcv)}</td>
@@ -359,7 +359,7 @@ export default function CplReport() {
             {Object.keys(filteredGroups).length > 0 && (
               <tfoot>
                 <tr className="bg-green-100 font-bold border-t-2 border-green-200 text-sm text-green-900">
-                  <td colSpan={8} className="px-3 py-3 text-center border-r border-green-200 uppercase tracking-widest">G.Total</td>
+                  <td colSpan={7} className="px-3 py-3 text-center border-r border-green-200 uppercase tracking-widest">G.Total</td>
                   <td className="px-2 py-3 text-right border-r border-green-200 tabular-nums">{formatNumber(grandTotals.ordQty)}</td>
                   <td className="px-2 py-3 text-right border-r border-green-200 tabular-nums">{formatNumber(grandTotals.todayRcv)}</td>
                   <td className="px-2 py-3 text-right border-r border-green-200 tabular-nums">{formatNumber(grandTotals.totalRcv)}</td>

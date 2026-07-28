@@ -14,7 +14,8 @@ import {
   ClipboardCheck,
   Package,
   FileText,
-  WashingMachine
+  WashingMachine,
+  PhoneCall
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
@@ -158,6 +159,15 @@ export default function Layout() {
             <span className="px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium bg-green-100 text-green-700 whitespace-nowrap hidden sm:inline-block">Auto Sync</span>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
+            <a
+              href="tel:01710110490"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 rounded-lg text-xs font-bold transition-colors"
+              title="Click to call support"
+            >
+              <PhoneCall size={12} className="text-amber-600 animate-bounce" />
+              <span className="hidden md:inline text-[11px]">Support:</span>
+              <span className="font-mono text-xs">01710-110490</span>
+            </a>
             <span className="sm:hidden px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 whitespace-nowrap">Auto Sync</span>
             <div className="flex flex-col items-end hidden sm:flex">
               <p className="text-xs text-slate-400">Real Time</p>

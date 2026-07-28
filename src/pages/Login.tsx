@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogIn, ShieldAlert, KeyRound, User, Loader2, Shield, WashingMachine } from "lucide-react";
+import { LogIn, ShieldAlert, KeyRound, User, Loader2, Shield, WashingMachine, PhoneCall } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
 import { motion } from "motion/react";
@@ -141,7 +141,19 @@ export default function Login() {
           </form>
 
           {/* Compliance & Branding */}
-          <div className="space-y-4 pt-1">
+          <div className="space-y-3 pt-1">
+            {/* Support Call Badge */}
+            <a 
+              href="tel:01710110490"
+              className="p-2.5 bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/40 rounded-xl flex items-center justify-between transition-colors group"
+            >
+              <div className="flex items-center gap-2">
+                <PhoneCall size={14} className="text-amber-400 group-hover:animate-bounce" />
+                <span className="text-[10px] font-bold text-amber-200">Call for Support:</span>
+              </div>
+              <span className="text-xs font-mono font-black text-amber-300">01710-110490</span>
+            </a>
+
             <div className="p-3 bg-white/5 border border-white/10 rounded-xl flex items-start gap-3 backdrop-blur-sm">
               <Shield size={16} className="text-blue-400 shrink-0 mt-0.5" strokeWidth={2.5} />
               <p className="text-[9px] leading-relaxed text-blue-100/40 font-medium italic">
