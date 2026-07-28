@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { getRealTime } from '../hooks/useRealTime';
 import { api, DailyLog, Order } from '../lib/api';
 import { formatNumber, formatDate } from '../lib/utils';
 import { useState, useMemo } from 'react';
@@ -255,7 +256,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-3">
           {dataUpdatedAt && (
             <span className="text-slate-400 font-mono text-[11px]">
-              Last updated: {new Date(dataUpdatedAt).toLocaleTimeString()}
+              Last updated: {getRealTime(dataUpdatedAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit', hour12: true })}
             </span>
           )}
           <button
