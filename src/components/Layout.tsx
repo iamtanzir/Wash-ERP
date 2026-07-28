@@ -15,11 +15,14 @@ import {
   Package,
   FileText,
   WashingMachine,
-  PhoneCall
+  PhoneCall,
+  Sun,
+  Moon
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
+import { useRealTimeClock, formatDhakaTime } from "../hooks/useRealTime";
 
 const navItems = [
   { name: "WASH DASHBOARD", href: "/", icon: LayoutDashboard },
@@ -37,6 +40,23 @@ export default function Layout() {
   const navigate = useNavigate();
   const { user, isAdmin, isEditor, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return document.documentElement.classList.contains("dark-mode");
+  });
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(prev => {
+      const newMode = !prev;
+      if (newMode) {
+        document.documentElement.classList.add("dark-mode");
+      } else {
+        document.documentElement.classList.remove("dark-mode");
+      }
+      return newMode;
+    });
+  };
+
+  const currentTime = useRealTimeClock();
 
   const handleLogout = async () => {
     try {
@@ -159,20 +179,19 @@ export default function Layout() {
             <span className="px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium bg-green-100 text-green-700 whitespace-nowrap hidden sm:inline-block">Auto Sync</span>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
-            <a
-              href="tel:01710110490"
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 rounded-lg text-xs font-bold transition-colors"
-              title="Click to call support"
+            <button
+              onClick={toggleDarkMode}
+              className="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors focus:outline-none"
+              aria-label="Toggle dark mode"
+              title="High Contrast Dark Mode"
             >
-              <PhoneCall size={12} className="text-amber-600 animate-bounce" />
-              <span className="hidden md:inline text-[11px]">Support:</span>
-              <span className="font-mono text-xs">01710-110490</span>
-            </a>
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
             <span className="sm:hidden px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 whitespace-nowrap">Auto Sync</span>
             <div className="flex flex-col items-end hidden sm:flex">
               <p className="text-xs text-slate-400">Real Time</p>
               <p className="text-sm font-mono font-medium text-slate-700 text-right">
-                {new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute:'2-digit', hour12: true }).toUpperCase().replace(',', ' |')}
+                {formatDhakaTime(currentTime)}
               </p>
             </div>
           </div>

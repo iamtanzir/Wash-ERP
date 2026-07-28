@@ -12,3 +12,17 @@ body {
   background-color: #f8fafc; /* slate-50 */
   color: #0f172a; /* slate-900 */
 }
+html.dark-mode {
+  filter: invert(1) hue-rotate(180deg);
+  background-color: #111;
+}
+
+html.dark-mode img,
+html.dark-mode video,
+html.dark-mode iframe {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+html.dark-mode .dark-mode-ignore {
+  filter: invert(1) hue-rotate(180deg);
+}

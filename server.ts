@@ -187,6 +187,8 @@ app.post("/api/logout", (req, res) => {
     res.json({ success: true });
 });
 
+app.get("/api/time", (req, res) => { res.json({ time: Date.now() }); });
+
 app.get("/api/me", authenticate, (req: any, res) => {
     res.json({ user: req.user });
 });
