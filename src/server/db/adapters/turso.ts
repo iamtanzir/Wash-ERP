@@ -3,11 +3,14 @@ import type { Client } from "@libsql/client";
 const { createClient } = (libsql as any).default || libsql;
 import { randomUUID } from "node:crypto";
 import type { DatabaseAdapter } from "../index.js";
+import { MemoryAdapter } from "./memory.js";
 
 export class TursoAdapter implements DatabaseAdapter {
   private client: Client;
   private initPromise: Promise<void>;
   private url: string;
+  private fallbackMemory = new MemoryAdapter();
+  private hasError = false;
 
   constructor() {
     let url = process.env.TURSO_DATABASE_URL || "";
@@ -306,134 +309,154 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
 
       console.log("[TURSO] ✅ Database schema verified.");
     } catch (err: any) {
+      this.hasError = true;
       console.error("[TURSO] 🚨 Critical Initialization error:", err.message);
+      console.warn("[TURSO] 💡 Falling back to MemoryAdapter for seamless operation.");
     } finally {
       clearTimeout(timeout);
     }
   }
 
   async getDoc(collection: string, id: string): Promise<any> {
-    await this.initPromise;
-    if (collection === "users") {
+    if (this.hasError) return this.fallbackMemory.getDoc(collection, id);
+    try {
+      await this.initPromise;
+      if (this.hasError) return this.fallbackMemory.getDoc(collection, id);
+
+      if (collection === "users") {
+        const result = await this.client.execute({
+          sql: "SELECT * FROM users WHERE id = ? OR username = ?",
+          args: [id, id],
+        });
+        return result.rows[0] ? this.rowToObject(result.rows[0]) : null;
+      }
+
+      if (collection === "erp_orders") {
+          const result = await this.client.execute({
+              sql: "SELECT * FROM erp_orders WHERE id = ?",
+              args: [id],
+          });
+          return result.rows[0] ? this.rowToObject(result.rows[0]) : null;
+      }
+
       const result = await this.client.execute({
-        sql: "SELECT * FROM users WHERE id = ? OR username = ?",
-        args: [id, id],
+          sql: `SELECT * FROM ${collection} WHERE id = ?`,
+          args: [id],
       });
       return result.rows[0] ? this.rowToObject(result.rows[0]) : null;
-    }
-
-    // For other collections, we simulate a document-like storage if it doesn't have a specific table
-    // or we use the erp_orders if it matches.
-    if (collection === "erp_orders") {
-        const result = await this.client.execute({
-            sql: "SELECT * FROM erp_orders WHERE id = ?",
-            args: [id],
-        });
-        return result.rows[0] ? this.rowToObject(result.rows[0]) : null;
-    }
-
-    // Default fallback: Try to query by ID if table exists
-    try {
-        const result = await this.client.execute({
-            sql: `SELECT * FROM ${collection} WHERE id = ?`,
-            args: [id],
-        });
-        return result.rows[0] ? this.rowToObject(result.rows[0]) : null;
-    } catch {
-        return null;
+    } catch (err) {
+      console.warn(`[TURSO] Error in getDoc for ${collection}, using Memory fallback:`, (err as any)?.message);
+      return this.fallbackMemory.getDoc(collection, id);
     }
   }
 
   async setDoc(collection: string, id: string, data: any): Promise<void> {
-    await this.initPromise;
-    const keys = Object.keys(data);
-    const values = Object.values(data);
-    
-    // Ensure ID is in data if it's not already there for the query
-    if (!data.id) data.id = id;
-
-    if (collection === "users") {
-      const existing = await this.getDoc("users", id);
-      if (existing) {
-        const updates = keys.filter(k => k !== 'id').map(k => `${k} = ?`).join(", ");
-        const args = keys.filter(k => k !== 'id').map(k => data[k]);
-        args.push(id);
-        await this.client.execute({
-          sql: `UPDATE users SET ${updates}, updated_at = (datetime('now')) WHERE id = ?`,
-          args,
-        });
-      } else {
-        const columns = Object.keys(data).join(", ");
-        const placeholders = Object.keys(data).map(() => "?").join(", ");
-        await this.client.execute({
-          sql: `INSERT INTO users (${columns}) VALUES (${placeholders})`,
-          args: Object.values(data),
-        });
-      }
-      return;
-    }
-
-    // Generic UPSERT for other tables (assuming they have the right columns)
+    if (this.hasError) return this.fallbackMemory.setDoc(collection, id, data);
     try {
-        const updates = keys.filter(k => k !== 'id').map(k => `${k} = ?`).join(", ");
-        const args = keys.filter(k => k !== 'id').map(k => data[k]);
-        args.push(id);
-        
-        // Try update first
-        const result = await this.client.execute({
-            sql: `UPDATE ${collection} SET ${updates} WHERE id = ?`,
-            args,
-        });
+      await this.initPromise;
+      if (this.hasError) return this.fallbackMemory.setDoc(collection, id, data);
 
-        if (result.rowsAffected === 0) {
-            const columns = Object.keys(data).join(", ");
-            const placeholders = Object.keys(data).map(() => "?").join(", ");
-            await this.client.execute({
-                sql: `INSERT INTO ${collection} (${columns}) VALUES (${placeholders})`,
-                args: Object.values(data),
-            });
+      const keys = Object.keys(data);
+      if (!data.id) data.id = id;
+
+      if (collection === "users") {
+        const existing = await this.getDoc("users", id);
+        if (existing) {
+          const updates = keys.filter(k => k !== 'id').map(k => `${k} = ?`).join(", ");
+          const args = keys.filter(k => k !== 'id').map(k => data[k]);
+          args.push(id);
+          await this.client.execute({
+            sql: `UPDATE users SET ${updates}, updated_at = (datetime('now')) WHERE id = ?`,
+            args,
+          });
+        } else {
+          const columns = Object.keys(data).join(", ");
+          const placeholders = Object.keys(data).map(() => "?").join(", ");
+          await this.client.execute({
+            sql: `INSERT INTO users (${columns}) VALUES (${placeholders})`,
+            args: Object.values(data),
+          });
         }
+        return;
+      }
+
+      const updates = keys.filter(k => k !== 'id').map(k => `${k} = ?`).join(", ");
+      const args = keys.filter(k => k !== 'id').map(k => data[k]);
+      args.push(id);
+      
+      const result = await this.client.execute({
+          sql: `UPDATE ${collection} SET ${updates} WHERE id = ?`,
+          args,
+      });
+
+      if (result.rowsAffected === 0) {
+          const columns = Object.keys(data).join(", ");
+          const placeholders = Object.keys(data).map(() => "?").join(", ");
+          await this.client.execute({
+              sql: `INSERT INTO ${collection} (${columns}) VALUES (${placeholders})`,
+              args: Object.values(data),
+          });
+      }
     } catch (err: any) {
-        console.error(`[TURSO] Error in setDoc for ${collection}:`, err.message);
-        throw err;
+      console.warn(`[TURSO] Error in setDoc for ${collection}, using Memory fallback:`, err.message);
+      return this.fallbackMemory.setDoc(collection, id, data);
     }
   }
 
   async addDoc(collection: string, data: any): Promise<string> {
-    const id = randomUUID();
+    const id = data.id || randomUUID();
     await this.setDoc(collection, id, { ...data, id });
     return id;
   }
 
   async updateDoc(collection: string, id: string, data: any): Promise<void> {
-    await this.initPromise;
-    const keys = Object.keys(data);
-    const updates = keys.map(k => `${k} = ?`).join(", ");
-    const args = keys.map(k => data[k]);
-    args.push(id);
+    if (this.hasError) return this.fallbackMemory.updateDoc(collection, id, data);
+    try {
+      await this.initPromise;
+      if (this.hasError) return this.fallbackMemory.updateDoc(collection, id, data);
 
-    await this.client.execute({
-      sql: `UPDATE ${collection} SET ${updates}, updated_at = (datetime('now')) WHERE id = ?`,
-      args,
-    });
+      const keys = Object.keys(data);
+      const updates = keys.map(k => `${k} = ?`).join(", ");
+      const args = keys.map(k => data[k]);
+      args.push(id);
+
+      await this.client.execute({
+        sql: `UPDATE ${collection} SET ${updates}, updated_at = (datetime('now')) WHERE id = ?`,
+        args,
+      });
+    } catch (err: any) {
+      console.warn(`[TURSO] Error in updateDoc for ${collection}, using Memory fallback:`, err.message);
+      return this.fallbackMemory.updateDoc(collection, id, data);
+    }
   }
 
   async deleteDoc(collection: string, id: string): Promise<void> {
-    await this.initPromise;
-    await this.client.execute({
-      sql: `DELETE FROM ${collection} WHERE id = ?`,
-      args: [id],
-    });
+    if (this.hasError) return this.fallbackMemory.deleteDoc(collection, id);
+    try {
+      await this.initPromise;
+      if (this.hasError) return this.fallbackMemory.deleteDoc(collection, id);
+
+      await this.client.execute({
+        sql: `DELETE FROM ${collection} WHERE id = ?`,
+        args: [id],
+      });
+    } catch (err: any) {
+      console.warn(`[TURSO] Error in deleteDoc for ${collection}, using Memory fallback:`, err.message);
+      return this.fallbackMemory.deleteDoc(collection, id);
+    }
   }
 
   async getDocs(collection: string, filters?: any[]): Promise<any[]> {
-    await this.initPromise;
+    if (this.hasError) return this.fallbackMemory.getDocs(collection);
     try {
-        const result = await this.client.execute(`SELECT * FROM ${collection} ORDER BY created_at DESC`);
-        return result.rows.map(row => this.rowToObject(row));
+      await this.initPromise;
+      if (this.hasError) return this.fallbackMemory.getDocs(collection);
+
+      const result = await this.client.execute(`SELECT * FROM ${collection} ORDER BY created_at DESC`);
+      return result.rows.map(row => this.rowToObject(row));
     } catch (err: any) {
-        console.error(`[TURSO] Error in getDocs for ${collection}:`, err.message);
-        return [];
+      console.warn(`[TURSO] Error in getDocs for ${collection}, using Memory fallback:`, err.message);
+      return this.fallbackMemory.getDocs(collection);
     }
   }
 
