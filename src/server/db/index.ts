@@ -5,6 +5,7 @@ import { SQLiteAdapter } from "./adapters/sqlite.js";
 import { TursoAdapter } from "./adapters/turso.js";
 import { CockroachDBAdapter } from "./adapters/cockroach.js";
 import { XataAdapter } from "./adapters/xata.js";
+import { MemoryAdapter } from "./adapters/memory.js";
 import fs from "node:fs";
 
 export interface DatabaseAdapter {
@@ -22,9 +23,9 @@ export function getDatabase(): DatabaseAdapter {
   // 1. Auto-detection: If no mode is set, check for environment variables
   if (!envDbType) {
     if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN && process.env.TURSO_DATABASE_URL !== "libsql://missing-url.turso.io") {
-      // If the URL matches a known deleted database, fallback to SQLite
       if (process.env.TURSO_DATABASE_URL.includes("wash-erp") || process.env.TURSO_DATABASE_URL.includes("404")) {
-          console.log("[DB] ⚡ Skipping broken Turso configuration, falling back to SQLite");
+          console.log("[DB] ⚡ Skipping broken Turso configuration, falling back to MemoryAdapter");
+          return new MemoryAdapter();
       } else {
           console.log("[DB] ⚡ Auto-detected Turso configuration");
           return new TursoAdapter();
@@ -46,8 +47,17 @@ export function getDatabase(): DatabaseAdapter {
       return new SupabaseAdapter();
     }
     
-    console.log("[DB] No database environment variables found, defaulting to SQLite");
-    return new SQLiteAdapter();
+    if (process.env.VERCEL) {
+      console.log("[DB] Vercel environment detected without DB credentials, defaulting to MemoryAdapter");
+      return new MemoryAdapter();
+    }
+
+    console.log("[DB] No database environment variables found, defaulting to SQLite or Memory");
+    try {
+      return new SQLiteAdapter();
+    } catch {
+      return new MemoryAdapter();
+    }
   }
 
   const dbType = envDbType.toLowerCase();
@@ -55,9 +65,10 @@ export function getDatabase(): DatabaseAdapter {
 
   switch (dbType) {
     case "turso":
-      if (process.env.TURSO_DATABASE_URL && (process.env.TURSO_DATABASE_URL.includes("wash-erp") || process.env.TURSO_DATABASE_URL.includes("404"))) {
-          console.log("[DB] ⚡ Skipping broken Turso configuration, falling back to SQLite");
-          return new SQLiteAdapter();
+      if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
+          console.warn("[DB] ⚠️ 'turso' mode requested but TURSO_DATABASE_URL or TURSO_AUTH_TOKEN is missing in environment variables.");
+          console.warn("[DB] 💡 Falling back to MemoryAdapter to prevent 500 Server Errors.");
+          return new MemoryAdapter();
       }
       return new TursoAdapter();
     case "cockroach":
@@ -72,9 +83,15 @@ export function getDatabase(): DatabaseAdapter {
     case "firebase":
       return new FirebaseAdapter();
     case "sqlite":
-      return new SQLiteAdapter();
+      try {
+        return new SQLiteAdapter();
+      } catch {
+        return new MemoryAdapter();
+      }
+    case "memory":
+      return new MemoryAdapter();
     default:
-      console.warn(`[DB] Unsupported database mode "${dbType}", falling back to SQLite`);
-      return new SQLiteAdapter();
+      console.warn(`[DB] Unsupported database mode "${dbType}", falling back to MemoryAdapter`);
+      return new MemoryAdapter();
   }
 }
