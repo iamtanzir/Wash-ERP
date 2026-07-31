@@ -2,5 +2,5 @@
   "name": "Wash ERP System",
   "description": "Professional ERP solution for INCTL Wash, handling order tracking, fabric management, and buyer analytics with multi-database support (SQLite, Turso, Supabase).",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -20,6 +20,7 @@ export interface Order {
   uploaded_by?: string;
   created_at?: string;
   updated_at?: string;
+  custom_values?: Record<string, any>;
 }
 
 export interface DailyLog {
