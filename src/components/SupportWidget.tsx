@@ -80,20 +80,7 @@ export default function SupportWidget() {
               </div>
             </div>
 
-            {/* Built-in Super Admin Info */}
-            <div className="bg-amber-50 border border-amber-200 p-3.5 rounded-xl space-y-1.5 text-xs">
-              <div className="flex items-center gap-2 text-amber-800 font-bold">
-                <ShieldCheck size={16} className="text-amber-600 shrink-0" />
-                <span>Built-in Permanent Super Admin</span>
-              </div>
-              <p className="text-slate-600 leading-relaxed text-[11px]">
-                সিস্টেমে জরুরি এক্সেসের জন্য স্থায়ী সুপার এডমিন ব্যবহারকারী:
-              </p>
-              <div className="bg-white p-2 rounded-lg border border-amber-200 font-mono text-[11px] flex justify-between text-slate-800 font-bold">
-                <span>User ID: <span className="text-blue-600">tanzirerp</span></span>
-                <span>Pass: <span className="text-blue-600">tanziradmin</span></span>
-              </div>
-            </div>
+
 
             {/* Actions */}
             <div className="flex justify-end gap-2 pt-1">

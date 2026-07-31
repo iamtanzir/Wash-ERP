@@ -5,7 +5,13 @@ import { formatNumber, formatDate } from '../lib/utils';
 import { useState, useMemo } from 'react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Filter, PlusCircle, Database, RefreshCw } from 'lucide-react';
+import { Filter, PlusCircle, Database, RefreshCw, Cpu, Package, Receipt, Users, Settings } from 'lucide-react';
+
+import ErpManufacturing from '../components/ErpManufacturing';
+import ErpStock from '../components/ErpStock';
+import ErpAccounts from '../components/ErpAccounts';
+import ErpHR from '../components/ErpHR';
+import ErpCustomizer from '../components/ErpCustomizer';
 
 interface OrderStats {
   order: Order;
@@ -21,6 +27,7 @@ interface OrderStats {
 }
 
 export default function Dashboard() {
+  const [workspace, setWorkspace] = useState<"wash" | "manufacturing" | "stock" | "accounts" | "hr" | "customizer">("wash");
   const [search, setSearch] = useState("");
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({
     unit: '',
@@ -38,6 +45,16 @@ export default function Dashboard() {
     readyForDelivery: '',
     washType: '',
     floor: ''
+  });
+
+  const { data: customFields = [] } = useQuery({
+    queryKey: ['customFieldsOrder'],
+    queryFn: async () => {
+      const res = await fetch("/api/db/erp_custom_fields");
+      if (!res.ok) return [];
+      const all: any[] = await res.json();
+      return all.filter((f: any) => f.doctype === "order");
+    }
   });
 
   const { 
@@ -271,206 +288,330 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-xs font-bold text-slate-400 uppercase">Active Orders</p>
-          <p className="text-3xl font-light text-slate-800 mt-1">{activeOrders?.length || 0}</p>
+      {/* Universal ERP Workspace switcher cards (Frappe Desk style) */}
+      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+            Frappe Desk Workspace Explorer
+          </h2>
+          <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+            Open-Source Universal Mode (Free)
+          </span>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-xs font-bold text-slate-400 uppercase">Today's Receive</p>
-          <p className="text-3xl font-light text-blue-600 mt-1">{formatNumber(todayRcv)} <span className="text-sm font-normal text-slate-400">pcs</span></p>
-        </div>
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-xs font-bold text-slate-400 uppercase">Today's Delivery</p>
-          <p className="text-3xl font-light text-emerald-600 mt-1">{formatNumber(todayDel)} <span className="text-sm font-normal text-slate-400">pcs</span></p>
-        </div>
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-xs font-bold text-slate-400 uppercase" title="WIP from recent logs">Pending Balance (WIP)</p>
-          <p className="text-3xl font-light text-orange-600 mt-1">{formatNumber(Math.max(0, totalWip))} <span className="text-sm font-normal text-slate-400">pcs</span></p>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <button 
+            onClick={() => setWorkspace("wash")}
+            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
+              workspace === "wash" 
+                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <span className="text-lg">👕</span>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide">Garment Wash</p>
+              <p className={`text-[9px] mt-0.5 ${workspace === "wash" ? "text-blue-100" : "text-slate-400"}`}>Washing & WIP Status</p>
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setWorkspace("manufacturing")}
+            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
+              workspace === "manufacturing" 
+                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <Cpu size={16} className={workspace === "manufacturing" ? "text-white" : "text-slate-500"} />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide">Manufacturing</p>
+              <p className={`text-[9px] mt-0.5 ${workspace === "manufacturing" ? "text-blue-100" : "text-slate-400"}`}>BOM & Work Orders</p>
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setWorkspace("stock")}
+            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
+              workspace === "stock" 
+                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <Package size={16} className={workspace === "stock" ? "text-white" : "text-slate-500"} />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide">Stock Room</p>
+              <p className={`text-[9px] mt-0.5 ${workspace === "stock" ? "text-blue-100" : "text-slate-400"}`}>SKU Item Ledgers</p>
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setWorkspace("accounts")}
+            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
+              workspace === "accounts" 
+                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <Receipt size={16} className={workspace === "accounts" ? "text-white" : "text-slate-500"} />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide">Accounts</p>
+              <p className={`text-[9px] mt-0.5 ${workspace === "accounts" ? "text-blue-100" : "text-slate-400"}`}>Finance & Invoicing</p>
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setWorkspace("hr")}
+            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
+              workspace === "hr" 
+                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <Users size={16} className={workspace === "hr" ? "text-white" : "text-slate-500"} />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide">HR & Payroll</p>
+              <p className={`text-[9px] mt-0.5 ${workspace === "hr" ? "text-blue-100" : "text-slate-400"}`}>Staff & Attendance</p>
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setWorkspace("customizer")}
+            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
+              workspace === "customizer" 
+                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <Settings size={16} className={workspace === "customizer" ? "text-white" : "text-slate-500"} />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide">Customize Form</p>
+              <p className={`text-[9px] mt-0.5 ${workspace === "customizer" ? "text-blue-100" : "text-slate-400"}`}>Meta Custom Columns</p>
+            </div>
+          </button>
         </div>
       </div>
 
-      {/* Quick Access Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link to="/new-plan" className="group bg-blue-600 p-6 rounded-2xl shadow-xl shadow-blue-500/20 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
-          <div className="text-white">
-            <h4 className="text-xl font-black mt-1">NEXT ERP PLAN</h4>
-          </div>
-          <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white group-hover:rotate-12 transition-transform">
-            <PlusCircle size={32} />
-          </div>
-        </Link>
-        <Link to="/cpl-report" className="group bg-slate-900 p-6 rounded-2xl shadow-xl shadow-slate-500/20 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
-          <div className="text-white">
-            <h4 className="text-xl font-black mt-1">CPL FABRIC REPORT</h4>
-          </div>
-          <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white group-hover:rotate-12 transition-transform">
-            <Filter size={32} />
-          </div>
-        </Link>
-        <Link to="/data-bank" className="group bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-xl shadow-slate-500/5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
-          <div className="text-slate-900">
-            <h4 className="text-xl font-black mt-1">BUYER DATA BANK (DB)</h4>
-          </div>
-          <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900 group-hover:rotate-12 transition-transform border border-slate-200">
-            <Database size={32} />
-          </div>
-        </Link>
-      </div>
+      {workspace === "manufacturing" && <ErpManufacturing />}
+      {workspace === "stock" && <ErpStock />}
+      {workspace === "accounts" && <ErpAccounts />}
+      {workspace === "hr" && <ErpHR />}
+      {workspace === "customizer" && <ErpCustomizer />}
 
-      {/* Orders Table */}
-      <div className="flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-full min-h-[420px]">
-        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Garments Wash Status Report (GMT)</h3>
-          <div className="flex gap-2">
-            <input 
-              type="text" 
-              placeholder="Search File/Style..." 
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="text-xs border border-slate-300 rounded px-3 py-1.5 w-48 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-            <Link to="/new-plan" className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs hover:bg-blue-700 transition-colors">
-              + New Plan
+      {workspace === "wash" && (
+        <>
+          {/* KPIs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <p className="text-xs font-bold text-slate-400 uppercase">Active Orders</p>
+              <p className="text-3xl font-light text-slate-800 mt-1">{activeOrders?.length || 0}</p>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <p className="text-xs font-bold text-slate-400 uppercase">Today's Receive</p>
+              <p className="text-3xl font-light text-blue-600 mt-1">{formatNumber(todayRcv)} <span className="text-sm font-normal text-slate-400">pcs</span></p>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <p className="text-xs font-bold text-slate-400 uppercase">Today's Delivery</p>
+              <p className="text-3xl font-light text-emerald-600 mt-1">{formatNumber(todayDel)} <span className="text-sm font-normal text-slate-400">pcs</span></p>
+            </div>
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+              <p className="text-xs font-bold text-slate-400 uppercase" title="WIP from recent logs">Pending Balance (WIP)</p>
+              <p className="text-3xl font-light text-orange-600 mt-1">{formatNumber(Math.max(0, totalWip))} <span className="text-sm font-normal text-slate-400">pcs</span></p>
+            </div>
+          </div>
+
+          {/* Quick Access Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Link to="/new-plan" className="group bg-blue-600 p-6 rounded-2xl shadow-xl shadow-blue-500/20 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
+              <div className="text-white">
+                <h4 className="text-xl font-black mt-1">NEXT ERP PLAN</h4>
+              </div>
+              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white group-hover:rotate-12 transition-transform">
+                <PlusCircle size={32} />
+              </div>
+            </Link>
+            <Link to="/cpl-report" className="group bg-slate-900 p-6 rounded-2xl shadow-xl shadow-slate-500/20 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
+              <div className="text-white">
+                <h4 className="text-xl font-black mt-1">CPL FABRIC REPORT</h4>
+              </div>
+              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white group-hover:rotate-12 transition-transform">
+                <Filter size={32} />
+              </div>
+            </Link>
+            <Link to="/data-bank" className="group bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-xl shadow-slate-500/5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
+              <div className="text-slate-900">
+                <h4 className="text-xl font-black mt-1">BUYER DATA BANK (DB)</h4>
+              </div>
+              <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900 group-hover:rotate-12 transition-transform border border-slate-200">
+                <Database size={32} />
+              </div>
             </Link>
           </div>
-        </div>
-        <div className="flex-1 overflow-auto">
-          <table className="w-full text-left border-collapse min-w-max">
-            <thead>
-              <tr className="bg-yellow-100 border-b border-yellow-200">
-                <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider sticky left-0 z-10 bg-yellow-100 border-r border-yellow-200 align-top">
-                  <FilterSelect column="unit" options={filterOptions.unit} label="Unit" />
-                </th>
-                <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-center border-r border-yellow-200 align-top">
-                  <FilterSelect column="receivedDate" options={filterOptions.receivedDate} label="Received Date" />
-                </th>
-                <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
-                  <FilterSelect column="styleNo" options={filterOptions.styleNo} label="Style NO" />
-                </th>
-                <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
-                  <FilterSelect column="buyer" options={filterOptions.buyer} label="Buyer" />
-                </th>
-                <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
-                  <FilterSelect column="erpFile" options={filterOptions.erpFile} label="ERP/File" />
-                </th>
-                <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
-                  <FilterSelect column="color" options={filterOptions.color} label="Color" />
-                </th>
-                <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-center border-r border-yellow-200 align-top">
-                  <span>ERP Date</span>
-                </th>
-                <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
-                  <FilterSelect column="ordQty" options={filterOptions.ordQty} label={<>Ord Qty<br/>(pcs)</>} />
-                </th>
-                <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
-                  <FilterSelect column="todayRcv" options={filterOptions.todayRcv} label={<>Today Received<br/>(pcs)</>} />
-                </th>
-                <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
-                  <FilterSelect column="totalRcv" options={filterOptions.totalRcv} label={<>Total Received<br/>(pcs)</>} />
-                </th>
-                <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
-                  <FilterSelect column="todayDel" options={filterOptions.todayDel} label={<>Today Delivery<br/>(pcs)</>} />
-                </th>
-                <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
-                  <FilterSelect column="totalDel" options={filterOptions.totalDel} label={<>Total Delivery<br/>(pcs)</>} />
-                </th>
-                <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
-                  <FilterSelect column="balance" options={filterOptions.balance} label={<>Balance<br/>(pcs)</>} />
-                </th>
-                <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
-                  <FilterSelect column="readyForDelivery" options={filterOptions.readyForDelivery} label={<>Ready For Delivery<br/>(pcs)</>} />
-                </th>
-                <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
-                  <FilterSelect column="washType" options={filterOptions.washType} label="Type of Wash" />
-                </th>
-                <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
-                  <FilterSelect column="floor" options={filterOptions.floor} label="Floor" />
-                </th>
-                <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider min-w-[200px] align-top pt-3">Remarks</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 text-xs text-slate-700 bg-white">
-              {Object.keys(filteredGroups).length === 0 ? (
-                <tr>
-                  <td colSpan={16} className="px-6 py-8 text-center text-slate-500 italic">No active orders found</td>
-                </tr>
-              ) : (
-                Object.entries(filteredGroups).map(([unit, stats]: [string, OrderStats[]]) => {
-                  const unitGrand = stats.reduce((acc, stat) => {
-                    acc.ord += stat.order.order_qty || 0;
-                    acc.tRcv += stat.todayRcv;
-                    acc.totRcv += stat.totalRcv;
-                    acc.tDel += stat.todayDel;
-                    acc.totDel += stat.totalDel;
-                    acc.bal += stat.balance;
-                    acc.ready += stat.totalReady;
-                    return acc;
-                  }, { ord: 0, tRcv: 0, totRcv: 0, tDel: 0, totDel: 0, bal: 0, ready: 0 });
 
-                  return (
-                    <React.Fragment key={unit}>
-                      {stats.map((stat, idx) => (
-                        <tr key={stat.order.id} className="hover:bg-blue-50/50">
-                          {idx === 0 && (
-                            <td rowSpan={stats.length + 1} className="p-2 border-r border-b border-slate-200 font-bold bg-[#43a1c6] text-white text-center transform -rotate-180" style={{ writingMode: 'vertical-rl' }}>
-                              <span>{unit}</span>
-                            </td>
-                          )}
-                          <td className="px-2 py-3 text-center border-r border-slate-200 whitespace-nowrap">{stat.firstRcvDate ? formatDate(stat.firstRcvDate) : '-'}</td>
-                          <td className="px-3 py-3 border-r border-slate-200">{stat.order.style_no || '-'}</td>
-                          <td className="px-3 py-3 border-r border-slate-200 font-bold text-slate-800">{stat.order.buyer}</td>
-                          <td className="px-3 py-3 border-r border-slate-200 font-mono text-blue-600 font-bold">{stat.order.file_no}</td>
-                          <td className="px-3 py-3 border-r border-slate-200">{stat.order.color || '-'}</td>
-                          <td className="px-2 py-3 text-center border-r border-slate-200 whitespace-nowrap text-slate-500">{stat.order.erp_date ? formatDate(stat.order.erp_date) : '-'}</td>
-                          <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{formatNumber(stat.order.order_qty)}</td>
-                          <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.todayRcv > 0 ? formatNumber(stat.todayRcv) : 0}</td>
-                          <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.totalRcv > 0 ? formatNumber(stat.totalRcv) : 0}</td>
-                          <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.todayDel > 0 ? formatNumber(stat.todayDel) : 0}</td>
-                          <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.totalDel > 0 ? formatNumber(stat.totalDel) : 0}</td>
-                          <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums font-semibold text-orange-600">{formatNumber(stat.balance)}</td>
-                          <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.totalReady > 0 ? formatNumber(stat.totalReady) : 0}</td>
-                          <td className="px-3 py-3 border-r border-slate-200">{stat.order.wash_type || '-'}</td>
-                          <td className="px-3 py-3 border-r border-slate-200">{stat.order.sew_floor || '-'}</td>
-                          <td className="px-3 py-3 text-slate-500 italic">{stat.latestRemarks || '-'}</td>
-                        </tr>
-                      ))}
-                      {/* Unit Total Row */}
-                      <tr className="bg-yellow-200/50 font-bold border-b-2 border-yellow-300">
-                        <td colSpan={6} className="px-3 py-3 text-center border-r border-slate-300">{unit} Total</td>
-                        <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.ord)}</td>
-                        <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.tRcv)}</td>
-                        <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.totRcv)}</td>
-                        <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.tDel)}</td>
-                        <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.totDel)}</td>
-                        <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums text-orange-600">{formatNumber(unitGrand.bal)}</td>
-                        <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.ready)}</td>
-                        <td colSpan={3}></td>
-                      </tr>
-                    </React.Fragment>
-                  );
-                })
-              )}
-            </tbody>
-            {Object.keys(filteredGroups).length > 0 && (
-              <tfoot>
-                <tr className="bg-slate-200 font-bold border-t-2 border-slate-300 text-xs">
-                  <td colSpan={7} className="px-3 py-3 text-center border-r border-slate-300 uppercase tracking-widest">G.Total</td>
-                  <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.ordQty)}</td>
-                  <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.todayRcv)}</td>
-                  <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.totalRcv)}</td>
-                  <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.todayDel)}</td>
-                  <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.totalDel)}</td>
-                  <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums text-orange-700">{formatNumber(grandTotals.balance)}</td>
-                  <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.ready)}</td>
-                  <td colSpan={3}></td>
-                </tr>
-              </tfoot>
-            )}
-          </table>
-        </div>
-      </div>
+          {/* Orders Table */}
+          <div className="flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-full min-h-[420px]">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Garments Wash Status Report (GMT)</h3>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  placeholder="Search File/Style..." 
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="text-xs border border-slate-300 rounded px-3 py-1.5 w-48 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <Link to="/new-plan" className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs hover:bg-blue-700 transition-colors">
+                  + New Plan
+                </Link>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <table className="w-full text-left border-collapse min-w-max">
+                <thead>
+                  <tr className="bg-yellow-100 border-b border-yellow-200">
+                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider sticky left-0 z-10 bg-yellow-100 border-r border-yellow-200 align-top">
+                      <FilterSelect column="unit" options={filterOptions.unit} label="Unit" />
+                    </th>
+                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-center border-r border-yellow-200 align-top">
+                      <FilterSelect column="receivedDate" options={filterOptions.receivedDate} label="Received Date" />
+                    </th>
+                    <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
+                      <FilterSelect column="styleNo" options={filterOptions.styleNo} label="Style NO" />
+                    </th>
+                    <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
+                      <FilterSelect column="buyer" options={filterOptions.buyer} label="Buyer" />
+                    </th>
+                    <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
+                      <FilterSelect column="erpFile" options={filterOptions.erpFile} label="ERP/File" />
+                    </th>
+                    <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
+                      <FilterSelect column="color" options={filterOptions.color} label="Color" />
+                    </th>
+                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-center border-r border-yellow-200 align-top">
+                      <span>ERP Date</span>
+                    </th>
+                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
+                      <FilterSelect column="ordQty" options={filterOptions.ordQty} label={<>Ord Qty<br/>(pcs)</>} />
+                    </th>
+                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
+                      <FilterSelect column="todayRcv" options={filterOptions.todayRcv} label={<>Today Received<br/>(pcs)</>} />
+                    </th>
+                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
+                      <FilterSelect column="totalRcv" options={filterOptions.totalRcv} label={<>Total Received<br/>(pcs)</>} />
+                    </th>
+                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
+                      <FilterSelect column="todayDel" options={filterOptions.todayDel} label={<>Today Delivery<br/>(pcs)</>} />
+                    </th>
+                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
+                      <FilterSelect column="totalDel" options={filterOptions.totalDel} label={<>Total Delivery<br/>(pcs)</>} />
+                    </th>
+                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
+                      <FilterSelect column="balance" options={filterOptions.balance} label={<>Balance<br/>(pcs)</>} />
+                    </th>
+                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
+                      <FilterSelect column="readyForDelivery" options={filterOptions.readyForDelivery} label={<>Ready For Delivery<br/>(pcs)</>} />
+                    </th>
+                    <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
+                      <FilterSelect column="washType" options={filterOptions.washType} label="Type of Wash" />
+                    </th>
+                    <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
+                      <FilterSelect column="floor" options={filterOptions.floor} label="Floor" />
+                    </th>
+                    {customFields.map((field: any) => (
+                      <th key={field.id} className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top pt-3">
+                        {field.label}
+                      </th>
+                    ))}
+                    <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider min-w-[200px] align-top pt-3">Remarks</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 text-xs text-slate-700 bg-white">
+                  {Object.keys(filteredGroups).length === 0 ? (
+                    <tr>
+                      <td colSpan={17 + customFields.length} className="px-6 py-8 text-center text-slate-500 italic">No active orders found</td>
+                    </tr>
+                  ) : (
+                    Object.entries(filteredGroups).map(([unit, stats]: [string, OrderStats[]]) => {
+                      const unitGrand = stats.reduce((acc, stat) => {
+                        acc.ord += stat.order.order_qty || 0;
+                        acc.tRcv += stat.todayRcv;
+                        acc.totRcv += stat.totalRcv;
+                        acc.tDel += stat.todayDel;
+                        acc.totDel += stat.totalDel;
+                        acc.bal += stat.balance;
+                        acc.ready += stat.totalReady;
+                        return acc;
+                      }, { ord: 0, tRcv: 0, totRcv: 0, tDel: 0, totDel: 0, bal: 0, ready: 0 });
+
+                      return (
+                        <React.Fragment key={unit}>
+                          {stats.map((stat, idx) => (
+                            <tr key={stat.order.id} className="hover:bg-blue-50/50">
+                              {idx === 0 && (
+                                <td rowSpan={stats.length + 1} className="p-2 border-r border-b border-slate-200 font-bold bg-[#43a1c6] text-white text-center transform -rotate-180" style={{ writingMode: 'vertical-rl' }}>
+                                  <span>{unit}</span>
+                                </td>
+                              )}
+                              <td className="px-2 py-3 text-center border-r border-slate-200 whitespace-nowrap">{stat.firstRcvDate ? formatDate(stat.firstRcvDate) : '-'}</td>
+                              <td className="px-3 py-3 border-r border-slate-200">{stat.order.style_no || '-'}</td>
+                              <td className="px-3 py-3 border-r border-slate-200 font-bold text-slate-800">{stat.order.buyer}</td>
+                              <td className="px-3 py-3 border-r border-slate-200 font-mono text-blue-600 font-bold">{stat.order.file_no}</td>
+                              <td className="px-3 py-3 border-r border-slate-200">{stat.order.color || '-'}</td>
+                              <td className="px-2 py-3 text-center border-r border-slate-200 whitespace-nowrap text-slate-500">{stat.order.erp_date ? formatDate(stat.order.erp_date) : '-'}</td>
+                              <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{formatNumber(stat.order.order_qty)}</td>
+                              <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.todayRcv > 0 ? formatNumber(stat.todayRcv) : 0}</td>
+                              <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.totalRcv > 0 ? formatNumber(stat.totalRcv) : 0}</td>
+                              <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.todayDel > 0 ? formatNumber(stat.todayDel) : 0}</td>
+                              <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.totalDel > 0 ? formatNumber(stat.totalDel) : 0}</td>
+                              <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums font-semibold text-orange-600">{formatNumber(stat.balance)}</td>
+                              <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.totalReady > 0 ? formatNumber(stat.totalReady) : 0}</td>
+                              <td className="px-3 py-3 border-r border-slate-200">{stat.order.wash_type || '-'}</td>
+                              <td className="px-3 py-3 border-r border-slate-200">{stat.order.sew_floor || '-'}</td>
+                              {customFields.map((field: any) => (
+                                <td key={field.id} className="px-3 py-3 border-r border-slate-200 text-slate-600 font-medium">
+                                  {stat.order.custom_values?.[field.fieldname] || "-"}
+                                </td>
+                              ))}
+                              <td className="px-3 py-3 text-slate-500 italic">{stat.latestRemarks || '-'}</td>
+                            </tr>
+                          ))}
+                          {/* Unit Total Row */}
+                          <tr className="bg-yellow-200/50 font-bold border-b-2 border-yellow-300">
+                            <td colSpan={6} className="px-3 py-3 text-center border-r border-slate-300">{unit} Total</td>
+                            <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.ord)}</td>
+                            <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.tRcv)}</td>
+                            <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.totRcv)}</td>
+                            <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.tDel)}</td>
+                            <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.totDel)}</td>
+                            <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums text-orange-600">{formatNumber(unitGrand.bal)}</td>
+                            <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.ready)}</td>
+                            <td colSpan={3 + customFields.length}></td>
+                          </tr>
+                        </React.Fragment>
+                      );
+                    })
+                  )}
+                </tbody>
+                {Object.keys(filteredGroups).length > 0 && (
+                  <tfoot>
+                    <tr className="bg-slate-200 font-bold border-t-2 border-slate-300 text-xs">
+                      <td colSpan={7} className="px-3 py-3 text-center border-r border-slate-300 uppercase tracking-widest">G.Total</td>
+                      <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.ordQty)}</td>
+                      <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.todayRcv)}</td>
+                      <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.totalRcv)}</td>
+                      <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.todayDel)}</td>
+                      <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.totalDel)}</td>
+                      <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums text-orange-700">{formatNumber(grandTotals.balance)}</td>
+                      <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.ready)}</td>
+                      <td colSpan={3 + customFields.length}></td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
