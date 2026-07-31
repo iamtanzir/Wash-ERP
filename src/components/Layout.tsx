@@ -17,7 +17,10 @@ import {
   WashingMachine,
   PhoneCall,
   Sun,
-  Moon
+  Moon,
+  Search,
+  Sparkles,
+  Globe
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
@@ -25,14 +28,14 @@ import { toast } from "sonner";
 import { useRealTimeClock, formatDhakaTime } from "../hooks/useRealTime";
 
 const navItems = [
-  { name: "WASH DASHBOARD", href: "/", icon: LayoutDashboard },
-  { name: "NEXT ERP PLAN", href: "/new-plan", icon: PlusCircle },
-  { name: "GARMENTS R&D LOG", href: "/daily-update", icon: ClipboardCheck },
-  { name: "CPL FABRIC REPORT", href: "/cpl-report", icon: FileText },
-  { name: "H&M SHIP RISK", href: "/hm-tod", icon: ClipboardCheck },
-  { name: "CLOSE ERP ORDER", href: "/close-order", icon: Lock },
-  { name: "ALL BUYER BANK", href: "/data-bank", icon: Database },
-  { name: "USER MANAGEMENT", href: "/admin", icon: ShieldCheck },
+  { name: "WASH DASHBOARD", href: "/", icon: LayoutDashboard, desc: "Overview, charts and live metrics" },
+  { name: "NEXT ERP PLAN", href: "/new-plan", icon: PlusCircle, desc: "Import and add new ERP plans" },
+  { name: "GARMENTS R&D LOG", href: "/daily-update", icon: ClipboardCheck, desc: "Log daily received and delivered quantities" },
+  { name: "CPL FABRIC REPORT", href: "/cpl-report", icon: FileText, desc: "Fabrics status and CPL calculations" },
+  { name: "H&M SHIP RISK", href: "/hm-tod", icon: ClipboardCheck, desc: "H&M ship risk & target order delivery" },
+  { name: "CLOSE ERP ORDER", href: "/close-order", icon: Lock, desc: "Archive completed ERP orders" },
+  { name: "ALL BUYER BANK", href: "/data-bank", icon: Database, desc: "Historic buyer data bank archive" },
+  { name: "USER MANAGEMENT", href: "/admin", icon: ShieldCheck, desc: "Manage user roles and permissions" },
 ];
 
 export default function Layout() {
@@ -40,9 +43,16 @@ export default function Layout() {
   const navigate = useNavigate();
   const { user, isAdmin, isEditor, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSidebarFocused] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return document.documentElement.classList.contains("dark-mode");
   });
+
+  const filteredNavItems = navItems.filter(item => 
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.desc.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const toggleDarkMode = () => {
     setIsDarkMode(prev => {
@@ -166,8 +176,8 @@ export default function Layout() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden w-full">
-        <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3 md:gap-4 font-sans focus-within:ring-0">
+        <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between shrink-0 gap-4">
+          <div className="flex items-center gap-3 md:gap-4 font-sans focus-within:ring-0 shrink-0">
             <button 
               onClick={toggleSidebar}
               className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
@@ -176,9 +186,63 @@ export default function Layout() {
               <Menu size={24} />
             </button>
             <h2 className="text-base md:text-lg font-semibold text-slate-800 uppercase tracking-wide truncate">{getPageTitle()}</h2>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium bg-green-100 text-green-700 whitespace-nowrap hidden sm:inline-block">Auto Sync</span>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium bg-green-100 text-green-700 whitespace-nowrap hidden lg:inline-block">Auto Sync</span>
           </div>
-          <div className="flex items-center gap-2 md:gap-4">
+
+          {/* Frappe/ERPNext Desk Awesome Search Bar */}
+          <div className="relative flex-1 max-w-md hidden md:block">
+            <div className="relative flex items-center">
+              <Search size={16} className="absolute left-3 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSidebarFocused(true)}
+                onBlur={() => setTimeout(() => setIsSidebarFocused(false), 200)}
+                placeholder="Search module, order, buyer, style or press '/'..."
+                className="w-full pl-9 pr-4 py-1.5 bg-slate-100 hover:bg-slate-200/80 focus:bg-white text-xs text-slate-800 rounded-lg border border-transparent focus:border-blue-500 focus:outline-none transition-all placeholder:text-slate-400 font-medium"
+              />
+              <kbd className="absolute right-2.5 hidden sm:inline-block text-[10px] bg-white border border-slate-200 text-slate-400 rounded px-1.5 py-0.5 font-mono shadow-xs">
+                Ctrl + K
+              </kbd>
+            </div>
+
+            {/* Awesome Bar Search Dropdown */}
+            {isSearchFocused && searchQuery.trim() !== "" && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-slate-100">
+                <div className="p-2 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  ERP Modules & Actions
+                </div>
+                <div className="max-h-60 overflow-y-auto py-1">
+                  {filteredNavItems.length > 0 ? (
+                    filteredNavItems.map(item => (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        onClick={() => setSearchQuery("")}
+                        className="flex items-center gap-3 px-3 py-2 hover:bg-blue-50 transition-colors group"
+                      >
+                        <item.icon size={16} className="text-slate-400 group-hover:text-blue-600 shrink-0" />
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-semibold text-slate-800 group-hover:text-blue-600 truncate">{item.name}</span>
+                          <span className="text-[10px] text-slate-400 truncate">{item.desc}</span>
+                        </div>
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="p-3 text-center text-xs text-slate-400">
+                      No matching modules found
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60 hidden xl:flex items-center gap-1">
+              <Sparkles size={12} /> Open ERP Desk
+            </span>
             <button
               onClick={toggleDarkMode}
               className="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors focus:outline-none"
