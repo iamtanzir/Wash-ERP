@@ -60,11 +60,6 @@ export function getDatabase(): DatabaseAdapter {
 
   switch (dbType) {
     case "turso":
-      if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
-          console.warn("[DB] ⚠️ 'turso' mode requested but TURSO_DATABASE_URL or TURSO_AUTH_TOKEN is missing in environment variables.");
-          console.warn("[DB] 💡 Falling back to MemoryAdapter to prevent 500 Server Errors.");
-          return new MemoryAdapter();
-      }
       return new TursoAdapter();
     case "cockroach":
     case "cockroachdb":
