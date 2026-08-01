@@ -609,11 +609,11 @@ export default function Dashboard() {
               {/* Manufacturing BOMs & Work Orders */}
               {(searchResults.boms.length > 0 || searchResults.workOrders.length > 0) && (
                 <div className="space-y-4">
+                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-1">
+                    <span>⚙️</span> Manufacturing BOMs & Work Orders ({searchResults.boms.length + searchResults.workOrders.length})
+                  </h4>
                   {searchResults.boms.length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <span>⚙️</span> Manufacturing BOMs ({searchResults.boms.length})
-                      </h4>
                       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                         <table className="w-full text-left text-xs text-slate-700">
                           <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500 text-[10px] uppercase">
@@ -655,9 +655,6 @@ export default function Dashboard() {
 
                   {searchResults.workOrders.length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <span>📋</span> Manufacturing Work Orders ({searchResults.workOrders.length})
-                      </h4>
                       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                         <table className="w-full text-left text-xs text-slate-700">
                           <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500 text-[10px] uppercase">
@@ -808,7 +805,7 @@ export default function Dashboard() {
               {searchResults.invoices.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <span>🧾</span> Accounts & Finance Invoices ({searchResults.invoices.length})
+                    <span>🧾</span> Accounts & Invoices ({searchResults.invoices.length})
                   </h4>
                   <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                     <table className="w-full text-left text-xs text-slate-700">

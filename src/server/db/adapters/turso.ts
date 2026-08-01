@@ -11,10 +11,12 @@ export class TursoAdapter implements DatabaseAdapter {
   private url: string;
   private fallbackMemory = new MemoryAdapter();
   private hasError = false;
+  private CORE_TABLES = ['users', 'erp_orders', 'daily_logs', 'buyer_data_bank', 'audit_logs'];
+  private ensuredTables = new Set<string>();
 
   constructor() {
-    let url = process.env.TURSO_DATABASE_URL || "";
-    let authToken = process.env.TURSO_AUTH_TOKEN || "";
+    let url = process.env.TURSO_DATABASE_URL || "libsql://database-aureolin-zebra-vercel-icfg-3u3w3vvbm3v8uvyu7ik2a9pf.aws-ap-south-1.turso.io";
+    let authToken = process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODU1MTUzOTEsImlkIjoiMDE5ZmI5MDItYjkwMS03NWJjLWEzZTEtOWFlNDI1NTYxYWQxIiwia2lkIjoiVWVoRWVGMFBOclI0ck05aTNkbVZyVVlSaWRWa3ozWnhFcE94em1rZGFDWSIsInJpZCI6IjY4YTBhMDJmLWU3MjgtNDJjNy1hYTg0LTE4MDZkNWZlNDY1OCJ9.Sj_iIfEUvIW_efZkYsLym4IEG7y35gYbNe830gMd82IZSGST5xF5_OWgJA3vj_MasJ3ZXjJPsObhc4V7y2jKAQ";
 
     // Sanitize URLs that might be wrapped in quotes or have whitespace
     url = (url || "").trim().replace(/^['"](.*)['"]$/, '$1').replace(/\/+$/, "").replace(/\s+/g, ""); // Remove trailing slashes and ALL whitespace
@@ -317,6 +319,24 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
     }
   }
 
+  private async ensureTable(col: string) {
+    await this.initPromise;
+    if (this.CORE_TABLES.includes(col) || this.ensuredTables.has(col)) return;
+    try {
+      await this.client.execute(`
+        CREATE TABLE IF NOT EXISTS ${col} (
+          id TEXT PRIMARY KEY,
+          data TEXT,
+          created_at TEXT DEFAULT (datetime('now')),
+          updated_at TEXT DEFAULT (datetime('now'))
+        )
+      `);
+      this.ensuredTables.add(col);
+    } catch (err: any) {
+      console.error(`[TURSO] Error ensuring table ${col}:`, err.message);
+    }
+  }
+
   async getDoc(collection: string, id: string): Promise<any> {
     if (this.hasError) return this.fallbackMemory.getDoc(collection, id);
     try {
@@ -331,19 +351,25 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
         return result.rows[0] ? this.rowToObject(result.rows[0]) : null;
       }
 
-      if (collection === "erp_orders") {
-          const result = await this.client.execute({
-              sql: "SELECT * FROM erp_orders WHERE id = ?",
-              args: [id],
-          });
-          return result.rows[0] ? this.rowToObject(result.rows[0]) : null;
-      }
+      await this.ensureTable(collection);
 
       const result = await this.client.execute({
-          sql: `SELECT * FROM ${collection} WHERE id = ?`,
-          args: [id],
+        sql: `SELECT * FROM ${collection} WHERE id = ?`,
+        args: [id],
       });
-      return result.rows[0] ? this.rowToObject(result.rows[0]) : null;
+
+      if (!result.rows[0]) return null;
+
+      if (this.CORE_TABLES.includes(collection)) {
+        return this.rowToObject(result.rows[0]);
+      }
+
+      const row: any = result.rows[0];
+      let dataObj = {};
+      try {
+        if (row.data) dataObj = typeof row.data === "string" ? JSON.parse(row.data) : row.data;
+      } catch (e) {}
+      return { id: row.id, ...dataObj };
     } catch (err) {
       console.warn(`[TURSO] Error in getDoc for ${collection}, using Memory fallback:`, (err as any)?.message);
       return this.fallbackMemory.getDoc(collection, id);
@@ -356,46 +382,62 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
       await this.initPromise;
       if (this.hasError) return this.fallbackMemory.setDoc(collection, id, data);
 
-      const keys = Object.keys(data);
       if (!data.id) data.id = id;
+      await this.ensureTable(collection);
 
-      if (collection === "users") {
-        const existing = await this.getDoc("users", id);
-        if (existing) {
-          const updates = keys.filter(k => k !== 'id').map(k => `${k} = ?`).join(", ");
-          const args = keys.filter(k => k !== 'id').map(k => data[k]);
-          args.push(id);
-          await this.client.execute({
-            sql: `UPDATE users SET ${updates}, updated_at = (datetime('now')) WHERE id = ?`,
+      if (this.CORE_TABLES.includes(collection)) {
+        const keys = Object.keys(data);
+        if (collection === "users") {
+          const existing = await this.getDoc("users", id);
+          if (existing) {
+            const updates = keys.filter(k => k !== 'id').map(k => `${k} = ?`).join(", ");
+            const args = keys.filter(k => k !== 'id').map(k => data[k]);
+            args.push(id);
+            await this.client.execute({
+              sql: `UPDATE users SET ${updates}, updated_at = (datetime('now')) WHERE id = ?`,
+              args,
+            });
+          } else {
+            const columns = Object.keys(data).join(", ");
+            const placeholders = Object.keys(data).map(() => "?").join(", ");
+            await this.client.execute({
+              sql: `INSERT INTO users (${columns}) VALUES (${placeholders})`,
+              args: Object.values(data),
+            });
+          }
+          return;
+        }
+
+        const updates = keys.filter(k => k !== 'id').map(k => `${k} = ?`).join(", ");
+        const args = keys.filter(k => k !== 'id').map(k => data[k]);
+        args.push(id);
+        
+        const result = await this.client.execute({
+            sql: `UPDATE ${collection} SET ${updates} WHERE id = ?`,
             args,
-          });
-        } else {
-          const columns = Object.keys(data).join(", ");
-          const placeholders = Object.keys(data).map(() => "?").join(", ");
+        });
+
+        if (result.rowsAffected === 0) {
+            const columns = Object.keys(data).join(", ");
+            const placeholders = Object.keys(data).map(() => "?").join(", ");
+            await this.client.execute({
+                sql: `INSERT INTO ${collection} (${columns}) VALUES (${placeholders})`,
+                args: Object.values(data),
+            });
+        }
+      } else {
+        const jsonStr = JSON.stringify(data);
+        const result = await this.client.execute({
+          sql: `UPDATE ${collection} SET data = ?, updated_at = (datetime('now')) WHERE id = ?`,
+          args: [jsonStr, id]
+        });
+
+        if (result.rowsAffected === 0) {
           await this.client.execute({
-            sql: `INSERT INTO users (${columns}) VALUES (${placeholders})`,
-            args: Object.values(data),
+            sql: `INSERT INTO ${collection} (id, data) VALUES (?, ?)`,
+            args: [id, jsonStr]
           });
         }
-        return;
-      }
-
-      const updates = keys.filter(k => k !== 'id').map(k => `${k} = ?`).join(", ");
-      const args = keys.filter(k => k !== 'id').map(k => data[k]);
-      args.push(id);
-      
-      const result = await this.client.execute({
-          sql: `UPDATE ${collection} SET ${updates} WHERE id = ?`,
-          args,
-      });
-
-      if (result.rowsAffected === 0) {
-          const columns = Object.keys(data).join(", ");
-          const placeholders = Object.keys(data).map(() => "?").join(", ");
-          await this.client.execute({
-              sql: `INSERT INTO ${collection} (${columns}) VALUES (${placeholders})`,
-              args: Object.values(data),
-          });
       }
     } catch (err: any) {
       console.warn(`[TURSO] Error in setDoc for ${collection}, using Memory fallback:`, err.message);
@@ -415,15 +457,23 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
       await this.initPromise;
       if (this.hasError) return this.fallbackMemory.updateDoc(collection, id, data);
 
-      const keys = Object.keys(data);
-      const updates = keys.map(k => `${k} = ?`).join(", ");
-      const args = keys.map(k => data[k]);
-      args.push(id);
+      await this.ensureTable(collection);
 
-      await this.client.execute({
-        sql: `UPDATE ${collection} SET ${updates}, updated_at = (datetime('now')) WHERE id = ?`,
-        args,
-      });
+      if (this.CORE_TABLES.includes(collection)) {
+        const keys = Object.keys(data);
+        const updates = keys.map(k => `${k} = ?`).join(", ");
+        const args = keys.map(k => data[k]);
+        args.push(id);
+
+        await this.client.execute({
+          sql: `UPDATE ${collection} SET ${updates}, updated_at = (datetime('now')) WHERE id = ?`,
+          args,
+        });
+      } else {
+        const existing = await this.getDoc(collection, id) || {};
+        const merged = { ...existing, ...data, id };
+        await this.setDoc(collection, id, merged);
+      }
     } catch (err: any) {
       console.warn(`[TURSO] Error in updateDoc for ${collection}, using Memory fallback:`, err.message);
       return this.fallbackMemory.updateDoc(collection, id, data);
@@ -435,6 +485,8 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
     try {
       await this.initPromise;
       if (this.hasError) return this.fallbackMemory.deleteDoc(collection, id);
+
+      await this.ensureTable(collection);
 
       await this.client.execute({
         sql: `DELETE FROM ${collection} WHERE id = ?`,
@@ -452,8 +504,20 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
       await this.initPromise;
       if (this.hasError) return this.fallbackMemory.getDocs(collection);
 
+      await this.ensureTable(collection);
+
       const result = await this.client.execute(`SELECT * FROM ${collection} ORDER BY created_at DESC`);
-      return result.rows.map(row => this.rowToObject(row));
+      if (this.CORE_TABLES.includes(collection)) {
+        return result.rows.map(row => this.rowToObject(row));
+      }
+
+      return result.rows.map((row: any) => {
+        let dataObj = {};
+        try {
+          if (row.data) dataObj = typeof row.data === "string" ? JSON.parse(row.data) : row.data;
+        } catch (e) {}
+        return { id: row.id, ...dataObj };
+      });
     } catch (err: any) {
       console.warn(`[TURSO] Error in getDocs for ${collection}, using Memory fallback:`, err.message);
       return this.fallbackMemory.getDocs(collection);
@@ -461,8 +525,6 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
   }
 
   private rowToObject(row: any): any {
-    // Convert row array to object based on column names if available
-    // For @libsql/client, row is an object-like with columns as properties
     return { ...row };
   }
 }
