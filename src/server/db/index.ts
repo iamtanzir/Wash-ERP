@@ -23,13 +23,8 @@ export function getDatabase(): DatabaseAdapter {
   // 1. Auto-detection: If no mode is set, check for environment variables
   if (!envDbType) {
     if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN && process.env.TURSO_DATABASE_URL !== "libsql://missing-url.turso.io") {
-      if (process.env.TURSO_DATABASE_URL.includes("wash-erp") || process.env.TURSO_DATABASE_URL.includes("404")) {
-          console.log("[DB] ⚡ Skipping broken Turso configuration, falling back to MemoryAdapter");
-          return new MemoryAdapter();
-      } else {
-          console.log("[DB] ⚡ Auto-detected Turso configuration");
-          return new TursoAdapter();
-      }
+      console.log("[DB] ⚡ Auto-detected Turso configuration");
+      return new TursoAdapter();
     }
     
     if (process.env.FIREBASE_PROJECT_ID || fs.existsSync("./firebase-applet-config.json")) {
