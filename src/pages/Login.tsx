@@ -143,6 +143,25 @@ export default function Login() {
             </button>
           </form>
 
+          {/* Legal Notice & Copyright */}
+          <div className="border border-red-500/30 bg-red-950/30 rounded-xl overflow-hidden text-left p-0">
+            <div className="bg-red-500/20 px-3 py-1.5 border-b border-red-500/20 flex items-center gap-1.5 text-red-300 font-bold text-[10px]">
+              <ShieldAlert size={14} className="shrink-0 text-red-400" />
+              <span>আইনগত সতর্কবার্তা ও কপিরাইট অধিকার (Legal Notice)</span>
+            </div>
+            <div className="p-2.5 space-y-1 text-[10px] text-slate-200 leading-relaxed">
+              <div className="font-bold text-amber-300 text-[10px]">
+                Developer & Owner: <span className="text-white">Tanzir Ahmed</span>
+              </div>
+              <p className="text-slate-200 text-[10px] leading-normal font-medium">
+                এই সাইট, ডিজাইন ও কন্ট্রোল সিস্টেমের কোনো অংশ অনুমতি ছাড়া ক্লোন বা নকল করা সম্পূর্ণ বেআইনি। পাইরেসি করা হলে সাইবার সুরক্ষা আইন ও কপিরাইট আইনের অধীনে আইনি ব্যবস্থা নেয়া হবে।
+              </p>
+              <p className="text-slate-400 text-[9px] italic leading-tight pt-1 border-t border-slate-800/80">
+                Unauthorized cloning or replication will face direct legal action under Cyber Security & Copyright Laws of BD.
+              </p>
+            </div>
+          </div>
+
           {/* Compliance & Branding */}
           <div className="space-y-3 pt-1">
             <div className="p-3 bg-white/5 border border-white/10 rounded-xl flex items-start gap-3 backdrop-blur-sm">
