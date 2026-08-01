@@ -12,6 +12,7 @@ import DataBank from './pages/DataBank';
 import NewERPPlan from './pages/NewERPPlan';
 import CplReport from './pages/CPLReport';
 import HMTOD from './pages/HMTOD';
+import WashMcLoadPlan from './pages/WashMcLoadPlan';
 import Login from './pages/Login';
 import Admin from './pages/Admin';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -32,6 +33,7 @@ export default function App() {
               <Route path="cpl-report" element={<CplReport />} />
               <Route path="daily-update" element={<DailyUpdate />} />
               <Route path="hm-tod" element={<HMTOD />} />
+              <Route path="wash-mc-plan" element={<WashMcLoadPlan />} />
               <Route path="close-order" element={<CloseOrder />} />
               <Route path="data-bank" element={<DataBank />} />
               

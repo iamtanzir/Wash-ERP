@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, CheckCircle, Package, TrendingUp, Calendar, ShieldCheck, Tag, Cpu, FileText } from "lucide-react";
+import { Plus, CheckCircle, Package, TrendingUp, Calendar, ShieldCheck, Tag, Cpu, FileText, WashingMachine } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { formatNumber, formatDate } from "../lib/utils";
 
@@ -168,27 +169,37 @@ export default function ErpManufacturing() {
   return (
     <div className="space-y-6">
       {/* Tab Switcher */}
-      <div className="flex border-b border-slate-200">
-        <button
-          onClick={() => setActiveTab("bom")}
-          className={`px-4 py-2.5 font-bold text-xs uppercase tracking-wider border-b-2 transition-colors ${
-            activeTab === "bom"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
+      <div className="flex flex-wrap items-center justify-between border-b border-slate-200 gap-2">
+        <div className="flex">
+          <button
+            onClick={() => setActiveTab("bom")}
+            className={`px-4 py-2.5 font-bold text-xs uppercase tracking-wider border-b-2 transition-colors ${
+              activeTab === "bom"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            Bill of Materials (BOM)
+          </button>
+          <button
+            onClick={() => setActiveTab("wo")}
+            className={`px-4 py-2.5 font-bold text-xs uppercase tracking-wider border-b-2 transition-colors ${
+              activeTab === "wo"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            Work Orders (Production)
+          </button>
+        </div>
+
+        <Link
+          to="/wash-mc-plan"
+          className="px-3.5 py-1.5 mb-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg border border-indigo-200 transition-colors flex items-center gap-1.5 shadow-xs"
         >
-          Bill of Materials (BOM)
-        </button>
-        <button
-          onClick={() => setActiveTab("wo")}
-          className={`px-4 py-2.5 font-bold text-xs uppercase tracking-wider border-b-2 transition-colors ${
-            activeTab === "wo"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
-        >
-          Work Orders (Production)
-        </button>
+          <WashingMachine size={15} />
+          <span>Open Wash M/C Load Plan (Wet Process)</span>
+        </Link>
       </div>
 
       {activeTab === "bom" ? (

@@ -31,6 +31,7 @@ const navItems = [
   { name: "WASH DASHBOARD", href: "/", icon: LayoutDashboard, desc: "Overview, charts and live metrics" },
   { name: "NEXT ERP PLAN", href: "/new-plan", icon: PlusCircle, desc: "Import and add new ERP plans" },
   { name: "GARMENTS R&D LOG", href: "/daily-update", icon: ClipboardCheck, desc: "Log daily received and delivered quantities" },
+  { name: "WASH M/C LOAD PLAN", href: "/wash-mc-plan", icon: WashingMachine, desc: "Wet process garments washing machine load plan & recipes" },
   { name: "CPL FABRIC REPORT", href: "/cpl-report", icon: FileText, desc: "Fabrics status and CPL calculations" },
   { name: "H&M SHIP RISK", href: "/hm-tod", icon: ClipboardCheck, desc: "H&M ship risk & target order delivery" },
   { name: "CLOSE ERP ORDER", href: "/close-order", icon: Lock, desc: "Archive completed ERP orders" },
@@ -83,6 +84,7 @@ export default function Layout() {
       case '/new-plan': return 'NEXT ERP Plan';
       case '/cpl-report': return 'CPL Report (Fabrics)';
       case '/daily-update': return 'Daily Update';
+      case '/wash-mc-plan': return 'Garments Wash M/C Load Plan (Wet Process)';
       case '/hm-tod': return 'H&M Target Order Delivery';
       case '/close-order': return 'Close ERP Orders';
       case '/data-bank': return 'All Buyer Data';
