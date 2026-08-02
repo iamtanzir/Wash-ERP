@@ -39,7 +39,8 @@ export default function Login() {
       } else if (!res.ok) {
         const textError = await res.text();
         console.error("Server Error Response:", textError);
-        throw new Error(`Server Error (${res.status}). This usually means Turso credentials are not set in Vercel environment variables.`);
+        const cleanMsg = textError.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').substring(0, 150).trim();
+        throw new Error(`Server Error (${res.status}): ${cleanMsg || "No response details."}`);
       }
 
       if (res.ok) {
