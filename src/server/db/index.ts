@@ -43,8 +43,8 @@ export function getDatabase(): DatabaseAdapter {
     }
     
     if (process.env.VERCEL) {
-      console.log("[DB] Vercel environment detected without DB credentials, defaulting to MemoryAdapter");
-      return new MemoryAdapter();
+      console.log("[DB] Vercel environment detected, defaulting to TursoAdapter for persistent database connection");
+      return new TursoAdapter();
     }
 
     console.log("[DB] No database environment variables found, defaulting to SQLite or Memory");

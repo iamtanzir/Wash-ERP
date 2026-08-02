@@ -384,7 +384,7 @@ async function startServer() {
         // Error feedback will be provided in the Login page when users try to interact.
     }
 
-    if (process.env.NODE_ENV !== "production") {
+    if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
         const vite = await createViteServer({
             server: { middlewareMode: true },
             appType: "spa",
