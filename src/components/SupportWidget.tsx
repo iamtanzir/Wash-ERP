@@ -32,9 +32,10 @@ export default function SupportWidget() {
 
       {/* Support Pop-up Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-md w-full p-6 relative space-y-5">
-            {/* Close Button */}
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 overflow-y-auto p-4 sm:p-6 animate-in fade-in duration-200">
+          <div className="flex min-h-full items-center justify-center">
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-md w-full p-6 relative space-y-5 my-8">
+              {/* Close Button */}
             <button
               onClick={() => setIsOpen(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-colors"
@@ -90,6 +91,7 @@ export default function SupportWidget() {
               >
                 Close / বন্ধ করুন
               </button>
+            </div>
             </div>
           </div>
         </div>

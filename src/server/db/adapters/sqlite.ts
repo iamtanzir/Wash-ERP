@@ -11,7 +11,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
   private CORE_TABLES = ['users', 'erp_orders', 'daily_logs', 'buyer_data_bank', 'audit_logs'];
 
   constructor() {
-    const filename = process.env.SQLITE_FILENAME || "wash_erp.sqlite";
+    const filename = process.env.SQLITE_FILENAME || "erp_database.sqlite";
     const dbPath = path.resolve(process.cwd(), filename);
     
     this.db = knex({

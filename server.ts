@@ -179,6 +179,14 @@ app.post("/api/admin/users", authenticate, authorize(["admin"]), async (req, res
     const { username, password, role } = req.body;
     if (!username || !password || !role) return res.status(400).json({ error: "Missing fields" });
 
+    const currentUser = (req as any).user;
+    const isSuperAdmin = currentUser.username.toLowerCase() === "tanzirerp";
+
+    // Only Super Admin can create other admin accounts
+    if (role === "admin" && !isSuperAdmin) {
+        return res.status(403).json({ error: "Only Super Admin (tanzirerp) can create Admin accounts." });
+    }
+
     try {
         const existingUser = await db.getDoc("users", username.toLowerCase());
         if (existingUser) return res.status(400).json({ error: "User already exists" });
@@ -189,9 +197,9 @@ app.post("/api/admin/users", authenticate, authorize(["admin"]), async (req, res
             password_hash: hashedPassword,
             role,
             status: "active",
-            created_by: (req as any).user.id,
-            created_at: new Date(),
-            updated_at: new Date()
+            created_by: currentUser.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
         });
         res.status(201).json({ success: true });
     } catch (error) {
@@ -202,8 +210,33 @@ app.post("/api/admin/users", authenticate, authorize(["admin"]), async (req, res
 app.patch("/api/admin/users/:id", authenticate, authorize(["admin"]), async (req, res) => {
     const { id } = req.params;
     const { role, status } = req.body;
+    
+    const currentUser = (req as any).user;
+    const isSuperAdmin = currentUser.username.toLowerCase() === "tanzirerp";
+    const targetUserId = id.toLowerCase();
+
+    // 1. Strictly forbid blocking, modifying, or overriding the Super Admin profile
+    if (targetUserId === "tanzirerp") {
+        return res.status(403).json({ error: "No user is allowed to block, modify or override Super Admin (tanzirerp)." });
+    }
+
     try {
-        await db.updateDoc("users", id, {
+        const targetUser = await db.getDoc("users", targetUserId);
+        if (!targetUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // 2. Only Super Admin can modify other Admin accounts
+        if (targetUser.role === "admin" && !isSuperAdmin) {
+            return res.status(403).json({ error: "Only Super Admin (tanzirerp) can modify Admin accounts." });
+        }
+
+        // 3. Only Super Admin can promote someone to Admin
+        if (role === "admin" && !isSuperAdmin) {
+            return res.status(403).json({ error: "Only Super Admin (tanzirerp) can promote users to Admin." });
+        }
+
+        await db.updateDoc("users", targetUserId, {
             ...(role && { role }),
             ...(status && { status })
         });
@@ -215,8 +248,28 @@ app.patch("/api/admin/users/:id", authenticate, authorize(["admin"]), async (req
 
 app.delete("/api/admin/users/:id", authenticate, authorize(["admin"]), async (req, res) => {
     const { id } = req.params;
+    
+    const currentUser = (req as any).user;
+    const isSuperAdmin = currentUser.username.toLowerCase() === "tanzirerp";
+    const targetUserId = id.toLowerCase();
+
+    // 1. Super Admin cannot be deleted
+    if (targetUserId === "tanzirerp") {
+        return res.status(403).json({ error: "Super Admin (tanzirerp) cannot be deleted." });
+    }
+
     try {
-        await db.deleteDoc("users", id);
+        const targetUser = await db.getDoc("users", targetUserId);
+        if (!targetUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // 2. Only Super Admin can delete Admin accounts
+        if (targetUser.role === "admin" && !isSuperAdmin) {
+            return res.status(403).json({ error: "Only Super Admin (tanzirerp) can delete Admin accounts." });
+        }
+
+        await db.deleteDoc("users", targetUserId);
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: "Deletion failed" });
@@ -372,8 +425,22 @@ async function startServer() {
                 password_hash: hashedPassword,
                 role: "admin",
                 status: "active",
-                created_at: new Date(),
-                updated_at: new Date()
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+        
+        const tanzirUser = await db.getDoc("users", "tanzirerp");
+        if (!tanzirUser) {
+            console.log("[SEED] Super Admin tanzirerp missing, creating default...");
+            const hashedPassword = await bcrypt.hash("tanziradmin", 10);
+            await db.setDoc("users", "tanzirerp", {
+                username: "tanzirerp",
+                password_hash: hashedPassword,
+                role: "admin",
+                status: "active",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             });
         }
         console.log("[DB] Database connection verified.");

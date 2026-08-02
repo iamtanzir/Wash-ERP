@@ -13,7 +13,8 @@ interface UserRecord {
 }
 
 export default function Admin() {
-  const { user, isAdmin } = useAuth();
+  const { user: currentUser, isAdmin } = useAuth();
+  const isSuperAdmin = currentUser?.username?.toLowerCase() === "tanzirerp";
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -183,63 +184,104 @@ export default function Admin() {
                   <td colSpan={4} className="px-6 py-12 text-center text-slate-400 font-medium italic">No users registered yet</td>
                 </tr>
               ) : (
-                users.map(user => (
-                  <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold uppercase">
-                          {user.username.charAt(0)}
+                users.map(user => {
+                  const isRowSuperAdmin = user.username.toLowerCase() === "tanzirerp";
+                  const canModifyRow = isAdmin && !isRowSuperAdmin && (isSuperAdmin || user.role !== "admin");
+                  
+                  return (
+                    <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-9 h-9 rounded-full flex items-center justify-center font-bold uppercase",
+                            isRowSuperAdmin ? "bg-amber-100 text-amber-800 border-2 border-amber-300" : "bg-slate-200 text-slate-600"
+                          )}>
+                            {user.username.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-bold text-slate-900 uppercase tracking-tight">{user.username}</p>
+                              {isRowSuperAdmin && (
+                                <span className="bg-amber-100 text-amber-800 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider border border-amber-200">
+                                  Super Admin 👑
+                                </span>
+                              )}
+                              {user.username.toLowerCase() === "admin" && (
+                                <span className="bg-slate-100 text-slate-800 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider border border-slate-200">
+                                  System Admin
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-bold">UID: {user.id}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-slate-900 uppercase tracking-tight">{user.username}</p>
-                          <p className="text-[10px] text-slate-400 font-bold">UID: {user.id}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <select 
-                        value={user.role}
-                        disabled={!isAdmin}
-                        onChange={(e) => handleUpdateRole(user.id, e.target.value)}
-                        className={cn(
-                          "text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border-2 transition-all disabled:opacity-80",
-                          user.role === 'admin' ? "bg-red-50 text-red-700 border-red-200" :
-                          user.role === 'editor' ? "bg-amber-50 text-amber-700 border-amber-200" :
-                          user.role === 'operator' ? "bg-purple-50 text-purple-700 border-purple-200" :
-                          "bg-blue-50 text-blue-700 border-blue-200"
+                      </td>
+                      <td className="px-6 py-4">
+                        {canModifyRow ? (
+                          <select 
+                            value={user.role}
+                            onChange={(e) => handleUpdateRole(user.id, e.target.value)}
+                            className={cn(
+                              "text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border-2 transition-all cursor-pointer hover:shadow-sm",
+                              user.role === 'admin' ? "bg-red-50 text-red-700 border-red-200" :
+                              user.role === 'editor' ? "bg-amber-50 text-amber-700 border-amber-200" :
+                              user.role === 'operator' ? "bg-purple-50 text-purple-700 border-purple-200" :
+                              "bg-blue-50 text-blue-700 border-blue-200"
+                            )}
+                          >
+                            {isSuperAdmin && <option value="admin">Admin</option>}
+                            {user.role === 'admin' && !isSuperAdmin && <option value="admin">Admin</option>}
+                            <option value="editor">Editor</option>
+                            <option value="operator">Operator</option>
+                            <option value="viewer">Viewer</option>
+                          </select>
+                        ) : (
+                          <span className={cn(
+                            "text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest border-2 inline-block opacity-80",
+                            user.role === 'admin' ? "bg-red-50 text-red-700 border-red-200" :
+                            user.role === 'editor' ? "bg-amber-50 text-amber-700 border-amber-200" :
+                            user.role === 'operator' ? "bg-purple-50 text-purple-700 border-purple-200" :
+                            "bg-blue-50 text-blue-700 border-blue-200"
+                          )}>
+                            {user.role}
+                          </span>
                         )}
-                      >
-                        <option value="admin">Admin</option>
-                        <option value="editor">Editor</option>
-                        <option value="operator">Operator</option>
-                        <option value="viewer">Viewer</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-4">
-                        <button 
-                            disabled={!isAdmin}
-                            onClick={() => handleToggleStatus(user.id, user.status)}
-                            className="flex items-center group disabled:cursor-not-allowed"
-                        >
-                            <span className={cn(
-                                "w-2 h-2 rounded-full inline-block mr-2 group-hover:scale-125 transition-transform",
-                                user.status === 'active' ? "bg-green-500" : "bg-slate-300"
-                            )} />
-                            <span className="text-xs font-bold text-slate-500 uppercase group-hover:text-slate-900">{user.status}</span>
-                        </button>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {isAdmin && (
-                        <button 
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="text-slate-300 hover:text-red-600 transition-colors p-2"
-                        >
-                          <UserMinus size={18} />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="px-6 py-4">
+                        {canModifyRow ? (
+                          <button 
+                              onClick={() => handleToggleStatus(user.id, user.status)}
+                              className="flex items-center group cursor-pointer"
+                          >
+                              <span className={cn(
+                                  "w-2 h-2 rounded-full inline-block mr-2 group-hover:scale-125 transition-transform",
+                                  user.status === 'active' ? "bg-green-500" : "bg-slate-300"
+                              )} />
+                              <span className="text-xs font-bold text-slate-500 uppercase group-hover:text-slate-900">{user.status}</span>
+                          </button>
+                        ) : (
+                          <div className="flex items-center opacity-80">
+                              <span className={cn(
+                                  "w-2 h-2 rounded-full inline-block mr-2",
+                                  user.status === 'active' ? "bg-green-500" : "bg-slate-300"
+                              )} />
+                              <span className="text-xs font-bold text-slate-500 uppercase">{user.status}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        {canModifyRow && (
+                          <button 
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="text-slate-300 hover:text-red-600 transition-colors p-2"
+                          >
+                            <UserMinus size={18} />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -247,9 +289,10 @@ export default function Admin() {
       </div>
 
       {showAddModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 space-y-6">
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Whitelist New User</h2>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 overflow-y-auto p-4 sm:p-6">
+          <div className="flex min-h-full items-center justify-center">
+            <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 space-y-6 my-8">
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Whitelist New User</h2>
             
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div className="space-y-2">
@@ -289,11 +332,16 @@ export default function Admin() {
                   onChange={e => setNewUser({...newUser, role: e.target.value as any})}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none font-bold"
                 >
-                  <option value="admin">Administrator</option>
+                  {isSuperAdmin && <option value="admin">Administrator (Full Access)</option>}
                   <option value="editor">Editor (Upload + Edit)</option>
                   <option value="operator">Operator (Daily Logs)</option>
                   <option value="viewer">Viewer (Read Only)</option>
                 </select>
+                {!isSuperAdmin && (
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    * Only the Super Admin (<strong>tanzirerp</strong>) can whitelist another Administrator.
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg text-[10px] text-blue-700 font-medium italic">
@@ -317,6 +365,7 @@ export default function Admin() {
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

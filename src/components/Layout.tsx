@@ -242,9 +242,6 @@ export default function Layout() {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4 shrink-0">
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60 hidden xl:flex items-center gap-1">
-              <Sparkles size={12} /> Open ERP Desk
-            </span>
             <button
               onClick={toggleDarkMode}
               className="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors focus:outline-none"
