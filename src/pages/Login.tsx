@@ -60,12 +60,13 @@ export default function Login() {
   return (
     <>
       <SupportWidget />
-      <div className="fixed inset-0 bg-[#0f172a] flex items-center justify-center p-2 sm:p-4 selection:bg-blue-500/30 font-sans overflow-y-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div className="fixed inset-0 bg-[#0f172a] overflow-y-auto [&::-webkit-scrollbar]:hidden p-4 sm:p-6" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div className="flex min-h-full items-center justify-center">
         <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-[400px] flex flex-col justify-center my-auto min-h-min"
+        className="w-full max-w-[400px] flex flex-col justify-center my-8"
       >
         <div className="px-4 py-4 sm:px-8 space-y-4 sm:space-y-5 transition-all">
           
@@ -189,6 +190,7 @@ export default function Login() {
           </div>
         </div>
       </motion.div>
+      </div>
       </div>
     </>
   );

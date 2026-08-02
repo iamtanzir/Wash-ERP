@@ -47,10 +47,11 @@ export function getDatabase(): DatabaseAdapter {
       return new TursoAdapter();
     }
 
-    console.log("[DB] No database environment variables found, defaulting to SQLite or Memory");
+    console.log("[DB] No database environment variables found, defaulting to SQLiteAdapter for persistent local storage");
     try {
       return new SQLiteAdapter();
-    } catch {
+    } catch (e: any) {
+      console.error("[DB] Failed to initialize SQLiteAdapter, falling back to MemoryAdapter:", e.message);
       return new MemoryAdapter();
     }
   }

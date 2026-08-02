@@ -370,9 +370,12 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
         if (row.data) dataObj = typeof row.data === "string" ? JSON.parse(row.data) : row.data;
       } catch (e) {}
       return { id: row.id, ...dataObj };
-    } catch (err) {
-      console.warn(`[TURSO] Error in getDoc for ${collection}, using Memory fallback:`, (err as any)?.message);
-      return this.fallbackMemory.getDoc(collection, id);
+    } catch (err: any) {
+      if (this.hasError) {
+        return this.fallbackMemory.getDoc(collection, id);
+      }
+      console.error(`[TURSO] Error in getDoc for ${collection}:`, err.message);
+      throw err;
     }
   }
 
@@ -440,8 +443,11 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
         }
       }
     } catch (err: any) {
-      console.warn(`[TURSO] Error in setDoc for ${collection}, using Memory fallback:`, err.message);
-      return this.fallbackMemory.setDoc(collection, id, data);
+      if (this.hasError) {
+        return this.fallbackMemory.setDoc(collection, id, data);
+      }
+      console.error(`[TURSO] Error in setDoc for ${collection}:`, err.message);
+      throw err;
     }
   }
 
@@ -475,8 +481,11 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
         await this.setDoc(collection, id, merged);
       }
     } catch (err: any) {
-      console.warn(`[TURSO] Error in updateDoc for ${collection}, using Memory fallback:`, err.message);
-      return this.fallbackMemory.updateDoc(collection, id, data);
+      if (this.hasError) {
+        return this.fallbackMemory.updateDoc(collection, id, data);
+      }
+      console.error(`[TURSO] Error in updateDoc for ${collection}:`, err.message);
+      throw err;
     }
   }
 
@@ -493,8 +502,11 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
         args: [id],
       });
     } catch (err: any) {
-      console.warn(`[TURSO] Error in deleteDoc for ${collection}, using Memory fallback:`, err.message);
-      return this.fallbackMemory.deleteDoc(collection, id);
+      if (this.hasError) {
+        return this.fallbackMemory.deleteDoc(collection, id);
+      }
+      console.error(`[TURSO] Error in deleteDoc for ${collection}:`, err.message);
+      throw err;
     }
   }
 
@@ -519,8 +531,11 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
         return { id: row.id, ...dataObj };
       });
     } catch (err: any) {
-      console.warn(`[TURSO] Error in getDocs for ${collection}, using Memory fallback:`, err.message);
-      return this.fallbackMemory.getDocs(collection);
+      if (this.hasError) {
+        return this.fallbackMemory.getDocs(collection);
+      }
+      console.error(`[TURSO] Error in getDocs for ${collection}:`, err.message);
+      throw err;
     }
   }
 
