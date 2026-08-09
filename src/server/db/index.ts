@@ -1,12 +1,3 @@
-import { PocketBaseAdapter } from "./adapters/pocketbase.js";
-import { SupabaseAdapter } from "./adapters/supabase.js";
-import { FirebaseAdapter } from "./adapters/firebase.js";
-import { SQLiteAdapter } from "./adapters/sqlite.js";
-import { TursoAdapter } from "./adapters/turso.js";
-import { CockroachDBAdapter } from "./adapters/cockroach.js";
-import { PolarDBAdapter } from "./adapters/polardb.js";
-import { XataAdapter } from "./adapters/xata.js";
-import { MemoryAdapter } from "./adapters/memory.js";
 import fs from "node:fs";
 
 export interface DatabaseAdapter {
@@ -18,81 +9,167 @@ export interface DatabaseAdapter {
   getDocs(collection: string, filters?: any[]): Promise<any[]>;
 }
 
-export function getDatabase(): DatabaseAdapter {
-  const envDbType = process.env.DATABASE_MODE || process.env.DB_TYPE;
-  
-  // 1. Auto-detection: If no mode is set, check for environment variables
-  if (!envDbType) {
-    if (process.env.POLARDB_DATABASE_URL) {
-      console.log("[DB] ⚡ Auto-detected PolarDB PostgreSQL (Sequelize) configuration");
-      return new PolarDBAdapter();
-    }
+class LazyDatabaseAdapter implements DatabaseAdapter {
+  private adapterPromise: Promise<DatabaseAdapter>;
+  private resolvedAdapter: DatabaseAdapter | null = null;
 
-    if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN && process.env.TURSO_DATABASE_URL !== "libsql://missing-url.turso.io") {
-      console.log("[DB] ⚡ Auto-detected Turso configuration");
-      return new TursoAdapter();
-    }
-    
-    if (process.env.FIREBASE_PROJECT_ID || fs.existsSync("./firebase-applet-config.json")) {
-       console.log("[DB] ⚡ Auto-detected Firebase configuration");
-       return new FirebaseAdapter();
-    }
-    
-    if (process.env.POCKETBASE_URL) {
-      console.log("[DB] ⚡ Auto-detected PocketBase configuration");
-      return new PocketBaseAdapter();
-    }
-
-    if (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.log("[DB] ⚡ Auto-detected Supabase configuration");
-      return new SupabaseAdapter();
-    }
-    
-    if (process.env.VERCEL) {
-      console.log("[DB] Vercel environment detected, defaulting to TursoAdapter for persistent database connection");
-      return new TursoAdapter();
-    }
-
-    console.log("[DB] No database environment variables found, defaulting to SQLiteAdapter for persistent local storage");
-    try {
-      return new SQLiteAdapter();
-    } catch (e: any) {
-      console.error("[DB] Failed to initialize SQLiteAdapter, falling back to MemoryAdapter:", e.message);
-      return new MemoryAdapter();
-    }
+  constructor() {
+    this.adapterPromise = this.loadAdapter();
+    // Safely catch any adapter loading failure to prevent Unhandled Promise Rejections
+    this.adapterPromise.catch((err) => {
+      console.error("[DB] 🚨 Critical error lazy-loading database adapter:", err.message);
+    });
   }
 
-  const dbType = envDbType.toLowerCase();
-  console.log(`[DB] Using Explicit Database Mode: "${dbType}"`);
+  private async loadAdapter(): Promise<DatabaseAdapter> {
+    const envDbType = process.env.DATABASE_MODE || process.env.DB_TYPE;
+    let dbType = "";
 
-  switch (dbType) {
-    case "polardb":
-    case "postgres":
-    case "sequelize":
-      return new PolarDBAdapter();
-    case "turso":
-      return new TursoAdapter();
-    case "cockroach":
-    case "cockroachdb":
-      return new CockroachDBAdapter();
-    case "xata":
-      return new XataAdapter();
-    case "pocketbase":
-      return new PocketBaseAdapter();
-    case "supabase":
-      return new SupabaseAdapter();
-    case "firebase":
-      return new FirebaseAdapter();
-    case "sqlite":
-      try {
-        return new SQLiteAdapter();
-      } catch {
-        return new MemoryAdapter();
+    if (!envDbType) {
+      if (process.env.POLARDB_DATABASE_URL) {
+        dbType = "polardb";
+      } else if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN && process.env.TURSO_DATABASE_URL !== "libsql://missing-url.turso.io") {
+        dbType = "turso";
+      } else if (process.env.FIREBASE_PROJECT_ID || fs.existsSync("./firebase-applet-config.json")) {
+        dbType = "firebase";
+      } else if (process.env.POCKETBASE_URL) {
+        dbType = "pocketbase";
+      } else if (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        dbType = "supabase";
+      } else if (process.env.VERCEL) {
+        dbType = "turso";
+      } else {
+        dbType = "sqlite";
       }
-    case "memory":
+    } else {
+      dbType = envDbType.toLowerCase();
+    }
+
+    console.log(`[DB] Lazy-initializing Database Mode: "${dbType}"`);
+
+    try {
+      switch (dbType) {
+        case "polardb":
+        case "postgres":
+        case "sequelize": {
+          const { PolarDBAdapter } = await import("./adapters/polardb.js");
+          return new PolarDBAdapter();
+        }
+        case "turso": {
+          const { TursoAdapter } = await import("./adapters/turso.js");
+          return new TursoAdapter();
+        }
+        case "cockroach":
+        case "cockroachdb": {
+          const { CockroachDBAdapter } = await import("./adapters/cockroach.js");
+          return new CockroachDBAdapter();
+        }
+        case "xata": {
+          const { XataAdapter } = await import("./adapters/xata.js");
+          return new XataAdapter();
+        }
+        case "pocketbase": {
+          const { PocketBaseAdapter } = await import("./adapters/pocketbase.js");
+          return new PocketBaseAdapter();
+        }
+        case "supabase": {
+          const { SupabaseAdapter } = await import("./adapters/supabase.js");
+          return new SupabaseAdapter();
+        }
+        case "firebase": {
+          const { FirebaseAdapter } = await import("./adapters/firebase.js");
+          return new FirebaseAdapter();
+        }
+        case "sqlite": {
+          const { SQLiteAdapter } = await import("./adapters/sqlite.js");
+          return new SQLiteAdapter();
+        }
+        case "memory": {
+          const { MemoryAdapter } = await import("./adapters/memory.js");
+          return new MemoryAdapter();
+        }
+        default: {
+          console.warn(`[DB] Unsupported database mode "${dbType}", falling back to MemoryAdapter`);
+          const { MemoryAdapter } = await import("./adapters/memory.js");
+          return new MemoryAdapter();
+        }
+      }
+    } catch (loadErr: any) {
+      console.error(`[DB] ❌ Failed to load adapter for "${dbType}":`, loadErr.message);
+      console.log("[DB] 💡 Falling back to MemoryAdapter for seamless execution");
+      const { MemoryAdapter } = await import("./adapters/memory.js");
       return new MemoryAdapter();
-    default:
-      console.warn(`[DB] Unsupported database mode "${dbType}", falling back to MemoryAdapter`);
-      return new MemoryAdapter();
+    }
   }
+
+  private async getAdapter(): Promise<DatabaseAdapter> {
+    if (!this.resolvedAdapter) {
+      this.resolvedAdapter = await this.adapterPromise;
+    }
+    return this.resolvedAdapter;
+  }
+
+  async getDoc(collection: string, id: string): Promise<any> {
+    try {
+      const adapter = await this.getAdapter();
+      return await adapter.getDoc(collection, id);
+    } catch (err: any) {
+      console.error(`[DB Adapter Error] getDoc failed: ${err.message}`);
+      throw err;
+    }
+  }
+
+  async setDoc(collection: string, id: string, data: any): Promise<void> {
+    try {
+      const adapter = await this.getAdapter();
+      await adapter.setDoc(collection, id, data);
+    } catch (err: any) {
+      console.error(`[DB Adapter Error] setDoc failed: ${err.message}`);
+      throw err;
+    }
+  }
+
+  async addDoc(collection: string, data: any): Promise<string> {
+    try {
+      const adapter = await this.getAdapter();
+      return await adapter.addDoc(collection, data);
+    } catch (err: any) {
+      console.error(`[DB Adapter Error] addDoc failed: ${err.message}`);
+      throw err;
+    }
+  }
+
+  async updateDoc(collection: string, id: string, data: any): Promise<void> {
+    try {
+      const adapter = await this.getAdapter();
+      await adapter.updateDoc(collection, id, data);
+    } catch (err: any) {
+      console.error(`[DB Adapter Error] updateDoc failed: ${err.message}`);
+      throw err;
+    }
+  }
+
+  async deleteDoc(collection: string, id: string): Promise<void> {
+    try {
+      const adapter = await this.getAdapter();
+      await adapter.deleteDoc(collection, id);
+    } catch (err: any) {
+      console.error(`[DB Adapter Error] deleteDoc failed: ${err.message}`);
+      throw err;
+    }
+  }
+
+  async getDocs(collection: string, filters?: any[]): Promise<any[]> {
+    try {
+      const adapter = await this.getAdapter();
+      return await adapter.getDocs(collection, filters);
+    } catch (err: any) {
+      console.error(`[DB Adapter Error] getDocs failed: ${err.message}`);
+      throw err;
+    }
+  }
+}
+
+export function getDatabase(): DatabaseAdapter {
+  return new LazyDatabaseAdapter();
 }
