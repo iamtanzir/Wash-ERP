@@ -422,6 +422,14 @@ export default function WashMcLoadPlan() {
                 <span>New Wash M/C Load</span>
               </button>
             )}
+            <a
+              href="/Wash_Mc_Load_Plan_Template.xlsx"
+              download="Wash_Mc_Load_Plan_Template.xlsx"
+              className="bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white text-xs font-bold px-3 py-2.5 rounded-xl transition-all flex items-center gap-2 inline-flex"
+            >
+              <FileSpreadsheet size={15} />
+              <span>M/C Plan Template</span>
+            </a>
             <button
               onClick={() => setIsMachineModalOpen(true)}
               className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-2.5 rounded-xl border border-slate-700 transition-all flex items-center gap-2"
