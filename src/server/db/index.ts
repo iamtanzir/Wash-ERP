@@ -1,4 +1,13 @@
 import fs from "node:fs";
+import { PolarDBAdapter } from "./adapters/polardb.js";
+import { TursoAdapter } from "./adapters/turso.js";
+import { CockroachDBAdapter } from "./adapters/cockroach.js";
+import { XataAdapter } from "./adapters/xata.js";
+import { PocketBaseAdapter } from "./adapters/pocketbase.js";
+import { SupabaseAdapter } from "./adapters/supabase.js";
+import { FirebaseAdapter } from "./adapters/firebase.js";
+import { SQLiteAdapter } from "./adapters/sqlite.js";
+import { MemoryAdapter } from "./adapters/memory.js";
 
 export interface DatabaseAdapter {
   getDoc(collection: string, id: string): Promise<any>;
@@ -9,19 +18,14 @@ export interface DatabaseAdapter {
   getDocs(collection: string, filters?: any[]): Promise<any[]>;
 }
 
-class LazyDatabaseAdapter implements DatabaseAdapter {
-  private adapterPromise: Promise<DatabaseAdapter>;
-  private resolvedAdapter: DatabaseAdapter | null = null;
+class StaticDatabaseAdapter implements DatabaseAdapter {
+  private adapter: DatabaseAdapter;
 
   constructor() {
-    this.adapterPromise = this.loadAdapter();
-    // Safely catch any adapter loading failure to prevent Unhandled Promise Rejections
-    this.adapterPromise.catch((err) => {
-      console.error("[DB] 🚨 Critical error lazy-loading database adapter:", err.message);
-    });
+    this.adapter = this.loadAdapter();
   }
 
-  private async loadAdapter(): Promise<DatabaseAdapter> {
+  private loadAdapter(): DatabaseAdapter {
     const envDbType = process.env.DATABASE_MODE || process.env.DB_TYPE;
     let dbType = "";
 
@@ -37,7 +41,11 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
       } else if (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_SERVICE_ROLE_KEY) {
         dbType = "supabase";
       } else if (process.env.VERCEL) {
-        dbType = "turso";
+        if (process.env.TURSO_DATABASE_URL && process.env.TURSO_DATABASE_URL !== "libsql://missing-url.turso.io") {
+          dbType = "turso";
+        } else {
+          dbType = "memory";
+        }
       } else {
         dbType = "sqlite";
       }
@@ -45,74 +53,45 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
       dbType = envDbType.toLowerCase();
     }
 
-    console.log(`[DB] Lazy-initializing Database Mode: "${dbType}"`);
+    console.log(`[DB] Initializing Database Mode: "${dbType}"`);
 
     try {
       switch (dbType) {
         case "polardb":
         case "postgres":
-        case "sequelize": {
-          const { PolarDBAdapter } = await import("./adapters/polardb.js");
+        case "sequelize":
           return new PolarDBAdapter();
-        }
-        case "turso": {
-          const { TursoAdapter } = await import("./adapters/turso.js");
+        case "turso":
           return new TursoAdapter();
-        }
         case "cockroach":
-        case "cockroachdb": {
-          const { CockroachDBAdapter } = await import("./adapters/cockroach.js");
+        case "cockroachdb":
           return new CockroachDBAdapter();
-        }
-        case "xata": {
-          const { XataAdapter } = await import("./adapters/xata.js");
+        case "xata":
           return new XataAdapter();
-        }
-        case "pocketbase": {
-          const { PocketBaseAdapter } = await import("./adapters/pocketbase.js");
+        case "pocketbase":
           return new PocketBaseAdapter();
-        }
-        case "supabase": {
-          const { SupabaseAdapter } = await import("./adapters/supabase.js");
+        case "supabase":
           return new SupabaseAdapter();
-        }
-        case "firebase": {
-          const { FirebaseAdapter } = await import("./adapters/firebase.js");
+        case "firebase":
           return new FirebaseAdapter();
-        }
-        case "sqlite": {
-          const { SQLiteAdapter } = await import("./adapters/sqlite.js");
+        case "sqlite":
           return new SQLiteAdapter();
-        }
-        case "memory": {
-          const { MemoryAdapter } = await import("./adapters/memory.js");
+        case "memory":
           return new MemoryAdapter();
-        }
-        default: {
+        default:
           console.warn(`[DB] Unsupported database mode "${dbType}", falling back to MemoryAdapter`);
-          const { MemoryAdapter } = await import("./adapters/memory.js");
           return new MemoryAdapter();
-        }
       }
     } catch (loadErr: any) {
-      console.error(`[DB] ❌ Failed to load adapter for "${dbType}":`, loadErr.message);
+      console.error(`[DB] ❌ Failed to instantiate adapter for "${dbType}":`, loadErr.message);
       console.log("[DB] 💡 Falling back to MemoryAdapter for seamless execution");
-      const { MemoryAdapter } = await import("./adapters/memory.js");
       return new MemoryAdapter();
     }
   }
 
-  private async getAdapter(): Promise<DatabaseAdapter> {
-    if (!this.resolvedAdapter) {
-      this.resolvedAdapter = await this.adapterPromise;
-    }
-    return this.resolvedAdapter;
-  }
-
   async getDoc(collection: string, id: string): Promise<any> {
     try {
-      const adapter = await this.getAdapter();
-      return await adapter.getDoc(collection, id);
+      return await this.adapter.getDoc(collection, id);
     } catch (err: any) {
       console.error(`[DB Adapter Error] getDoc failed: ${err.message}`);
       throw err;
@@ -121,8 +100,7 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
 
   async setDoc(collection: string, id: string, data: any): Promise<void> {
     try {
-      const adapter = await this.getAdapter();
-      await adapter.setDoc(collection, id, data);
+      await this.adapter.setDoc(collection, id, data);
     } catch (err: any) {
       console.error(`[DB Adapter Error] setDoc failed: ${err.message}`);
       throw err;
@@ -131,8 +109,7 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
 
   async addDoc(collection: string, data: any): Promise<string> {
     try {
-      const adapter = await this.getAdapter();
-      return await adapter.addDoc(collection, data);
+      return await this.adapter.addDoc(collection, data);
     } catch (err: any) {
       console.error(`[DB Adapter Error] addDoc failed: ${err.message}`);
       throw err;
@@ -141,8 +118,7 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
 
   async updateDoc(collection: string, id: string, data: any): Promise<void> {
     try {
-      const adapter = await this.getAdapter();
-      await adapter.updateDoc(collection, id, data);
+      await this.adapter.updateDoc(collection, id, data);
     } catch (err: any) {
       console.error(`[DB Adapter Error] updateDoc failed: ${err.message}`);
       throw err;
@@ -151,8 +127,7 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
 
   async deleteDoc(collection: string, id: string): Promise<void> {
     try {
-      const adapter = await this.getAdapter();
-      await adapter.deleteDoc(collection, id);
+      await this.adapter.deleteDoc(collection, id);
     } catch (err: any) {
       console.error(`[DB Adapter Error] deleteDoc failed: ${err.message}`);
       throw err;
@@ -161,8 +136,7 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
 
   async getDocs(collection: string, filters?: any[]): Promise<any[]> {
     try {
-      const adapter = await this.getAdapter();
-      return await adapter.getDocs(collection, filters);
+      return await this.adapter.getDocs(collection, filters);
     } catch (err: any) {
       console.error(`[DB Adapter Error] getDocs failed: ${err.message}`);
       throw err;
@@ -171,5 +145,5 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
 }
 
 export function getDatabase(): DatabaseAdapter {
-  return new LazyDatabaseAdapter();
+  return new StaticDatabaseAdapter();
 }
