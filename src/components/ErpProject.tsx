@@ -249,10 +249,10 @@ export default function ErpProject() {
               ) : filteredTasks.length === 0 ? (
                 <div className="text-center py-8 text-slate-400 text-xs italic">No matching projects/tasks recorded.</div>
               ) : (
-                filteredTasks.map((t) => {
+                filteredTasks.map((t, tIdx) => {
                   const percent = Math.min(100, Math.round(((t.logged_hours || 0) / t.allocated_hours) * 100));
                   return (
-                    <div key={t.id} className="p-4 hover:bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors">
+                    <div key={t.id || `task-gantt-${tIdx}`} className="p-4 hover:bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors">
                       <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex items-center flex-wrap gap-2">
                           <span className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-100 px-1.5 py-0.2 rounded font-extrabold uppercase">{t.project}</span>
@@ -485,8 +485,8 @@ export default function ErpProject() {
                   className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold"
                 >
                   <option value="">-- Choose Active Task --</option>
-                  {tasks.filter(t => t.status !== "Completed").map(t => (
-                    <option key={t.id} value={t.id}>[{t.project}] {t.title} ({t.logged_hours}/{t.allocated_hours} hrs)</option>
+                  {tasks.filter(t => t.status !== "Completed").map((t, tIdx) => (
+                    <option key={t.id || `task-opt-${tIdx}`} value={t.id}>[{t.project}] {t.title} ({t.logged_hours}/{t.allocated_hours} hrs)</option>
                   ))}
                 </select>
               </div>
@@ -541,8 +541,8 @@ export default function ErpProject() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-150 text-xs text-slate-700">
-                  {tasks.map((t) => (
-                    <tr key={t.id} className="hover:bg-slate-50/50">
+                  {tasks.map((t, tIdx) => (
+                    <tr key={t.id || `task-row-${tIdx}`} className="hover:bg-slate-50/50">
                       <td className="px-4 py-3 font-semibold text-slate-800 flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px] uppercase">
                           {t.assigned_to.slice(0, 2)}

@@ -1348,23 +1348,96 @@ export default function Dashboard() {
 
       {workspace === "wash" && (
         <>
-          {/* KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-              <p className="text-xs font-bold text-slate-400 uppercase">Active Orders</p>
-              <p className="text-3xl font-light text-slate-800 mt-1">{activeOrders?.length || 0}</p>
+          {/* Enhanced Graphical KPIs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
+            {/* Active Orders Card */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50/30 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Active Orders</p>
+                  <p className="text-3xl font-black text-slate-800 mt-2 tracking-tight">{activeOrders?.length || 0}</p>
+                </div>
+                <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+                  <Package size={20} className="stroke-[2.5]" />
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500 font-medium font-sans">Current batch queue</span>
+                <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-extrabold text-[9px] uppercase">Live Tracking</span>
+              </div>
             </div>
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-              <p className="text-xs font-bold text-slate-400 uppercase">Today's Receive</p>
-              <p className="text-3xl font-light text-blue-600 mt-1">{formatNumber(todayRcv)} <span className="text-sm font-normal text-slate-400">pcs</span></p>
+
+            {/* Today's Receive Card */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-sky-50/30 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Today's Receive</p>
+                  <p className="text-3xl font-black text-slate-800 mt-2 tracking-tight">
+                    {formatNumber(todayRcv)} <span className="text-xs font-bold text-slate-400">pcs</span>
+                  </p>
+                </div>
+                <div className="p-2.5 bg-sky-50 text-sky-600 rounded-xl">
+                  <WashingMachine size={20} className="stroke-[2.5]" />
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500 font-medium font-sans">Floor input stream</span>
+                  <span className="text-sky-600 font-extrabold text-[10px] flex items-center gap-0.5"><TrendingUp size={11} /> Active</span>
+                </div>
+              </div>
             </div>
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-              <p className="text-xs font-bold text-slate-400 uppercase">Today's Delivery</p>
-              <p className="text-3xl font-light text-emerald-600 mt-1">{formatNumber(todayDel)} <span className="text-sm font-normal text-slate-400">pcs</span></p>
+
+            {/* Today's Delivery Card with Graphical Progress Bar */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50/30 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Today's Delivery</p>
+                  <p className="text-3xl font-black text-slate-800 mt-2 tracking-tight">
+                    {formatNumber(todayDel)} <span className="text-xs font-bold text-slate-400">pcs</span>
+                  </p>
+                </div>
+                <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+                  <TrendingUp size={20} className="stroke-[2.5]" />
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500 font-bold font-sans">Target Completeness</span>
+                  <span className="text-emerald-700 font-extrabold text-[10px] font-mono bg-emerald-50 px-1.5 py-0.2 rounded">
+                    {dailyTarget > 0 ? Math.round((todayDel / dailyTarget) * 100) : 0}%
+                  </span>
+                </div>
+                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${dailyTarget > 0 ? Math.min(100, Math.round((todayDel / dailyTarget) * 100)) : 0}%` }}
+                  ></div>
+                </div>
+              </div>
             </div>
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-              <p className="text-xs font-bold text-slate-400 uppercase" title="WIP from recent logs">Pending Balance (WIP)</p>
-              <p className="text-3xl font-light text-orange-600 mt-1">{formatNumber(Math.max(0, totalWip))} <span className="text-sm font-normal text-slate-400">pcs</span></p>
+
+            {/* WIP Pending Balance Card */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-orange-50/30 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest" title="WIP from recent logs">Pending Balance (WIP)</p>
+                  <p className="text-3xl font-black text-slate-800 mt-2 tracking-tight">
+                    {formatNumber(Math.max(0, totalWip))} <span className="text-xs font-bold text-slate-400">pcs</span>
+                  </p>
+                </div>
+                <div className="p-2.5 bg-orange-50 text-orange-600 rounded-xl">
+                  <Layers size={20} className="stroke-[2.5]" />
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500 font-medium font-sans">Total floor workload</span>
+                <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded font-extrabold text-[9px] uppercase">Action Required</span>
+              </div>
             </div>
           </div>
 
