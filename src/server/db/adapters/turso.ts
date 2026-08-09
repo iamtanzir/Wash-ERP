@@ -246,9 +246,8 @@ export class TursoAdapter implements DatabaseAdapter {
       for (const table of tables) {
         try {
           await this.client.execute(table.sql);
-          // console.log(`[TURSO] ✅ Table ensured: ${table.name}`);
         } catch (tableErr: any) {
-          console.error(`[TURSO] ❌ Failed to ensure table "${table.name}":`, tableErr.message);
+          console.warn(`[TURSO] ⚠️ Handled table check note "${table.name}":`, tableErr.message);
           
           const maskedUrl = this.url.replace(/\/\/([^:]+):[^@]+@/, "//$1:****@").replace(/authToken=[^&]+/, "authToken=****");
 
@@ -278,6 +277,7 @@ Possible reasons:
 1. Typo in database or organization name in your TURSO_DATABASE_URL.
 2. You used a Dashboard URL instead of a Connection URL.
 3. Your TURSO_DATABASE_URL format is wrong.
+4. The database was deleted or expired.
 
 Current Attempted URL: ${maskedUrl}
 Expected Format: libsql://your-db-name-your-org-name.turso.io`);
@@ -312,8 +312,7 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
       console.log("[TURSO] ✅ Database schema verified.");
     } catch (err: any) {
       this.hasError = true;
-      console.error("[TURSO] 🚨 Critical Initialization error:", err.message);
-      console.warn("[TURSO] 💡 Falling back to MemoryAdapter for seamless operation.");
+      console.warn("[TURSO] ⚠️ Note: Connection not available, falling back to local or MemoryAdapter:", err.message);
     } finally {
       clearTimeout(timeout);
     }
