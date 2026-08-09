@@ -247,40 +247,38 @@ export class TursoAdapter implements DatabaseAdapter {
         try {
           await this.client.execute(table.sql);
         } catch (tableErr: any) {
-          console.warn(`[TURSO] ⚠️ Handled table check note "${table.name}":`, tableErr.message);
-          
           const maskedUrl = this.url.replace(/\/\/([^:]+):[^@]+@/, "//$1:****@").replace(/authToken=[^&]+/, "authToken=****");
+          const errMsg = tableErr.message || "";
 
-          // Handle Fetch Failed (Network/DNS issues)
-          if (tableErr.message.includes("fetch failed")) {
-            throw new Error(`Database Network Error: Failed to reach the database server. 
-            
-Original error: fetch failed.
-Attempted URL: ${maskedUrl}
+          // Identify if it's a critical connection error
+          const isCriticalConn = 
+            errMsg.includes("404") || 
+            errMsg.includes("fetch failed") || 
+            errMsg.includes("unauthorized") || 
+            errMsg.includes("401") ||
+            errMsg.includes("forbidden") ||
+            errMsg.includes("403");
 
-Possible causes:
-1. The host "${maskedUrl.split('//')[1]?.split('.')[0] || 'your-db'}" does not exist.
-2. There is a network restriction preventing the app from reaching Turso.
-3. Your TURSO_DATABASE_URL is missing the '.turso.io' suffix or organization name.`);
-          }
+          if (isCriticalConn) {
+            let reason = "Database connection could not be established.";
+            if (errMsg.includes("404")) {
+              reason = `DATABASE NOT FOUND / EXPIRED (404). The database endpoint was reached, but it does not exist. 
+👉 Check if the database was deleted or expired in your Turso dashboard.
+👉 Verify if there is a typo in your TURSO_DATABASE_URL environment variable.`;
+            } else if (errMsg.includes("fetch failed")) {
+              reason = `NETWORK / DNS ERROR. Failed to reach the database server.
+👉 Verify if the hostname in your TURSO_DATABASE_URL is spelled correctly and includes '.turso.io'.
+👉 Check if your internet connection or cloud environment permits outbound traffic to Turso.`;
+            } else if (errMsg.includes("401") || errMsg.includes("unauthorized")) {
+              reason = `UNAUTHORIZED ACCESS (401). The auth token provided is invalid or has expired.
+👉 Verify your TURSO_AUTH_TOKEN environment variable in your settings/dashboard.`;
+            }
 
-          // If connection is 404, we'll know here
-          if (tableErr.message.includes("404")) {
-              let host = "unknown";
-              try {
-                const urlObj = new URL(this.url.replace("libsql://", "http://"));
-                host = urlObj.host;
-              } catch (e) {}
-              throw new Error(`Turso Connection Error (404). Host "${host}" was reached but the database was not found. 
-              
-Possible reasons:
-1. Typo in database or organization name in your TURSO_DATABASE_URL.
-2. You used a Dashboard URL instead of a Connection URL.
-3. Your TURSO_DATABASE_URL format is wrong.
-4. The database was deleted or expired.
-
-Current Attempted URL: ${maskedUrl}
-Expected Format: libsql://your-db-name-your-org-name.turso.io`);
+            const connError = new Error(`[CRITICAL DATABASE CONNECTION FAILURE]\nReason: ${reason}\n\nTechnical details: ${errMsg}\nAttempted Endpoint: ${maskedUrl}`);
+            (connError as any).isCriticalConnectionError = true;
+            throw connError;
+          } else {
+            console.warn(`[TURSO] ⚠️ Handled table check note for "${table.name}":`, errMsg);
           }
         }
       }
@@ -312,7 +310,14 @@ Expected Format: libsql://your-db-name-your-org-name.turso.io`);
       console.log("[TURSO] ✅ Database schema verified.");
     } catch (err: any) {
       this.hasError = true;
-      console.warn("[TURSO] ⚠️ Note: Connection not available, falling back to local or MemoryAdapter:", err.message);
+      if (err.isCriticalConnectionError) {
+        console.error("\n==========================================================================");
+        console.error("🔴 [TURSO] CRITICAL DATABASE CONNECTION FAILURE");
+        console.error(err.message);
+        console.error("==========================================================================\n");
+      } else {
+        console.warn("[TURSO] ⚠️ Non-critical schema initialization note:", err.message);
+      }
     } finally {
       clearTimeout(timeout);
     }
