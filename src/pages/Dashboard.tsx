@@ -5,7 +5,7 @@ import { formatNumber, formatDate } from '../lib/utils';
 import { useState, useMemo } from 'react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Filter, PlusCircle, Database, RefreshCw, Cpu, Package, Receipt, Users, Settings, WashingMachine, Target, TrendingUp, TrendingDown, Award, Search, X, Download, FileSpreadsheet } from 'lucide-react';
+import { Filter, PlusCircle, Database, RefreshCw, Cpu, Package, Receipt, Users, Settings, WashingMachine, Target, TrendingUp, TrendingDown, Award, Search, X, Download, FileSpreadsheet, FolderKanban, ShoppingCart } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import {
@@ -29,6 +29,9 @@ import ErpStock from '../components/ErpStock';
 import ErpAccounts from '../components/ErpAccounts';
 import ErpHR from '../components/ErpHR';
 import ErpCustomizer from '../components/ErpCustomizer';
+import ErpCRM from '../components/ErpCRM';
+import ErpProject from '../components/ErpProject';
+import ErpPurchase from '../components/ErpPurchase';
 
 interface OrderStats {
   order: Order;
@@ -44,7 +47,7 @@ interface OrderStats {
 }
 
 export default function Dashboard() {
-  const [workspace, setWorkspace] = useState<"wash" | "manufacturing" | "stock" | "accounts" | "hr" | "customizer">("wash");
+  const [workspace, setWorkspace] = useState<"wash" | "manufacturing" | "stock" | "accounts" | "hr" | "crm" | "projects" | "purchase" | "customizer">("wash");
   const [dailyTarget, setDailyTarget] = useState<number>(12000);
   const [globalSearch, setGlobalSearch] = useState("");
   const [search, setSearch] = useState("");
@@ -1179,7 +1182,7 @@ export default function Dashboard() {
             Frappe Desk Workspace Explorer
           </h2>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-9 gap-3">
           <button 
             onClick={() => setWorkspace("wash")}
             className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
@@ -1192,6 +1195,21 @@ export default function Dashboard() {
             <div>
               <p className="text-xs font-bold uppercase tracking-wide">Garment Wash</p>
               <p className={`text-[9px] mt-0.5 ${workspace === "wash" ? "text-blue-100" : "text-slate-400"}`}>Washing & WIP Status</p>
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setWorkspace("crm")}
+            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
+              workspace === "crm" 
+                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <Target size={16} className={workspace === "crm" ? "text-white" : "text-slate-500"} />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide">CRM & Sales</p>
+              <p className={`text-[9px] mt-0.5 ${workspace === "crm" ? "text-blue-100" : "text-slate-400"}`}>Leads & Pipeline</p>
             </div>
           </button>
 
@@ -1222,6 +1240,36 @@ export default function Dashboard() {
             <div>
               <p className="text-xs font-bold uppercase tracking-wide">Stock Room</p>
               <p className={`text-[9px] mt-0.5 ${workspace === "stock" ? "text-blue-100" : "text-slate-400"}`}>SKU Item Ledgers</p>
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setWorkspace("purchase")}
+            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
+              workspace === "purchase" 
+                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <ShoppingCart size={16} className={workspace === "purchase" ? "text-white" : "text-slate-500"} />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide">Purchase</p>
+              <p className={`text-[9px] mt-0.5 ${workspace === "purchase" ? "text-blue-100" : "text-slate-400"}`}>RFQs & Sourcing</p>
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setWorkspace("projects")}
+            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
+              workspace === "projects" 
+                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <FolderKanban size={16} className={workspace === "projects" ? "text-white" : "text-slate-500"} />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide">Projects</p>
+              <p className={`text-[9px] mt-0.5 ${workspace === "projects" ? "text-blue-100" : "text-slate-400"}`}>Gantt & Timesheets</p>
             </div>
           </button>
 
@@ -1272,8 +1320,11 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {workspace === "crm" && <ErpCRM />}
       {workspace === "manufacturing" && <ErpManufacturing />}
       {workspace === "stock" && <ErpStock />}
+      {workspace === "purchase" && <ErpPurchase />}
+      {workspace === "projects" && <ErpProject />}
       {workspace === "accounts" && <ErpAccounts />}
       {workspace === "hr" && <ErpHR />}
       {workspace === "customizer" && <ErpCustomizer />}
