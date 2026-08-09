@@ -5,7 +5,7 @@ import { formatNumber, formatDate } from '../lib/utils';
 import { useState, useMemo } from 'react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Filter, PlusCircle, Database, RefreshCw, Cpu, Package, Receipt, Users, Settings, WashingMachine, Target, TrendingUp, TrendingDown, Award, Search, X, Download, FileSpreadsheet, FolderKanban, ShoppingCart } from 'lucide-react';
+import { Filter, PlusCircle, Database, RefreshCw, Cpu, Package, Receipt, Users, Settings, WashingMachine, Target, TrendingUp, TrendingDown, Award, Search, X, Download, FileSpreadsheet, FolderKanban, ShoppingCart, Layers } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import {
@@ -32,6 +32,7 @@ import ErpCustomizer from '../components/ErpCustomizer';
 import ErpCRM from '../components/ErpCRM';
 import ErpProject from '../components/ErpProject';
 import ErpPurchase from '../components/ErpPurchase';
+import ErpApex from '../components/ErpApex';
 
 interface OrderStats {
   order: Order;
@@ -47,7 +48,7 @@ interface OrderStats {
 }
 
 export default function Dashboard() {
-  const [workspace, setWorkspace] = useState<"wash" | "manufacturing" | "stock" | "accounts" | "hr" | "crm" | "projects" | "purchase" | "customizer">("wash");
+  const [workspace, setWorkspace] = useState<"wash" | "manufacturing" | "stock" | "accounts" | "hr" | "crm" | "projects" | "purchase" | "apex" | "customizer">("wash");
   const [dailyTarget, setDailyTarget] = useState<number>(12000);
   const [globalSearch, setGlobalSearch] = useState("");
   const [search, setSearch] = useState("");
@@ -1182,7 +1183,7 @@ export default function Dashboard() {
             Frappe Desk Workspace Explorer
           </h2>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-9 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3">
           <button 
             onClick={() => setWorkspace("wash")}
             className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
@@ -1304,6 +1305,21 @@ export default function Dashboard() {
           </button>
 
           <button 
+            onClick={() => setWorkspace("apex")}
+            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
+              workspace === "apex" 
+                ? "bg-amber-600 border-amber-600 text-white shadow-md shadow-amber-200" 
+                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <Layers size={16} className={workspace === "apex" ? "text-white" : "text-amber-600"} />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide">Oracle APEX</p>
+              <p className={`text-[9px] mt-0.5 ${workspace === "apex" ? "text-amber-100" : "text-slate-400"}`}>Low-Code & SQL</p>
+            </div>
+          </button>
+
+          <button 
             onClick={() => setWorkspace("customizer")}
             className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
               workspace === "customizer" 
@@ -1328,6 +1344,7 @@ export default function Dashboard() {
       {workspace === "accounts" && <ErpAccounts />}
       {workspace === "hr" && <ErpHR />}
       {workspace === "customizer" && <ErpCustomizer />}
+      {workspace === "apex" && <ErpApex />}
 
       {workspace === "wash" && (
         <>
