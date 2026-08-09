@@ -104,7 +104,7 @@ Supported using dedicated configuration files located in `/src/server/db/adapter
 
 ## 🇧🇩 Vercel Deployment & Database Connection Guide (Bengali Version)
 
-Google AI Studio থেকে অ্যাপটি ডাউনলোড করে বা GitHub এর মাধ্যমে Vercel এ ডিপ্লয় করার সময় নিচের পদক্ষেপগুলো অনুসরণ করুন:
+Zip ডাউনলোড করে বা GitHub এর মাধ্যমে Vercel এ ডিপ্লয় করার সময় নিচের পদক্ষেপগুলো অনুসরণ করুন:
 
 ### ১. যা যা Git বা Zip এ রাখা যাবে না (Excluded Files)
 * `.env` ফাইল (যাতে আপনার সিক্রেট কী থাকে)।
