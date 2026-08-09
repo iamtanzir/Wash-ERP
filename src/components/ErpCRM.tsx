@@ -243,10 +243,10 @@ export default function ErpCRM() {
                   ) : stageLeads.length === 0 ? (
                     <div className="text-center py-8 text-slate-400 text-[11px] italic">No active opportunities</div>
                   ) : (
-                    stageLeads.map((lead) => {
+                    stageLeads.map((lead, leadIdx) => {
                       const weighted = (lead.expected_revenue * lead.probability) / 100;
                       return (
-                        <div key={lead.id} className="bg-white p-3 rounded-lg border border-slate-200 hover:shadow-md transition-all group">
+                        <div key={lead.id || `lead-card-${lead.title}-${leadIdx}`} className="bg-white p-3 rounded-lg border border-slate-200 hover:shadow-md transition-all group">
                           <div className="flex flex-col gap-1">
                             <span className="text-[10px] text-slate-400 font-black tracking-wider uppercase">{lead.customer}</span>
                             <h4 className="font-bold text-xs text-slate-800 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
@@ -514,10 +514,10 @@ export default function ErpCRM() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-150 text-xs text-slate-700">
-                  {filteredLeads.map((l) => {
+                  {filteredLeads.map((l, leadIdx) => {
                     const weighted = (l.expected_revenue * l.probability) / 100;
                     return (
-                      <tr key={l.id} className="hover:bg-slate-50/50">
+                      <tr key={l.id || `lead-row-${l.title}-${leadIdx}`} className="hover:bg-slate-50/50">
                         <td className="px-4 py-3 font-semibold text-slate-800">
                           {l.title}
                           {l.notes && <div className="text-[10px] font-normal text-slate-400 truncate max-w-sm" title={l.notes}>{l.notes}</div>}

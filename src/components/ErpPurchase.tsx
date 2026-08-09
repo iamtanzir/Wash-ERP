@@ -295,8 +295,8 @@ export default function ErpPurchase() {
                   ) : filteredRFQs.length === 0 ? (
                     <tr><td colSpan={6} className="text-center p-8 text-slate-400 italic">No purchase orders found.</td></tr>
                   ) : (
-                    filteredRFQs.map((r) => (
-                      <tr key={r.id} className="hover:bg-slate-50/50">
+                    filteredRFQs.map((r, rIdx) => (
+                      <tr key={r.id || `purchase-rfq-${r.po_number}-${rIdx}`} className="hover:bg-slate-50/50">
                         <td className="px-4 py-3 font-mono font-bold text-blue-600">
                           {r.po_number}
                           {r.remarks && <div className="text-[10px] text-slate-400 font-normal truncate max-w-xs">{r.remarks}</div>}
@@ -404,8 +404,8 @@ export default function ErpPurchase() {
                 onChange={(e) => setVendor(e.target.value)}
                 className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:outline-none"
               >
-                {vendors.map((v) => (
-                  <option key={v.id} value={v.name}>{v.name} ({v.payment_terms})</option>
+                {vendors.map((v, vIdx) => (
+                  <option key={v.id || `vendor-opt-${vIdx}`} value={v.name}>{v.name} ({v.payment_terms})</option>
                 ))}
               </select>
             </div>
@@ -573,8 +573,8 @@ export default function ErpPurchase() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-150 text-xs text-slate-700">
-                  {vendors.map((v) => (
-                    <tr key={v.id} className="hover:bg-slate-50/50">
+                  {vendors.map((v, vIdx) => (
+                    <tr key={v.id || `vendor-row-${vIdx}`} className="hover:bg-slate-50/50">
                       <td className="px-4 py-3 font-semibold text-slate-800">{v.name}</td>
                       <td className="px-3 py-3 font-mono text-[11px] text-slate-500">{v.contact || "No Email"}</td>
                       <td className="px-3 py-3 text-slate-500">{v.item_supplied}</td>
