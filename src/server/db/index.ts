@@ -4,6 +4,7 @@ import { FirebaseAdapter } from "./adapters/firebase.js";
 import { SQLiteAdapter } from "./adapters/sqlite.js";
 import { TursoAdapter } from "./adapters/turso.js";
 import { CockroachDBAdapter } from "./adapters/cockroach.js";
+import { PolarDBAdapter } from "./adapters/polardb.js";
 import { XataAdapter } from "./adapters/xata.js";
 import { MemoryAdapter } from "./adapters/memory.js";
 import fs from "node:fs";
@@ -22,6 +23,11 @@ export function getDatabase(): DatabaseAdapter {
   
   // 1. Auto-detection: If no mode is set, check for environment variables
   if (!envDbType) {
+    if (process.env.POLARDB_DATABASE_URL) {
+      console.log("[DB] ⚡ Auto-detected PolarDB PostgreSQL (Sequelize) configuration");
+      return new PolarDBAdapter();
+    }
+
     if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN && process.env.TURSO_DATABASE_URL !== "libsql://missing-url.turso.io") {
       console.log("[DB] ⚡ Auto-detected Turso configuration");
       return new TursoAdapter();
@@ -60,6 +66,10 @@ export function getDatabase(): DatabaseAdapter {
   console.log(`[DB] Using Explicit Database Mode: "${dbType}"`);
 
   switch (dbType) {
+    case "polardb":
+    case "postgres":
+    case "sequelize":
+      return new PolarDBAdapter();
     case "turso":
       return new TursoAdapter();
     case "cockroach":
