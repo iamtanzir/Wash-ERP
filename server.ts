@@ -14,6 +14,71 @@ import { getDatabase } from "./src/server/db/index.js";
 
 const db = getDatabase();
 const app = express();
+
+let dbSeedPromise: Promise<void> | null = null;
+
+async function seedDatabase() {
+    console.log("[SEED] Checking database connection and seeding...");
+    const adminUser = await db.getDoc("users", "admin");
+    if (!adminUser) {
+        console.log("[SEED] Admin missing, creating default...");
+        const hashedPassword = await bcrypt.hash("admin", 10);
+        await db.setDoc("users", "admin", {
+            id: "admin",
+            username: "admin",
+            password_hash: hashedPassword,
+            role: "admin",
+            status: "active",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+    }
+    
+    const tanzirUser = await db.getDoc("users", "tanzirerp");
+    if (!tanzirUser) {
+        console.log("[SEED] Super Admin tanzirerp missing, creating default...");
+        const hashedPassword = await bcrypt.hash("tanziradmin", 10);
+        await db.setDoc("users", "tanzirerp", {
+            id: "tanzirerp",
+            username: "tanzirerp",
+            password_hash: hashedPassword,
+            role: "admin",
+            status: "active",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+    }
+    console.log("[SEED] Database seeding check completed.");
+}
+
+function getSeedPromise() {
+    if (!dbSeedPromise) {
+        dbSeedPromise = seedDatabase().catch(err => {
+            console.error("[SEED] ❌ Seeding failed:", err.message);
+            dbSeedPromise = null; // Reset so next request can retry
+            throw err;
+        });
+    }
+    return dbSeedPromise;
+}
+
+const ensureDb = async (req: any, res: any, next: any) => {
+    // Only intercept API calls
+    if (!req.path.startsWith("/api/")) {
+        return next();
+    }
+    try {
+        await getSeedPromise();
+        next();
+    } catch (err: any) {
+        console.error("[DB] Failed to ensure database:", err.message);
+        res.status(500).json({ 
+            error: "Database Connection Error. This usually means the Turso credentials are not configured or the database was not accessible.",
+            details: err.message 
+        });
+    }
+};
+
 const httpServer = http.createServer(app);
 const PORT = 3000;
 const upload = multer({ storage: multer.memoryStorage() });
@@ -23,6 +88,7 @@ const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_KEY);
 
 app.use(express.json());
 app.use(cookieParser(JWT_SECRET_KEY));
+app.use(ensureDb);
 
 // Middleware: Auth Check
 const authenticate = async (req: any, res: any, next: any) => {
@@ -417,42 +483,10 @@ app.post("/api/db/batch/:collection", authenticate, async (req, res) => {
 async function startServer() {
     console.log("[SERVER] Initializing...");
 
-    try {
-        console.log("[SERVER] Checking database connection...");
-        const adminUser = await db.getDoc("users", "admin");
-        if (!adminUser) {
-            console.log("[SEED] Admin missing, creating default...");
-            const hashedPassword = await bcrypt.hash("admin", 10);
-            await db.setDoc("users", "admin", {
-                username: "admin",
-                password_hash: hashedPassword,
-                role: "admin",
-                status: "active",
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            });
-        }
-        
-        const tanzirUser = await db.getDoc("users", "tanzirerp");
-        if (!tanzirUser) {
-            console.log("[SEED] Super Admin tanzirerp missing, creating default...");
-            const hashedPassword = await bcrypt.hash("tanziradmin", 10);
-            await db.setDoc("users", "tanzirerp", {
-                username: "tanzirerp",
-                password_hash: hashedPassword,
-                role: "admin",
-                status: "active",
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            });
-        }
-        console.log("[DB] Database connection verified.");
-    } catch (err: any) {
-        console.error("[DB] ❌ Database connection failed during startup.");
-        console.error(`[DB] Error detail: ${err.message}`);
-        // We don't throw here to allow the server to start and Vite to serve the frontend
-        // Error feedback will be provided in the Login page when users try to interact.
-    }
+    // Trigger seeding lazily on startup, but do not block node server initialization
+    getSeedPromise().catch((err) => {
+        console.warn("[SERVER] Non-critical database initialization notice during startup:", err.message);
+    });
 
     if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
         const vite = await createViteServer({
