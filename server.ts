@@ -414,6 +414,21 @@ app.post("/api/db/batch/:collection", authenticate, async (req, res) => {
 
 async function startServer() {
     console.log("[SERVER] Initializing...");
+    // Initialize frontend serving synchronously so Vercel doesn't return 404 while DB connects
+    if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+        const vite = await createViteServer({
+            server: { middlewareMode: true },
+            appType: "spa",
+        });
+        app.use(vite.middlewares);
+    } else {
+        const distPath = path.join(process.cwd(), "dist");
+        app.use(express.static(distPath));
+        app.get("*", (req, res) => {
+            res.sendFile(path.join(distPath, "index.html"));
+        });
+    }
+
     try {
         console.log("[SERVER] Checking database connection...");
         const adminUser = await db.getDoc("users", "admin");
@@ -449,20 +464,6 @@ async function startServer() {
         console.error(`[DB] Error detail: ${err.message}`);
         // We don't throw here to allow the server to start and Vite to serve the frontend
         // Error feedback will be provided in the Login page when users try to interact.
-    }
-
-    if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
-        const vite = await createViteServer({
-            server: { middlewareMode: true },
-            appType: "spa",
-        });
-        app.use(vite.middlewares);
-    } else {
-        const distPath = path.join(process.cwd(), "dist");
-        app.use(express.static(distPath));
-        app.get("*", (req, res) => {
-            res.sendFile(path.join(distPath, "index.html"));
-        });
     }
 
     if (!process.env.VERCEL) {
