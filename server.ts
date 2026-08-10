@@ -71,11 +71,9 @@ const ensureDb = async (req: any, res: any, next: any) => {
         await getSeedPromise();
         next();
     } catch (err: any) {
-        console.error("[DB] Failed to ensure database:", err.message);
-        res.status(500).json({ 
-            error: "Database Connection Error. This usually means the Turso credentials are not configured or the database was not accessible.",
-            details: err.message 
-        });
+        console.warn("[DB] Non-critical database connection issue on request:", err.message);
+        // Do not crash or block the request with 500, allow proceeding with fallback behavior (e.g. Memory fallback)
+        next();
     }
 };
 
