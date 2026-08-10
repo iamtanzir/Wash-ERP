@@ -16,7 +16,7 @@ export class TursoAdapter implements DatabaseAdapter {
 
   constructor() {
     let url = process.env.TURSO_DATABASE_URL || "libsql://database-aureolin-zebra-vercel-icfg-3u3w3vvbm3v8uvyu7ik2a9pf.aws-ap-south-1.turso.io";
-    let authToken = process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODU1MTUzOTEsImlkIjoiMDE5ZmI5MDItYjkwMS03NWJjLWEzZTEtOWFlNDI1NTYxYWQxIiwia2lkIjoiVWVoRWVGMFBOclI0ck05aTNkbVZyVVlSaWRWa3ozWnhFcE94em1rZGFDWSIsInJpZCI6IjY4YTBhMDJmLWU3MjgtNDJjNy1hYTg0LTE4MDZkNWZlNDY1OCJ9.Sj_iIfEUvIW_efZkYsLym4IEG7y35gYbNe830gMd82IZSGST5xF5_OWgJA3vj_MasJ3ZXjJPsObhc4V7y2jKAQ";
+    let authToken = process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODYzNzQ5MDQsImlkIjoiMDE5ZmI5MDItYjkwMS03NWJjLWEzZTEtOWFlNDI1NTYxYWQxIiwia2lkIjoiVWVoRWVGMFBOclI0ck05aTNkbVZyVVlSaWRWa3ozWnhFcE94em1rZGFDWSIsInJpZCI6IjY4YTBhMDJmLWU3MjgtNDJjNy1hYTg0LTE4MDZkNWZlNDY1OCJ9.DXPoxJ0q3c49KzXwCorD9Uyl8jUO9X18oI93TA5HUx2Nv4jOXUMN_82nr6gzaZm7XgR3gVSEXYQ2TGeNhIxTDw";
 
     // Sanitize URLs that might be wrapped in quotes or have whitespace
     url = (url || "").trim().replace(/^['"](.*)['"]$/, '$1').replace(/\/+$/, "").replace(/\s+/g, ""); // Remove trailing slashes and ALL whitespace
