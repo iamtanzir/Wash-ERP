@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config({ override: true });
 import express from "express";
+import http from "http";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import multer from "multer";
@@ -13,6 +14,7 @@ import { getDatabase } from "./src/server/db/index.js";
 
 const db = getDatabase();
 const app = express();
+const httpServer = http.createServer(app);
 const PORT = 3000;
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -414,20 +416,6 @@ app.post("/api/db/batch/:collection", authenticate, async (req, res) => {
 
 async function startServer() {
     console.log("[SERVER] Initializing...");
-    // Initialize frontend serving synchronously so Vercel doesn't return 404 while DB connects
-    if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
-        const vite = await createViteServer({
-            server: { middlewareMode: true },
-            appType: "spa",
-        });
-        app.use(vite.middlewares);
-    } else {
-        const distPath = path.join(process.cwd(), "dist");
-        app.use(express.static(distPath));
-        app.get("*", (req, res) => {
-            res.sendFile(path.join(distPath, "index.html"));
-        });
-    }
 
     try {
         console.log("[SERVER] Checking database connection...");
@@ -466,8 +454,25 @@ async function startServer() {
         // Error feedback will be provided in the Login page when users try to interact.
     }
 
+    if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+        const vite = await createViteServer({
+            server: { 
+                middlewareMode: true,
+                hmr: { server: httpServer }
+            },
+            appType: "spa",
+        });
+        app.use(vite.middlewares);
+    } else {
+        const distPath = path.join(process.cwd(), "dist");
+        app.use(express.static(distPath));
+        app.get("*", (req, res) => {
+            res.sendFile(path.join(distPath, "index.html"));
+        });
+    }
+
     if (!process.env.VERCEL) {
-        app.listen(PORT, "0.0.0.0", () => {
+        httpServer.listen(PORT, "0.0.0.0", () => {
             console.log(`Server running on http://localhost:${PORT}`);
         });
     }
