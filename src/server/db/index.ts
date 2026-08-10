@@ -35,14 +35,9 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
         dbType = "pocketbase";
       } else if (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_SERVICE_ROLE_KEY) {
         dbType = "supabase";
-      } else if (process.env.VERCEL) {
-        if (process.env.TURSO_DATABASE_URL && process.env.TURSO_DATABASE_URL !== "libsql://missing-url.turso.io") {
-          dbType = "turso";
-        } else {
-          dbType = "memory";
-        }
       } else {
-        dbType = "sqlite";
+        // Default to Turso with fallback credentials so everything works and persists automatically everywhere
+        dbType = "turso";
       }
     } else {
       dbType = envDbType.toLowerCase();
