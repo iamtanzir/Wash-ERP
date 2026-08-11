@@ -19,6 +19,34 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUser, setNewUser] = useState({ username: "", password: "", role: "viewer" as const });
+  const [tursoUrl, setTursoUrl] = useState("");
+  const [tursoToken, setTursoToken] = useState("");
+  const [savingTurso, setSavingTurso] = useState(false);
+
+  const handleSaveTurso = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tursoUrl || !tursoToken) {
+      toast.error("Both URL and Token are required.");
+      return;
+    }
+    setSavingTurso(true);
+    try {
+      const res = await fetch("/api/admin/config/turso", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: tursoUrl, token: tursoToken })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.details || "Failed to save configuration");
+      toast.success(data.message || "Database configuration saved securely");
+      setTursoUrl("");
+      setTursoToken("");
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setSavingTurso(false);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -162,6 +190,55 @@ export default function Admin() {
           </div>
         </div>
       </div>
+
+      {isSuperAdmin && (
+        <div className="bg-slate-900 rounded-2xl p-8 shadow-lg relative overflow-hidden border border-slate-800">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+          <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center justify-between">
+            <div className="max-w-xl text-left">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center">
+                  <KeyRound size={20} />
+                </div>
+                <h2 className="text-xl font-bold text-white tracking-tight">Database Override</h2>
+              </div>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                As a Super Admin, you can manually inject Turso credentials if Vercel environment variables fail. These credentials will be securely encrypted via cookies and bypass normal startup sequences.
+              </p>
+            </div>
+            
+            <form onSubmit={handleSaveTurso} className="w-full md:w-auto flex-1 max-w-lg bg-slate-800/50 p-5 rounded-xl border border-slate-700/50 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Turso URL</label>
+                <input 
+                  type="text"
+                  value={tursoUrl}
+                  onChange={e => setTursoUrl(e.target.value)}
+                  placeholder="libsql://..."
+                  className="w-full bg-slate-950 border border-slate-700 text-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Turso Auth Token</label>
+                <input 
+                  type="password"
+                  value={tursoToken}
+                  onChange={e => setTursoToken(e.target.value)}
+                  placeholder="eyJhbG..."
+                  className="w-full bg-slate-950 border border-slate-700 text-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
+                />
+              </div>
+              <button 
+                type="submit"
+                disabled={savingTurso}
+                className="w-full bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold py-2.5 rounded-lg transition-all active:scale-[0.98] disabled:opacity-50"
+              >
+                {savingTurso ? "Securing Configuration..." : "Inject Credentials"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">

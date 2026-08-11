@@ -12,7 +12,7 @@ import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { getDatabase } from "./src/server/db/index.js";
 
-const db = getDatabase();
+let db = getDatabase();
 const app = express();
 
 let dbSeedPromise: Promise<void> | null = null;
@@ -68,6 +68,21 @@ const ensureDb = async (req: any, res: any, next: any) => {
         return next();
     }
     try {
+        let changed = false;
+        if (req.cookies?.turso_url && req.cookies.turso_url !== process.env.TURSO_DATABASE_URL) {
+            process.env.TURSO_DATABASE_URL = req.cookies.turso_url;
+            changed = true;
+        }
+        if (req.cookies?.turso_token && req.cookies.turso_token !== process.env.TURSO_AUTH_TOKEN) {
+            process.env.TURSO_AUTH_TOKEN = req.cookies.turso_token;
+            changed = true;
+        }
+        if (changed) {
+            console.log("[DB] Turso credentials overridden by cookie. Reinitializing db.");
+            db = getDatabase();
+            dbSeedPromise = null;
+        }
+
         await getSeedPromise();
         next();
     } catch (err: any) {
@@ -228,6 +243,34 @@ app.get("/api/me", authenticate, (req: any, res) => {
 });
 
 // User Management API
+app.post("/api/admin/config/turso", authenticate, authorize(["admin"]), async (req, res) => {
+    const { url, token } = req.body;
+    if (!url || !token) return res.status(400).json({ error: "Missing fields" });
+
+    const currentUser = (req as any).user;
+    const isSuperAdmin = currentUser.username.toLowerCase() === "tanzirerp";
+
+    if (!isSuperAdmin) {
+        return res.status(403).json({ error: "Forbidden: Super Admin only" });
+    }
+
+    try {
+        process.env.TURSO_DATABASE_URL = url;
+        process.env.TURSO_AUTH_TOKEN = token;
+        
+        res.cookie("turso_url", url, { httpOnly: true, secure: true, sameSite: 'none', path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
+        res.cookie("turso_token", token, { httpOnly: true, secure: true, sameSite: 'none', path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
+
+        db = getDatabase();
+        dbSeedPromise = null;
+        await getSeedPromise();
+        
+        res.json({ success: true, message: "Database credentials updated and verified." });
+    } catch (e: any) {
+        res.status(500).json({ error: "Failed to verify new credentials", details: e.message });
+    }
+});
+
 app.get("/api/admin/users", authenticate, authorize(["admin"]), async (req, res) => {
     try {
         const users = await db.getDocs("users");
