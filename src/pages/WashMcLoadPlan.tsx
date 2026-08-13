@@ -247,6 +247,20 @@ export default function WashMcLoadPlan() {
     }
   });
 
+  const deleteMachineMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/db/wash_machines/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete machine');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['washMachinesMaster'] });
+      toast.success('Machine deleted from Master!');
+    }
+  });
+
   const addMachineMutation = useMutation({
     mutationFn: async (mc: MachineMaster) => {
       const res = await fetch('/api/db/wash_machines', {
@@ -1225,19 +1239,35 @@ export default function WashMcLoadPlan() {
 
             <div className="space-y-3 max-h-60 overflow-y-auto">
               {availableMachines.map(m => (
-                <div key={m.code} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                <div key={m.code} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs group">
                   <div>
                     <p className="font-bold text-slate-800">{m.name}</p>
                     <p className="text-[10px] text-slate-400 font-mono">Code: {m.code} | {m.type}</p>
                   </div>
-                  <span className="font-mono font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded border border-blue-200">
-                    {m.capacity_kg} Kg Cap
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                      {m.capacity_kg} Kg Cap
+                    </span>
+                    {user?.role === 'admin' && m.id && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to remove this washing machine?')) {
+                            deleteMachineMutation.mutate(m.id!);
+                          }
+                        }}
+                        disabled={deleteMachineMutation.isPending}
+                        className="text-red-400 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                        title="Remove Machine"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
 
-            {!isViewer && (
+            {(user?.role === 'admin' || user?.role === 'editor') && (
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
