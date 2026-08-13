@@ -95,7 +95,7 @@ export default function Layout() {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 font-sans overflow-hidden">
+    <div className="flex h-screen bg-slate-50  font-sans overflow-hidden">
       {/* Sidebar Navigation */}
       <aside className={cn(
         "bg-slate-900 flex flex-col shadow-2xl shrink-0 h-screen overflow-hidden transition-all duration-300 ease-in-out z-50",
@@ -178,18 +178,18 @@ export default function Layout() {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden w-full relative">
-        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 flex items-center justify-between shrink-0 gap-4">
+        <header className="h-16 bg-white  border-b border-slate-200  px-4 md:px-8 flex items-center justify-between shrink-0 gap-4">
           <div className="flex items-center gap-3 md:gap-4 font-sans focus-within:ring-0 shrink-0">
             <button 
               onClick={toggleSidebar}
-              className="p-2 -ml-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors"
+              className="p-2 -ml-2 text-slate-600  hover:bg-slate-100  rounded-md transition-colors"
               aria-label="Toggle sidebar"
             >
               <Menu size={24} />
             </button>
 
-            <h2 className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide truncate md:border-l md:border-slate-200 md:dark:border-slate-700 md:pl-4">{getPageTitle()}</h2>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 whitespace-nowrap hidden lg:inline-block">Auto Sync</span>
+            <h2 className="text-base md:text-lg font-bold text-slate-800  uppercase tracking-wide truncate md:border-l md:border-slate-200 md: md:pl-4">{getPageTitle()}</h2>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium bg-green-100  text-green-700  whitespace-nowrap hidden lg:inline-block">Auto Sync</span>
           </div>
 
           {/* Frappe/ERPNext Desk Awesome Search Bar (Desktop Only) */}
@@ -245,16 +245,16 @@ export default function Layout() {
           <div className="flex items-center gap-2 md:gap-4 shrink-0">
             <button
               onClick={toggleDarkMode}
-              className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors focus:outline-none"
+              className="p-2 text-slate-600  hover:bg-slate-100  rounded-full transition-colors focus:outline-none"
               aria-label="Toggle dark mode"
               title="High Contrast Dark Mode"
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-            <span className="sm:hidden px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 whitespace-nowrap">Auto Sync</span>
+            <span className="sm:hidden px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100  text-green-700  whitespace-nowrap">Auto Sync</span>
             <div className="flex flex-col items-end hidden sm:flex">
               <p className="text-xs text-slate-400">Real Time</p>
-              <p className="text-sm font-mono font-medium text-slate-700 dark:text-slate-300 text-right">
+              <p className="text-sm font-mono font-medium text-slate-700  text-right">
                 {formatDhakaTime(currentTime)}
               </p>
             </div>
@@ -267,7 +267,7 @@ export default function Layout() {
         </div>
 
         {/* Desktop Tooltip / Status Footer */}
-        <footer className="h-10 bg-slate-200 dark:bg-slate-800 px-4 md:px-6 flex items-center justify-between text-[10px] md:text-xs text-slate-500 dark:text-slate-400 shrink-0">
+        <footer className="h-10 bg-slate-200  px-4 md:px-6 flex items-center justify-between text-[10px] md:text-xs text-slate-500  shrink-0">
           <div className="flex gap-2 md:gap-4">
             <span className="hidden sm:inline">System: PocketBase v0.22</span>
             <span className="hidden sm:inline">|</span>
@@ -277,7 +277,7 @@ export default function Layout() {
           </div>
           <div className="flex gap-2 md:gap-4 italic items-center">
             <span title="সব রিসিভ এবং ডেলিভারি সম্পন্ন হলে ক্লোজ করুন">Hints (hover)</span>
-            <span className="font-semibold text-slate-600 dark:text-slate-300 uppercase hidden sm:inline">Wash Planning</span>
+            <span className="font-semibold text-slate-600  uppercase hidden sm:inline">Wash Planning</span>
           </div>
         </footer>
       </main>
