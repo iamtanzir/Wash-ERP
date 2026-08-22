@@ -34,6 +34,7 @@ const navItems = [
   { name: "WASH M/C LOAD PLAN", href: "/wash-mc-plan", icon: WashingMachine, desc: "Wet process garments washing machine load plan & recipes" },
   { name: "CPL FABRIC REPORT", href: "/cpl-report", icon: FileText, desc: "Fabrics status and CPL calculations" },
   { name: "H&M SHIP RISK", href: "/hm-tod", icon: ClipboardCheck, desc: "H&M ship risk & target order delivery" },
+  { name: "PROACTIVE PLAN", href: "/proactive-plan", icon: Sparkles, desc: "AI Master Production Schedule & T&A Tracking" },
   { name: "CLOSE ERP ORDER", href: "/close-order", icon: Lock, desc: "Archive completed ERP orders" },
   { name: "ALL BUYER BANK", href: "/data-bank", icon: Database, desc: "Historic buyer data bank archive" },
   { name: "USER MANAGEMENT", href: "/admin", icon: ShieldCheck, desc: "Manage user roles and permissions" },
@@ -86,6 +87,7 @@ export default function Layout() {
       case '/daily-update': return 'Daily Update';
       case '/wash-mc-plan': return 'Garments Wash M/C Load Plan (Wet Process)';
       case '/hm-tod': return 'H&M Target Order Delivery';
+      case '/proactive-plan': return 'Proactive AI Planner';
       case '/close-order': return 'Close ERP Orders';
       case '/data-bank': return 'All Buyer Data';
       default: return 'Wash ERP';
