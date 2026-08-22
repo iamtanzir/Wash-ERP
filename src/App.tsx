@@ -13,6 +13,7 @@ import NewERPPlan from './pages/NewERPPlan';
 import CplReport from './pages/CPLReport';
 import HMTOD from './pages/HMTOD';
 import ProactivePlan from './pages/ProactivePlan';
+import IoTTracking from './pages/IoTTracking';
 import WashMcLoadPlan from './pages/WashMcLoadPlan';
 import Login from './pages/Login';
 import Admin from './pages/Admin';
@@ -35,6 +36,7 @@ export default function App() {
               <Route path="daily-update" element={<DailyUpdate />} />
               <Route path="hm-tod" element={<HMTOD />} />
               <Route path="proactive-plan" element={<ProactivePlan />} />
+              <Route path="iot-tracking" element={<IoTTracking />} />
               <Route path="wash-mc-plan" element={<WashMcLoadPlan />} />
               <Route path="close-order" element={<CloseOrder />} />
               <Route path="data-bank" element={<DataBank />} />
