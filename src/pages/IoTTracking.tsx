@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import { Activity, Cpu, Wifi, AlertTriangle, CheckCircle2, Search, ArrowRight, Settings, Smartphone, Server, LayoutTemplate, MapPin, Kanban, Factory, Users, Scissors, ShieldCheck, BarChart, ArrowDown } from 'lucide-react';
+import { Activity, Cpu, Wifi, AlertTriangle, CheckCircle2, Search, ArrowRight, Settings, Smartphone, Server, LayoutTemplate, MapPin, Kanban, Factory, Users, Scissors, ShieldCheck, BarChart, ArrowDown, Power, Clock, Plug, Lock, Laptop, Battery, Home, Lightbulb, Check } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
 const VALUE_CHAIN = [
@@ -208,127 +208,44 @@ export default function IoTTracking() {
       )}
 
       {activeTab === 'landscape' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-            <div className="text-center mb-10">
-              <h2 className="text-xl font-bold text-slate-800">Get a bird's eye view of Nidle's workflow in all stages!</h2>
-              <h3 className="text-3xl font-black text-slate-900 mt-2">Solution <span className="text-cyan-600">Landscape</span></h3>
-            </div>
-            
-            {/* Diagram Representation */}
-            <div className="relative max-w-5xl mx-auto py-12">
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
-              
-              <div className="flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
-                {/* Left: Input Management */}
-                <div className="flex flex-col items-center gap-4 flex-1">
-                  <div className="w-32 h-32 rounded-2xl bg-slate-50 border-2 border-slate-200 shadow-lg flex flex-col items-center justify-center relative group hover:border-cyan-500 transition-colors">
-                    <Factory size={40} className="text-slate-600 group-hover:text-cyan-600 mb-2" />
-                    <span className="font-bold text-slate-800 text-sm text-center">Warehouse</span>
-                    <div className="absolute -top-3 -right-3 w-8 h-8 bg-cyan-100 text-cyan-700 rounded-full flex items-center justify-center border-2 border-white shadow-sm"><Kanban size={14}/></div>
-                  </div>
-                  <ArrowDown className="text-slate-300 md:hidden" />
-                  <div className="w-32 h-32 rounded-2xl bg-slate-50 border-2 border-slate-200 shadow-lg flex flex-col items-center justify-center relative group hover:border-cyan-500 transition-colors">
-                    <Scissors size={40} className="text-slate-600 group-hover:text-cyan-600 mb-2" />
-                    <span className="font-bold text-slate-800 text-sm text-center">Cutting</span>
-                    <span className="text-[10px] text-slate-500 font-medium absolute bottom-2">Input Management</span>
-                  </div>
-                </div>
+        <div className="bg-white py-12">
+          <div className="text-center mb-10">
+            <p className="text-[15px] font-semibold text-[#111111] mb-2">
+              Get a bird's eye view of Nidle's <span className="text-[#0284c7]">workflow</span> in all stages!
+            </p>
+            <h2 className="text-[34px] font-black text-[#111111] tracking-tight">
+              Solution <span className="text-[#0284c7]">Landscape</span>
+            </h2>
+          </div>
+          
+          <div className="w-full max-w-5xl mx-auto mb-16 px-4 flex justify-center">
+            <img 
+              src="https://intellier.com/wp-content/uploads/2023/04/niddle_dashboard_final.png" 
+              alt="Solution Landscape Workflow Diagram" 
+              className="w-full object-contain max-w-[850px]"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/solution-landscape.png'; // Fallback
+              }}
+            />
+          </div>
 
-                {/* Arrow Connector Desktop */}
-                <div className="hidden md:flex flex-col items-center text-slate-300 gap-2">
-                  <ArrowRight size={32} />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Input Man</span>
+          <div className="max-w-[950px] mx-auto bg-[#fafafa] p-8 md:p-10 rounded-sm">
+            <h4 className="font-bold text-[14px] text-[#111111] mb-6">
+              See an overview of the activities that are carried out via Nidle which includes KANBAN, In-Line, and End-Line activities.
+            </h4>
+            <div className="space-y-3.5">
+              {[
+                'The "Intelligent Input Management System" reduces material input complexity in the production floor following KANBAN process.',
+                'The In-Line Productivity System is in-house designed and developed as a Smart IoT device to track productivity of Operators.',
+                'The End-Line QC features quality monitoring where the system tracks defects and reworks. It decreases rework time and increases efficiency by identifying the source of your defects using live heat maps.',
+                'An Action Plan is created to help you plan and monitor improvements over time.',
+                'Your organisation\'s performance is tracked and verified across 5 levels of maturity that showcase your progress.'
+              ].map((text, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <CheckCircle2 className="text-[#38bdf8] shrink-0 mt-0.5" size={18} strokeWidth={1.5} />
+                  <p className="text-[13px] text-[#444444] leading-relaxed">{text}</p>
                 </div>
-
-                {/* Center: Sewing Line IoT */}
-                <div className="flex flex-col items-center gap-4 flex-[2] relative">
-                  <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-full shadow-lg">
-                    <Wifi size={14} className="text-cyan-400" />
-                    <span className="text-xs font-bold tracking-wider uppercase">IoT Device Network</span>
-                  </div>
-
-                  <div className="bg-slate-50 p-6 rounded-3xl border-2 border-dashed border-slate-300 w-full relative">
-                    <div className="grid grid-cols-2 gap-6">
-                      {[1,2,3,4].map(i => (
-                        <div key={i} className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-cyan-50 flex items-center justify-center relative">
-                            <Users size={18} className="text-cyan-600" />
-                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-800">Operator #{i}</p>
-                            <p className="text-[10px] text-slate-500">In-Line Productivity</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 text-center">
-                      <span className="font-black text-slate-800 text-lg uppercase tracking-wider">Sewing Line</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="bg-white border border-slate-200 px-4 py-2 rounded-lg text-xs font-bold text-slate-600 shadow-sm flex items-center gap-2">
-                      <Search size={14} className="text-blue-500" /> In Line QC
-                    </div>
-                  </div>
-                </div>
-
-                {/* Arrow Connector Desktop */}
-                <div className="hidden md:flex flex-col items-center text-slate-300 gap-2">
-                  <ArrowRight size={32} />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">QMS</span>
-                </div>
-
-                {/* Right: End-Line & Server */}
-                <div className="flex flex-col items-center gap-8 flex-1">
-                  <div className="w-40 bg-white p-4 rounded-xl border border-slate-200 shadow-lg text-center relative group hover:border-cyan-500 transition-colors">
-                    <div className="w-12 h-12 mx-auto bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-2">
-                      <ShieldCheck size={24} />
-                    </div>
-                    <span className="font-bold text-slate-800 text-sm">End Line QC</span>
-                    <p className="text-[10px] text-slate-500 mt-1">Live Heat Maps</p>
-                  </div>
-
-                  <div className="w-40 bg-white p-4 rounded-xl border border-slate-200 shadow-lg text-center relative group hover:border-cyan-500 transition-colors">
-                    <div className="w-12 h-12 mx-auto bg-slate-100 text-slate-700 rounded-lg flex items-center justify-center mb-2">
-                      <Server size={24} />
-                    </div>
-                    <span className="font-bold text-slate-800 text-sm">Cloud Server</span>
-                    <p className="text-[10px] text-slate-500 mt-1">Real-time Sync</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Feature List */}
-            <div className="max-w-4xl mx-auto mt-12 bg-slate-50 p-8 rounded-2xl border border-slate-200">
-              <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <LayoutTemplate className="text-cyan-600" size={20} />
-                Overview of Activities via Nidle (KANBAN, In-Line, and End-Line)
-              </h4>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="text-cyan-500 shrink-0 mt-0.5" size={18} />
-                  <p className="text-sm text-slate-700 leading-relaxed">The <strong>"Intelligent Input Management System"</strong> reduces material input complexity in the production floor following KANBAN process.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="text-cyan-500 shrink-0 mt-0.5" size={18} />
-                  <p className="text-sm text-slate-700 leading-relaxed">The <strong>In-Line Productivity System</strong> is in-house designed and developed as a Smart IoT device to track productivity of Operators.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="text-cyan-500 shrink-0 mt-0.5" size={18} />
-                  <p className="text-sm text-slate-700 leading-relaxed">The <strong>End-Line QC</strong> features quality monitoring where the system tracks defects and reworks. It decreases rework time and increases efficiency by identifying the source of your defects using live heat maps.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="text-cyan-500 shrink-0 mt-0.5" size={18} />
-                  <p className="text-sm text-slate-700 leading-relaxed">An <strong>Action Plan</strong> is created to help you plan and monitor improvements over time.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="text-cyan-500 shrink-0 mt-0.5" size={18} />
-                  <p className="text-sm text-slate-700 leading-relaxed">Your organization's performance is tracked and verified across <strong>5 levels of maturity</strong> that showcase your progress.</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
