@@ -20,7 +20,8 @@ import {
   Moon,
   Search,
   Sparkles,
-  Globe
+  Globe,
+  Activity
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
@@ -35,6 +36,7 @@ const navItems = [
   { name: "CPL FABRIC REPORT", href: "/cpl-report", icon: FileText, desc: "Fabrics status and CPL calculations" },
   { name: "H&M SHIP RISK", href: "/hm-tod", icon: ClipboardCheck, desc: "H&M ship risk & target order delivery" },
   { name: "PROACTIVE PLAN", href: "/proactive-plan", icon: Sparkles, desc: "AI Master Production Schedule & T&A Tracking" },
+  { name: "IOT TRACKING", href: "/iot-tracking", icon: Activity, desc: "IoT-driven real-time production & critical path tracking" },
   { name: "CLOSE ERP ORDER", href: "/close-order", icon: Lock, desc: "Archive completed ERP orders" },
   { name: "ALL BUYER BANK", href: "/data-bank", icon: Database, desc: "Historic buyer data bank archive" },
   { name: "USER MANAGEMENT", href: "/admin", icon: ShieldCheck, desc: "Manage user roles and permissions" },
@@ -88,6 +90,7 @@ export default function Layout() {
       case '/wash-mc-plan': return 'Garments Wash M/C Load Plan (Wet Process)';
       case '/hm-tod': return 'H&M Target Order Delivery';
       case '/proactive-plan': return 'Proactive AI Planner';
+      case '/iot-tracking': return 'IoT Nidle Smart Tracking';
       case '/close-order': return 'Close ERP Orders';
       case '/data-bank': return 'All Buyer Data';
       default: return 'Wash ERP';
