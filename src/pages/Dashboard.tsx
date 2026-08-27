@@ -739,7 +739,7 @@ export default function Dashboard() {
           </span>
           <span className="font-semibold text-slate-700">Live Auto-Sync</span>
           <span className="text-slate-400">•</span>
-          <span className="text-slate-500">Updates every 5 mins</span>
+          <span className="text-slate-400">Updates every 5 mins</span>
         </div>
         <div className="flex items-center gap-3">
           {dataUpdatedAt && (
@@ -791,14 +791,14 @@ export default function Dashboard() {
 
       {/* Global Search Results Panel */}
       {globalSearch && searchResults && (
-        <div className="bg-slate-50 p-5 rounded-xl border-2 border-blue-500/20 shadow-lg space-y-6">
+        <div className="bg-slate-50 p-5 rounded-xl border-2 border-blue-200 shadow-lg space-y-6">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <div>
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                 <Search className="text-blue-600" size={16} />
                 Global Search Results
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-400 mt-1">
                 Found {searchResults.totalCount} matches for "<span className="font-bold text-slate-700">{globalSearch}</span>" across all modules
               </p>
             </div>
@@ -811,7 +811,7 @@ export default function Dashboard() {
           </div>
 
           {searchResults.totalCount === 0 ? (
-            <div className="py-8 text-center text-slate-500 italic text-xs">
+            <div className="py-8 text-center text-slate-400 italic text-xs">
               No matching records found in any ERP module. Try searching for a different keyword or code.
             </div>
           ) : (
@@ -820,12 +820,12 @@ export default function Dashboard() {
               {/* Garments Wash Orders */}
               {searchResults.orders.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <span>👕</span> Garments Wash Orders ({searchResults.orders.length})
                   </h4>
                   <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                     <table className="w-full text-left text-xs text-slate-700">
-                      <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500 text-[10px] uppercase">
+                      <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-400 text-[10px] uppercase">
                         <tr>
                           <th className="px-3 py-2">File No</th>
                           <th className="px-3 py-2">Style No</th>
@@ -873,14 +873,14 @@ export default function Dashboard() {
               {/* Manufacturing BOMs & Work Orders */}
               {(searchResults.boms.length > 0 || searchResults.workOrders.length > 0) && (
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-1">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-1">
                     <span>⚙️</span> Manufacturing BOMs & Work Orders ({searchResults.boms.length + searchResults.workOrders.length})
                   </h4>
                   {searchResults.boms.length > 0 && (
                     <div className="space-y-2">
                       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                         <table className="w-full text-left text-xs text-slate-700">
-                          <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500 text-[10px] uppercase">
+                          <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-400 text-[10px] uppercase">
                             <tr>
                               <th className="px-3 py-2">Item Name</th>
                               <th className="px-3 py-2">Raw Materials</th>
@@ -894,7 +894,7 @@ export default function Dashboard() {
                             {searchResults.boms.map((b: any, index: number) => (
                               <tr key={b.id || index} className="hover:bg-slate-50/50">
                                 <td className="px-3 py-2 font-bold">{b.item_name}</td>
-                                <td className="px-3 py-2 text-slate-500 truncate max-w-[200px]" title={b.raw_materials}>{b.raw_materials}</td>
+                                <td className="px-3 py-2 text-slate-400 truncate max-w-[200px]" title={b.raw_materials}>{b.raw_materials}</td>
                                 <td className="px-3 py-2 text-right tabular-nums">${formatNumber(b.material_cost)}</td>
                                 <td className="px-3 py-2 text-right tabular-nums">${formatNumber(b.labor_cost)}</td>
                                 <td className="px-3 py-2 text-right tabular-nums font-bold text-slate-800">${formatNumber(b.total_cost)}</td>
@@ -921,7 +921,7 @@ export default function Dashboard() {
                     <div className="space-y-2">
                       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                         <table className="w-full text-left text-xs text-slate-700">
-                          <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500 text-[10px] uppercase">
+                          <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-400 text-[10px] uppercase">
                             <tr>
                               <th className="px-3 py-2">BOM Name</th>
                               <th className="px-3 py-2 text-right">Qty to Produce</th>
@@ -937,7 +937,7 @@ export default function Dashboard() {
                                 <td className="px-3 py-2 font-bold">{wo.bom_name}</td>
                                 <td className="px-3 py-2 text-right tabular-nums">{formatNumber(wo.qty_to_produce)}</td>
                                 <td className="px-3 py-2 text-right tabular-nums">{formatNumber(wo.qty_produced)}</td>
-                                <td className="px-3 py-2 text-slate-500">{formatDate(wo.start_date)} - {formatDate(wo.end_date)}</td>
+                                <td className="px-3 py-2 text-slate-400">{formatDate(wo.start_date)} - {formatDate(wo.end_date)}</td>
                                 <td className="px-3 py-2">
                                   <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-slate-100 text-slate-700`}>
                                     {wo.status}
@@ -967,12 +967,12 @@ export default function Dashboard() {
               {/* Stock SKU Items */}
               {searchResults.items.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <span>📦</span> Stock SKU Items ({searchResults.items.length})
                   </h4>
                   <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                     <table className="w-full text-left text-xs text-slate-700">
-                      <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500 text-[10px] uppercase">
+                      <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-400 text-[10px] uppercase">
                         <tr>
                           <th className="px-3 py-2">Item Code</th>
                           <th className="px-3 py-2">Item Name</th>
@@ -988,7 +988,7 @@ export default function Dashboard() {
                           <tr key={it.id || index} className="hover:bg-slate-50/50">
                             <td className="px-3 py-2 font-mono font-bold text-indigo-600">{it.item_code}</td>
                             <td className="px-3 py-2 font-semibold">{it.item_name}</td>
-                            <td className="px-3 py-2 text-slate-500">{it.item_group}</td>
+                            <td className="px-3 py-2 text-slate-400">{it.item_group}</td>
                             <td className="px-3 py-2 text-right tabular-nums">{formatNumber(it.opening_stock)}</td>
                             <td className="px-3 py-2">{it.uom}</td>
                             <td className="px-3 py-2 text-right tabular-nums font-bold text-amber-600">{formatNumber(it.safety_stock)}</td>
@@ -1014,12 +1014,12 @@ export default function Dashboard() {
               {/* Wash M/C Load Plans */}
               {searchResults.mcLoads.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <span>🧼</span> Wet Process M/C Load Plans ({searchResults.mcLoads.length})
                   </h4>
                   <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                     <table className="w-full text-left text-xs text-slate-700">
-                      <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500 text-[10px] uppercase">
+                      <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-400 text-[10px] uppercase">
                         <tr>
                           <th className="px-3 py-2">Machine Code</th>
                           <th className="px-3 py-2">Buyer</th>
@@ -1040,7 +1040,7 @@ export default function Dashboard() {
                             </td>
                             <td className="px-3 py-2 font-medium">{load.buyer}</td>
                             <td className="px-3 py-2 font-mono text-xs">{load.style_no} / {load.file_no}</td>
-                            <td className="px-3 py-2 text-slate-500">{load.process_type}</td>
+                            <td className="px-3 py-2 text-slate-400">{load.process_type}</td>
                             <td className="px-3 py-2">{load.operator_name || '-'}</td>
                             <td className="px-3 py-2 text-right font-bold tabular-nums">{formatNumber(load.pcs_qty)} pcs</td>
                             <td className="px-3 py-2">
@@ -1068,12 +1068,12 @@ export default function Dashboard() {
               {/* Accounts Invoices */}
               {searchResults.invoices.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <span>🧾</span> Accounts & Invoices ({searchResults.invoices.length})
                   </h4>
                   <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                     <table className="w-full text-left text-xs text-slate-700">
-                      <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500 text-[10px] uppercase">
+                      <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-400 text-[10px] uppercase">
                         <tr>
                           <th className="px-3 py-2">Invoice Number</th>
                           <th className="px-3 py-2">Customer Name</th>
@@ -1089,7 +1089,7 @@ export default function Dashboard() {
                           <tr key={inv.id || index} className="hover:bg-slate-50/50">
                             <td className="px-3 py-2 font-mono font-bold text-slate-800">{inv.invoice_number}</td>
                             <td className="px-3 py-2 font-semibold">{inv.customer_name}</td>
-                            <td className="px-3 py-2 text-slate-500">{formatDate(inv.posting_date)}</td>
+                            <td className="px-3 py-2 text-slate-400">{formatDate(inv.posting_date)}</td>
                             <td className="px-3 py-2 text-right tabular-nums">${formatNumber(inv.net_amount)}</td>
                             <td className="px-3 py-2 text-right tabular-nums font-bold text-slate-800">${formatNumber(inv.total_amount)}</td>
                             <td className="px-3 py-2">
@@ -1119,12 +1119,12 @@ export default function Dashboard() {
               {/* Staff & Employees */}
               {searchResults.employees.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <span>👥</span> Staff & Employees ({searchResults.employees.length})
                   </h4>
                   <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                     <table className="w-full text-left text-xs text-slate-700">
-                      <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500 text-[10px] uppercase">
+                      <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-400 text-[10px] uppercase">
                         <tr>
                           <th className="px-3 py-2">ID</th>
                           <th className="px-3 py-2">Employee Name</th>
@@ -1141,7 +1141,7 @@ export default function Dashboard() {
                             <td className="px-3 py-2 font-mono font-bold text-slate-600">{emp.employee_id}</td>
                             <td className="px-3 py-2 font-semibold">{emp.employee_name}</td>
                             <td className="px-3 py-2">{emp.designation}</td>
-                            <td className="px-3 py-2 text-slate-500">{emp.department}</td>
+                            <td className="px-3 py-2 text-slate-400">{emp.department}</td>
                             <td className="px-3 py-2 tabular-nums">${formatNumber(emp.salary)}</td>
                             <td className="px-3 py-2">
                               <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
@@ -1178,7 +1178,7 @@ export default function Dashboard() {
       {/* Universal ERP Workspace switcher cards (Frappe Desk style) */}
       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
             Frappe Desk Workspace Explorer
           </h2>
@@ -1188,7 +1188,7 @@ export default function Dashboard() {
             onClick={() => setWorkspace("wash")}
             className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
               workspace === "wash" 
-                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
                 : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
             }`}
           >
@@ -1203,11 +1203,11 @@ export default function Dashboard() {
             onClick={() => setWorkspace("crm")}
             className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
               workspace === "crm" 
-                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
                 : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
             }`}
           >
-            <Target size={16} className={workspace === "crm" ? "text-white" : "text-slate-500"} />
+            <Target size={16} className={workspace === "crm" ? "text-slate-800" : "text-slate-400"} />
             <div>
               <p className="text-xs font-bold uppercase tracking-wide">CRM & Sales</p>
               <p className={`text-[9px] mt-0.5 ${workspace === "crm" ? "text-blue-100" : "text-slate-400"}`}>Leads & Pipeline</p>
@@ -1218,11 +1218,11 @@ export default function Dashboard() {
             onClick={() => setWorkspace("manufacturing")}
             className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
               workspace === "manufacturing" 
-                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
                 : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
             }`}
           >
-            <Cpu size={16} className={workspace === "manufacturing" ? "text-white" : "text-slate-500"} />
+            <Cpu size={16} className={workspace === "manufacturing" ? "text-slate-800" : "text-slate-400"} />
             <div>
               <p className="text-xs font-bold uppercase tracking-wide">Manufacturing</p>
               <p className={`text-[9px] mt-0.5 ${workspace === "manufacturing" ? "text-blue-100" : "text-slate-400"}`}>BOM & Work Orders</p>
@@ -1233,11 +1233,11 @@ export default function Dashboard() {
             onClick={() => setWorkspace("stock")}
             className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
               workspace === "stock" 
-                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
                 : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
             }`}
           >
-            <Package size={16} className={workspace === "stock" ? "text-white" : "text-slate-500"} />
+            <Package size={16} className={workspace === "stock" ? "text-slate-800" : "text-slate-400"} />
             <div>
               <p className="text-xs font-bold uppercase tracking-wide">Stock Room</p>
               <p className={`text-[9px] mt-0.5 ${workspace === "stock" ? "text-blue-100" : "text-slate-400"}`}>SKU Item Ledgers</p>
@@ -1248,11 +1248,11 @@ export default function Dashboard() {
             onClick={() => setWorkspace("purchase")}
             className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
               workspace === "purchase" 
-                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
                 : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
             }`}
           >
-            <ShoppingCart size={16} className={workspace === "purchase" ? "text-white" : "text-slate-500"} />
+            <ShoppingCart size={16} className={workspace === "purchase" ? "text-slate-800" : "text-slate-400"} />
             <div>
               <p className="text-xs font-bold uppercase tracking-wide">Purchase</p>
               <p className={`text-[9px] mt-0.5 ${workspace === "purchase" ? "text-blue-100" : "text-slate-400"}`}>RFQs & Sourcing</p>
@@ -1263,11 +1263,11 @@ export default function Dashboard() {
             onClick={() => setWorkspace("projects")}
             className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
               workspace === "projects" 
-                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
                 : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
             }`}
           >
-            <FolderKanban size={16} className={workspace === "projects" ? "text-white" : "text-slate-500"} />
+            <FolderKanban size={16} className={workspace === "projects" ? "text-slate-800" : "text-slate-400"} />
             <div>
               <p className="text-xs font-bold uppercase tracking-wide">Projects</p>
               <p className={`text-[9px] mt-0.5 ${workspace === "projects" ? "text-blue-100" : "text-slate-400"}`}>Gantt & Timesheets</p>
@@ -1278,11 +1278,11 @@ export default function Dashboard() {
             onClick={() => setWorkspace("accounts")}
             className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
               workspace === "accounts" 
-                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
                 : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
             }`}
           >
-            <Receipt size={16} className={workspace === "accounts" ? "text-white" : "text-slate-500"} />
+            <Receipt size={16} className={workspace === "accounts" ? "text-slate-800" : "text-slate-400"} />
             <div>
               <p className="text-xs font-bold uppercase tracking-wide">Accounts</p>
               <p className={`text-[9px] mt-0.5 ${workspace === "accounts" ? "text-blue-100" : "text-slate-400"}`}>Finance & Invoicing</p>
@@ -1293,11 +1293,11 @@ export default function Dashboard() {
             onClick={() => setWorkspace("hr")}
             className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
               workspace === "hr" 
-                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
                 : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
             }`}
           >
-            <Users size={16} className={workspace === "hr" ? "text-white" : "text-slate-500"} />
+            <Users size={16} className={workspace === "hr" ? "text-slate-800" : "text-slate-400"} />
             <div>
               <p className="text-xs font-bold uppercase tracking-wide">HR & Payroll</p>
               <p className={`text-[9px] mt-0.5 ${workspace === "hr" ? "text-blue-100" : "text-slate-400"}`}>Staff & Attendance</p>
@@ -1308,11 +1308,11 @@ export default function Dashboard() {
             onClick={() => setWorkspace("apex")}
             className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
               workspace === "apex" 
-                ? "bg-amber-600 border-amber-600 text-white shadow-md shadow-amber-200" 
+                ? "bg-amber-600 border-amber-600 text-slate-800 shadow-md shadow-amber-200" 
                 : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
             }`}
           >
-            <Layers size={16} className={workspace === "apex" ? "text-white" : "text-amber-600"} />
+            <Layers size={16} className={workspace === "apex" ? "text-slate-800" : "text-amber-600"} />
             <div>
               <p className="text-xs font-bold uppercase tracking-wide">Oracle APEX</p>
               <p className={`text-[9px] mt-0.5 ${workspace === "apex" ? "text-amber-100" : "text-slate-400"}`}>Low-Code & SQL</p>
@@ -1323,11 +1323,11 @@ export default function Dashboard() {
             onClick={() => setWorkspace("customizer")}
             className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
               workspace === "customizer" 
-                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200" 
+                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
                 : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
             }`}
           >
-            <Settings size={16} className={workspace === "customizer" ? "text-white" : "text-slate-500"} />
+            <Settings size={16} className={workspace === "customizer" ? "text-slate-800" : "text-slate-400"} />
             <div>
               <p className="text-xs font-bold uppercase tracking-wide">Customize Form</p>
               <p className={`text-[9px] mt-0.5 ${workspace === "customizer" ? "text-blue-100" : "text-slate-400"}`}>Meta Custom Columns</p>
@@ -1363,7 +1363,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500 font-medium font-sans">Current batch queue</span>
+                <span className="text-slate-400 font-medium font-sans">Current batch queue</span>
                 <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-extrabold text-[9px] uppercase">Live Tracking</span>
               </div>
             </div>
@@ -1384,7 +1384,7 @@ export default function Dashboard() {
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-1.5">
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-slate-500 font-medium font-sans">Floor input stream</span>
+                  <span className="text-slate-400 font-medium font-sans">Floor input stream</span>
                   <span className="text-sky-600 font-extrabold text-[10px] flex items-center gap-0.5"><TrendingUp size={11} /> Active</span>
                 </div>
               </div>
@@ -1406,7 +1406,7 @@ export default function Dashboard() {
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-slate-500 font-bold font-sans">Target Completeness</span>
+                  <span className="text-slate-400 font-bold font-sans">Target Completeness</span>
                   <span className="text-emerald-700 font-extrabold text-[10px] font-mono bg-emerald-50 px-1.5 py-0.2 rounded">
                     {dailyTarget > 0 ? Math.round((todayDel / dailyTarget) * 100) : 0}%
                   </span>
@@ -1435,7 +1435,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500 font-medium font-sans">Total floor workload</span>
+                <span className="text-slate-400 font-medium font-sans">Total floor workload</span>
                 <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded font-extrabold text-[9px] uppercase">Action Required</span>
               </div>
             </div>
@@ -1449,14 +1449,14 @@ export default function Dashboard() {
                   <Target size={18} className="text-blue-600" />
                   Wash Plant Daily Performance (Output vs Target)
                 </h3>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-400 mt-1">
                   Analysis of garment output (deliveries) and raw inputs (receives) compared to operational target
                 </p>
               </div>
               
               {/* Target Controller */}
               <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-lg border border-slate-200 self-start lg:self-auto">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2">Set Target:</span>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2">Set Target:</span>
                 <button 
                   onClick={() => setDailyTarget(prev => Math.max(1000, prev - 1000))}
                   className="px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold rounded border border-slate-200 shadow-xs transition-colors"
@@ -1507,23 +1507,23 @@ export default function Dashboard() {
                           const target = data.target;
                           const isMet = output >= target;
                           return (
-                            <div className="bg-slate-900/95 text-white p-3 rounded-lg shadow-xl border border-slate-800 text-[11px] space-y-1.5 backdrop-blur-xs font-sans">
-                              <p className="font-bold border-b border-white/10 pb-1 text-slate-300">{data.formattedDate} ({data.date})</p>
+                            <div className="bg-slate-900/95 text-slate-800 p-3 rounded-lg shadow-xl border border-slate-800 text-[11px] space-y-1.5 backdrop-blur-xs font-sans">
+                              <p className="font-bold border-b border-slate-200 pb-1 text-slate-600">{data.formattedDate} ({data.date})</p>
                               <div className="flex items-center justify-between gap-4">
                                 <span className="text-slate-400">Received (Input):</span>
                                 <span className="font-semibold text-blue-300">{formatNumber(input)} pcs</span>
                               </div>
                               <div className="flex items-center justify-between gap-4">
                                 <span className="text-slate-400">Delivered (Output):</span>
-                                <span className="font-semibold text-emerald-300">{formatNumber(output)} pcs</span>
+                                <span className="font-semibold text-blue-700">{formatNumber(output)} pcs</span>
                               </div>
                               <div className="flex items-center justify-between gap-4">
                                 <span className="text-slate-400">Target Line:</span>
                                 <span className="font-semibold text-amber-400">{formatNumber(target)} pcs</span>
                               </div>
-                              <div className="flex items-center justify-between gap-4 pt-1 border-t border-white/5 font-bold">
+                              <div className="flex items-center justify-between gap-4 pt-1 border-t border-slate-100 font-bold">
                                 <span>Status:</span>
-                                <span className={isMet ? "text-emerald-400 flex items-center gap-1" : "text-rose-400 flex items-center gap-1"}>
+                                <span className={isMet ? "text-blue-600 flex items-center gap-1" : "text-rose-400 flex items-center gap-1"}>
                                   {isMet ? "✓ Target Met" : `✗ Deficit: ${formatNumber(target - output)} pcs`}
                                 </span>
                               </div>
@@ -1581,24 +1581,24 @@ export default function Dashboard() {
                   {/* Insight Stats Grid */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1">
-                      <div className="flex items-center gap-1.5 text-slate-500">
+                      <div className="flex items-center gap-1.5 text-slate-400">
                         <Award size={14} className="text-amber-500" />
                         <span className="text-[10px] font-bold uppercase">Avg Output</span>
                       </div>
                       <p className="text-lg font-bold text-slate-800 tabular-nums">
                         {formatNumber(chartStats.avgOutput)}
-                        <span className="text-xs font-normal text-slate-500 ml-1">pcs</span>
+                        <span className="text-xs font-normal text-slate-400 ml-1">pcs</span>
                       </p>
                     </div>
 
                     <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1">
-                      <div className="flex items-center gap-1.5 text-slate-500">
+                      <div className="flex items-center gap-1.5 text-slate-400">
                         <TrendingUp size={14} className="text-emerald-500" />
                         <span className="text-[10px] font-bold uppercase">Max Output</span>
                       </div>
                       <p className="text-lg font-bold text-slate-800 tabular-nums">
                         {formatNumber(chartStats.maxOutput)}
-                        <span className="text-xs font-normal text-slate-500 ml-1">pcs</span>
+                        <span className="text-xs font-normal text-slate-400 ml-1">pcs</span>
                       </p>
                     </div>
                   </div>
@@ -1608,7 +1608,7 @@ export default function Dashboard() {
                     chartStats.achievementPct >= 80 
                       ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
                       : chartStats.achievementPct >= 50 
-                        ? 'bg-amber-50 border-amber-200 text-amber-800' 
+                        ? 'bg-amber-50 border-amber-500/30 text-amber-800' 
                         : 'bg-rose-50 border-rose-200 text-rose-800'
                   }`}>
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-sm border-2 shrink-0 ${
@@ -1653,7 +1653,7 @@ export default function Dashboard() {
                   <WashingMachine size={18} className="text-indigo-600" />
                   Washing Machine Efficiency & Downtime Analytics
                 </h3>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-400 mt-1">
                   Real-time machine performance evaluation based on batch weights, capacity utilization, and runtime logs
                 </p>
               </div>
@@ -1675,9 +1675,9 @@ export default function Dashboard() {
                           if (active && payload && payload.length) {
                             const data = payload[0].payload;
                             return (
-                              <div className="bg-slate-900 text-white p-2.5 rounded shadow-lg text-[10px] space-y-1">
+                              <div className="bg-slate-900 text-slate-800 p-2.5 rounded shadow-lg text-[10px] space-y-1">
                                 <p className="font-bold text-indigo-300">{data.name} ({data.mc})</p>
-                                <p>Avg Loading Efficiency: <strong className="text-white">{data.efficiency}%</strong></p>
+                                <p>Avg Loading Efficiency: <strong className="text-slate-800">{data.efficiency}%</strong></p>
                                 <p>Washing: {Math.round(data.activeMins / 60)}h | Idle: {Math.round(data.idleMins / 60)}h</p>
                               </div>
                             );
@@ -1689,7 +1689,7 @@ export default function Dashboard() {
                     </ResponsiveContainer>
                   </div>
                 </div>
-                <p className="text-[10px] text-slate-500 italic text-center mt-2">
+                <p className="text-[10px] text-slate-400 italic text-center mt-2">
                   Target: Maintain machine loading between 75% to 90% for optimum liquor ratio action.
                 </p>
               </div>
@@ -1759,39 +1759,39 @@ export default function Dashboard() {
           {/* Quick Access Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Link to="/wash-mc-plan" className="group bg-indigo-900 p-6 rounded-2xl shadow-xl shadow-indigo-900/20 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
-              <div className="text-white">
+              <div className="text-slate-800">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-300">Wet Process Floor</span>
                 <h4 className="text-lg font-black mt-0.5">WASH M/C LOAD PLAN</h4>
                 <p className="text-xs text-indigo-200 mt-1">Batch loading, recipes & wet process scheduling</p>
               </div>
-              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white group-hover:rotate-12 transition-transform shrink-0">
+              <div className="w-12 h-12 bg-slate-200 rounded-xl flex items-center justify-center text-slate-800 group-hover:rotate-12 transition-transform shrink-0">
                 <WashingMachine size={28} />
               </div>
             </Link>
 
             <Link to="/new-plan" className="group bg-blue-600 p-6 rounded-2xl shadow-xl shadow-blue-500/20 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
-              <div className="text-white">
+              <div className="text-slate-800">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200">Import & Planning</span>
                 <h4 className="text-lg font-black mt-0.5">NEXT ERP PLAN</h4>
                 <p className="text-xs text-blue-100 mt-1">Excel import & buyer order planning</p>
               </div>
-              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white group-hover:rotate-12 transition-transform shrink-0">
+              <div className="w-12 h-12 bg-slate-200 rounded-xl flex items-center justify-center text-slate-800 group-hover:rotate-12 transition-transform shrink-0">
                 <PlusCircle size={28} />
               </div>
             </Link>
             <Link to="/cpl-report" className="group bg-slate-900 p-6 rounded-2xl shadow-xl shadow-slate-500/20 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
-              <div className="text-white">
+              <div className="text-slate-800">
                 <h4 className="text-xl font-black mt-1">CPL FABRIC REPORT</h4>
               </div>
-              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white group-hover:rotate-12 transition-transform">
+              <div className="w-12 h-12 bg-slate-200 rounded-xl flex items-center justify-center text-slate-800 group-hover:rotate-12 transition-transform">
                 <Filter size={32} />
               </div>
             </Link>
             <Link to="/data-bank" className="group bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-xl shadow-slate-500/5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
-              <div className="text-slate-900">
+              <div className="text-slate-800 drop-shadow-sm">
                 <h4 className="text-xl font-black mt-1">BUYER DATA BANK (DB)</h4>
               </div>
-              <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900 group-hover:rotate-12 transition-transform border border-slate-200">
+              <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-800 drop-shadow-sm group-hover:rotate-12 transition-transform border border-slate-200">
                 <Database size={32} />
               </div>
             </Link>
@@ -1811,13 +1811,13 @@ export default function Dashboard() {
                 />
                 <button
                   onClick={handleExportToExcel}
-                  className="bg-[#107c41] hover:bg-[#0b592e] text-white px-3 py-1.5 rounded text-xs transition-colors flex items-center gap-1.5 font-bold cursor-pointer"
+                  className="bg-[#107c41] hover:bg-[#0b592e] text-slate-800 px-3 py-1.5 rounded text-xs transition-colors flex items-center gap-1.5 font-bold cursor-pointer"
                   title="Export current filtered status report to Excel"
                 >
                   <FileSpreadsheet size={14} />
                   Export to Excel
                 </button>
-                <Link to="/new-plan" className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs hover:bg-blue-700 transition-colors flex items-center">
+                <Link to="/new-plan" className="bg-blue-600 text-slate-800 px-3 py-1.5 rounded text-xs hover:bg-blue-700 transition-colors flex items-center">
                   + New Plan
                 </Link>
               </div>
@@ -1885,7 +1885,7 @@ export default function Dashboard() {
                 <tbody className="divide-y divide-slate-200 text-xs text-slate-700 bg-white">
                   {Object.keys(filteredGroups).length === 0 ? (
                     <tr>
-                      <td colSpan={17 + customFields.length} className="px-6 py-8 text-center text-slate-500 italic">No active orders found</td>
+                      <td colSpan={17 + customFields.length} className="px-6 py-8 text-center text-slate-400 italic">No active orders found</td>
                     </tr>
                   ) : (
                     Object.entries(filteredGroups).map(([unit, stats]: [string, OrderStats[]]) => {
@@ -1905,7 +1905,7 @@ export default function Dashboard() {
                           {stats.map((stat, idx) => (
                             <tr key={stat.order.id} className="hover:bg-blue-50/50">
                               {idx === 0 && (
-                                <td rowSpan={stats.length + 1} className="p-2 border-r border-b border-slate-200 font-bold bg-[#43a1c6] text-white text-center transform -rotate-180" style={{ writingMode: 'vertical-rl' }}>
+                                <td rowSpan={stats.length + 1} className="p-2 border-r border-b border-slate-200 font-bold bg-[#43a1c6] text-slate-800 text-center transform -rotate-180" style={{ writingMode: 'vertical-rl' }}>
                                   <span>{unit}</span>
                                 </td>
                               )}
@@ -1914,7 +1914,7 @@ export default function Dashboard() {
                               <td className="px-3 py-3 border-r border-slate-200 font-bold text-slate-800">{stat.order.buyer}</td>
                               <td className="px-3 py-3 border-r border-slate-200 font-mono text-blue-600 font-bold">{stat.order.file_no}</td>
                               <td className="px-3 py-3 border-r border-slate-200">{stat.order.color || '-'}</td>
-                              <td className="px-2 py-3 text-center border-r border-slate-200 whitespace-nowrap text-slate-500">{stat.order.erp_date ? formatDate(stat.order.erp_date) : '-'}</td>
+                              <td className="px-2 py-3 text-center border-r border-slate-200 whitespace-nowrap text-slate-400">{stat.order.erp_date ? formatDate(stat.order.erp_date) : '-'}</td>
                               <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{formatNumber(stat.order.order_qty)}</td>
                               <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.todayRcv > 0 ? formatNumber(stat.todayRcv) : 0}</td>
                               <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.totalRcv > 0 ? formatNumber(stat.totalRcv) : 0}</td>
@@ -1929,7 +1929,7 @@ export default function Dashboard() {
                                   {stat.order.custom_values?.[field.fieldname] || "-"}
                                 </td>
                               ))}
-                              <td className="px-3 py-3 text-slate-500 italic">{stat.latestRemarks || '-'}</td>
+                              <td className="px-3 py-3 text-slate-400 italic">{stat.latestRemarks || '-'}</td>
                             </tr>
                           ))}
                           {/* Unit Total Row */}
