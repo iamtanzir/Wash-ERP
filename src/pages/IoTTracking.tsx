@@ -38,7 +38,7 @@ export default function IoTTracking() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg relative overflow-hidden text-white">
+      <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg relative overflow-hidden text-slate-800">
         <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -60,7 +60,7 @@ export default function IoTTracking() {
               <Cpu size={16} className="text-slate-400" />
               <div>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Connected Devices</p>
-                <p className="text-lg font-mono font-bold text-slate-200">1,248</p>
+                <p className="text-lg font-mono font-bold text-slate-700">1,248</p>
               </div>
             </div>
             <div className="bg-slate-800 rounded-lg p-3 border border-slate-700 flex items-center gap-3">
@@ -79,7 +79,7 @@ export default function IoTTracking() {
         <button
           onClick={() => setActiveTab('landscape')}
           className={`px-4 py-2 text-sm font-bold tracking-wide uppercase transition-all border-b-2 flex items-center gap-2 ${
-            activeTab === 'landscape' ? 'border-cyan-600 text-cyan-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+            activeTab === 'landscape' ? 'border-cyan-600 text-cyan-700' : 'border-transparent text-slate-400 hover:text-slate-700'
           }`}
         >
           <LayoutTemplate size={16} />
@@ -88,7 +88,7 @@ export default function IoTTracking() {
         <button
           onClick={() => setActiveTab('critical-path')}
           className={`px-4 py-2 text-sm font-bold tracking-wide uppercase transition-all border-b-2 flex items-center gap-2 ${
-            activeTab === 'critical-path' ? 'border-cyan-600 text-cyan-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+            activeTab === 'critical-path' ? 'border-cyan-600 text-cyan-700' : 'border-transparent text-slate-400 hover:text-slate-700'
           }`}
         >
           <BarChart size={16} />
@@ -167,13 +167,13 @@ export default function IoTTracking() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">IoT Sync Status</p>
-                  <p className="text-sm font-mono font-bold text-green-600 mt-1 flex items-center gap-1">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">IoT Sync Status</p>
+                  <p className="text-sm font-mono font-bold text-blue-600 mt-1 flex items-center gap-1">
                     <CheckCircle2 size={12} /> Connected
                   </p>
                 </div>
                 <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Last Update</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Last Update</p>
                   <p className="text-sm font-mono font-bold text-slate-700 mt-1">2 mins ago</p>
                 </div>
               </div>

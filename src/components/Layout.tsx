@@ -100,7 +100,7 @@ export default function Layout() {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   return (
-    <div className="flex h-screen bg-slate-50  font-sans overflow-hidden">
+    <div className="flex h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
       {/* Sidebar Navigation */}
       <aside className={cn(
         "bg-slate-900 flex flex-col shadow-2xl shrink-0 h-screen overflow-hidden transition-all duration-300 ease-in-out z-50",
@@ -112,7 +112,7 @@ export default function Layout() {
                 <WashingMachine size={20} className="text-white" />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-white font-black text-xl tracking-tighter leading-none">WASH</h1>
+              <h1 className="text-white font-black text-xl tracking-tighter leading-none ">WASH</h1>
               <span className="text-blue-400 font-bold text-[10px] tracking-[0.2em] leading-none mt-1">ERP SYSTEM</span>
             </div>
           </div>
@@ -139,7 +139,7 @@ export default function Layout() {
                     )}
                   >
                     <item.icon
-                      className={cn("flex-shrink-0 h-5 w-5", isActive ? "text-white" : "text-slate-500")}
+                      className={cn("flex-shrink-0 h-5 w-5", isActive ? "text-white" : "text-slate-400")}
                       aria-hidden="true"
                     />
                     <span className="font-semibold text-sm tracking-wide">{item.name}</span>
@@ -156,14 +156,14 @@ export default function Layout() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate uppercase">{user?.username}</p>
               <div className="flex items-center gap-1">
-                <ShieldCheck size={12} className={cn(isAdmin ? "text-red-400" : isEditor ? "text-amber-400" : "text-blue-400")} />
-                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">{user?.role || "viewer"}</p>
+                <ShieldCheck size={12} className={cn(isAdmin ? "text-red-400" : isEditor ? "text-blue-400" : "text-blue-400")} />
+                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">{user?.role || "viewer"}</p>
               </div>
             </div>
           </div>
           <button 
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-red-900/20 rounded-md transition-all group"
+            className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-slate-800 hover:bg-red-900/20 rounded-md transition-all group"
           >
             <LogOut size={18} className="group-hover:translate-x-1 transition-transform" />
             <span className="text-sm font-medium">Log out</span>
@@ -175,26 +175,26 @@ export default function Layout() {
       {!isSidebarOpen && (
         <button 
           onClick={() => setIsSidebarOpen(true)}
-          className="fixed bottom-6 right-6 md:hidden z-50 w-14 h-14 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
+          className="fixed bottom-6 right-6 md:hidden z-50 w-14 h-14 bg-blue-600 text-slate-800 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
         >
           <Menu size={28} />
         </button>
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden w-full relative">
-        <header className="h-16 bg-white  border-b border-slate-200  px-4 md:px-8 flex items-center justify-between shrink-0 gap-4">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden w-full relative z-10">
+        <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between shrink-0 gap-4 shadow-sm">
           <div className="flex items-center gap-3 md:gap-4 font-sans focus-within:ring-0 shrink-0">
             <button 
               onClick={toggleSidebar}
-              className="p-2 -ml-2 text-slate-600  hover:bg-slate-100  rounded-md transition-colors"
+              className="p-2 -ml-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-md transition-colors"
               aria-label="Toggle sidebar"
             >
               <Menu size={24} />
             </button>
 
-            <h2 className="text-base md:text-lg font-bold text-slate-800  uppercase tracking-wide truncate md:border-l md:border-slate-200 md: md:pl-4">{getPageTitle()}</h2>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium bg-green-100  text-green-700  whitespace-nowrap hidden lg:inline-block">Auto Sync</span>
+            <h2 className="text-base md:text-lg font-bold text-slate-800 uppercase tracking-wide truncate md:border-l md:border-slate-200 md:pl-4 drop-shadow-sm">{getPageTitle()}</h2>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium bg-emerald-500/15 border border-blue-200 text-blue-600 whitespace-nowrap hidden lg:inline-block shadow-[0_0_10px_rgba(16,185,129,0.1)]">Auto Sync</span>
           </div>
 
           {/* Frappe/ERPNext Desk Awesome Search Bar (Desktop Only) */}
@@ -208,17 +208,17 @@ export default function Layout() {
                 onFocus={() => setIsSidebarFocused(true)}
                 onBlur={() => setTimeout(() => setIsSidebarFocused(false), 200)}
                 placeholder="Search module, order, buyer, style or press '/'..."
-                className="w-full pl-9 pr-4 py-1.5 bg-slate-100 hover:bg-slate-200/80 focus:bg-white text-xs text-slate-800 rounded-lg border border-transparent focus:border-blue-500 focus:outline-none transition-all placeholder:text-slate-400 font-medium"
+                className="w-full pl-9 pr-4 py-1.5 bg-slate-50 hover:bg-black/30 focus:bg-black/40 text-xs text-slate-700 rounded-lg border border-slate-200 focus:border-emerald-500/50 focus:outline-none transition-all placeholder:text-slate-400 font-medium shadow-inner"
               />
-              <kbd className="absolute right-2.5 hidden sm:inline-block text-[10px] bg-white border border-slate-200 text-slate-400 rounded px-1.5 py-0.5 font-mono shadow-xs">
+              <kbd className="absolute right-2.5 hidden sm:inline-block text-[10px] bg-slate-200 border border-slate-300 text-slate-400 rounded px-1.5 py-0.5 font-mono shadow-sm">
                 Ctrl + K
               </kbd>
             </div>
 
             {/* Awesome Bar Search Dropdown */}
             {isSearchFocused && searchQuery.trim() !== "" && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-slate-100">
-                <div className="p-2 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#0B1120]/95 backdrop-blur-2xl border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden divide-y divide-slate-100">
+                <div className="p-2 bg-slate-50 text-[10px] font-bold text-blue-400/80 uppercase tracking-wider">
                   ERP Modules & Actions
                 </div>
                 <div className="max-h-60 overflow-y-auto py-1">
@@ -228,11 +228,11 @@ export default function Layout() {
                         key={item.href}
                         to={item.href}
                         onClick={() => setSearchQuery("")}
-                        className="flex items-center gap-3 px-3 py-2 hover:bg-blue-50 transition-colors group"
+                        className="flex items-center gap-3 px-3 py-2 hover:bg-slate-100 transition-colors group"
                       >
                         <item.icon size={16} className="text-slate-400 group-hover:text-blue-600 shrink-0" />
                         <div className="flex flex-col min-w-0">
-                          <span className="text-xs font-semibold text-slate-800 group-hover:text-blue-600 truncate">{item.name}</span>
+                          <span className="text-xs font-semibold text-slate-600 group-hover:text-blue-600 truncate transition-colors">{item.name}</span>
                           <span className="text-[10px] text-slate-400 truncate">{item.desc}</span>
                         </div>
                       </Link>
@@ -250,16 +250,16 @@ export default function Layout() {
           <div className="flex items-center gap-2 md:gap-4 shrink-0">
             <button
               onClick={toggleDarkMode}
-              className="p-2 text-slate-600  hover:bg-slate-100  rounded-full transition-colors focus:outline-none"
+              className="p-2 text-slate-400 hover:text-blue-400 hover:bg-slate-200 rounded-full transition-colors focus:outline-none"
               aria-label="Toggle dark mode"
               title="High Contrast Dark Mode"
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-            <span className="sm:hidden px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100  text-green-700  whitespace-nowrap">Auto Sync</span>
+            <span className="sm:hidden px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/15 border border-blue-200 text-blue-600 whitespace-nowrap shadow-[0_0_10px_rgba(16,185,129,0.1)]">Auto Sync</span>
             <div className="flex flex-col items-end hidden sm:flex">
               <p className="text-xs text-slate-400">Real Time</p>
-              <p className="text-sm font-mono font-medium text-slate-700  text-right">
+              <p className="text-sm font-mono font-medium text-blue-600 text-right ">
                 {formatDhakaTime(currentTime)}
               </p>
             </div>
@@ -272,17 +272,17 @@ export default function Layout() {
         </div>
 
         {/* Desktop Tooltip / Status Footer */}
-        <footer className="h-10 bg-slate-200  px-4 md:px-6 flex items-center justify-between text-[10px] md:text-xs text-slate-500  shrink-0">
+        <footer className="h-10 bg-slate-50 backdrop-blur-md px-4 md:px-6 flex items-center justify-between text-[10px] md:text-xs text-slate-400 shrink-0 border-t border-slate-200">
           <div className="flex gap-2 md:gap-4">
             <span className="hidden sm:inline">System: PocketBase v0.22</span>
-            <span className="hidden sm:inline">|</span>
-            <span className="hidden sm:inline">Host: LOCAL-SRV-01</span>
-            <span className="hidden sm:inline">|</span>
-            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500"></div> Tailscale Connected</span>
+            <span className="hidden sm:inline text-slate-200">|</span>
+            <span className="hidden sm:inline text-slate-400">Host: LOCAL-SRV-01</span>
+            <span className="hidden sm:inline text-slate-200">|</span>
+            <span className="flex items-center gap-1 text-emerald-500/80"><div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div> Tailscale Connected</span>
           </div>
           <div className="flex gap-2 md:gap-4 italic items-center">
             <span title="সব রিসিভ এবং ডেলিভারি সম্পন্ন হলে ক্লোজ করুন">Hints (hover)</span>
-            <span className="font-semibold text-slate-600  uppercase hidden sm:inline">Wash Planning</span>
+            <span className="font-semibold text-slate-600 uppercase hidden sm:inline tracking-wider">Wash Planning</span>
           </div>
         </footer>
       </main>
