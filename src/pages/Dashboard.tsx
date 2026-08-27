@@ -1823,144 +1823,110 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex-1 overflow-auto">
-              <table className="w-full text-left border-collapse min-w-max">
+              <table className="w-full text-center border-collapse min-w-max text-[11px] font-medium font-sans">
                 <thead>
-                  <tr className="bg-yellow-100 border-b border-yellow-200">
-                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider sticky left-0 z-10 bg-yellow-100 border-r border-yellow-200 align-top">
+                  <tr>
+                    <th colSpan={14} className="border border-black bg-white px-2 py-1 text-center">
+                      <div className="flex justify-between items-center w-full">
+                        <div className="w-[150px]"></div>
+                        <h2 className="text-xl font-bold font-serif underline decoration-2 underline-offset-4 tracking-wide">Wash Garments Received & Delivery Report</h2>
+                        <div className="w-[150px] flex justify-end">
+                          <span className="font-bold border border-black bg-white px-2 py-1 flex items-center">
+                            Date: <span className="ml-2 bg-yellow-200 px-3 py-0.5 border border-black inline-block min-w-[100px] text-center">{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).replace(/ /g, '-')}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </th>
+                  </tr>
+                  <tr className="bg-white text-black font-bold">
+                    <th className="px-1 py-2 border border-black align-middle w-[60px]">
                       <FilterSelect column="unit" options={filterOptions.unit} label="Unit" />
                     </th>
-                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-center border-r border-yellow-200 align-top">
-                      <FilterSelect column="receivedDate" options={filterOptions.receivedDate} label="Received Date" />
-                    </th>
-                    <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
-                      <FilterSelect column="styleNo" options={filterOptions.styleNo} label="Style NO" />
-                    </th>
-                    <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
+                    <th className="px-1 py-2 border border-black align-middle w-[80px]">
                       <FilterSelect column="buyer" options={filterOptions.buyer} label="Buyer" />
                     </th>
-                    <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
+                    <th className="px-2 py-2 border border-black align-middle w-[100px]">
                       <FilterSelect column="erpFile" options={filterOptions.erpFile} label="ERP/File" />
                     </th>
-                    <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
+                    <th className="px-2 py-2 border border-black align-middle min-w-[120px]">
                       <FilterSelect column="color" options={filterOptions.color} label="Color" />
                     </th>
-                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-center border-r border-yellow-200 align-top">
-                      <span>ERP Date</span>
+                    <th className="px-2 py-2 border border-black align-middle">
+                      <FilterSelect column="ordQty" options={filterOptions.ordQty} label="Ord Qty" />
                     </th>
-                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
-                      <FilterSelect column="ordQty" options={filterOptions.ordQty} label={<>Ord Qty<br/>(pcs)</>} />
+                    <th className="px-1 py-2 border border-black align-middle">
+                      <FilterSelect column="todayRcv" options={filterOptions.todayRcv} label={<>Today<br/>Received</>} />
                     </th>
-                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
-                      <FilterSelect column="todayRcv" options={filterOptions.todayRcv} label={<>Today Received<br/>(pcs)</>} />
+                    <th className="px-1 py-2 border border-black align-middle">
+                      <FilterSelect column="totalRcv" options={filterOptions.totalRcv} label={<>Total<br/>Received</>} />
                     </th>
-                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
-                      <FilterSelect column="totalRcv" options={filterOptions.totalRcv} label={<>Total Received<br/>(pcs)</>} />
+                    <th className="px-1 py-2 border border-black align-middle">
+                      <FilterSelect column="todayDel" options={filterOptions.todayDel} label={<>Today<br/>Delivery</>} />
                     </th>
-                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
-                      <FilterSelect column="todayDel" options={filterOptions.todayDel} label={<>Today Delivery<br/>(pcs)</>} />
+                    <th className="px-1 py-2 border border-black align-middle">
+                      <FilterSelect column="totalDel" options={filterOptions.totalDel} label={<>Total<br/>Delivery</>} />
                     </th>
-                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
-                      <FilterSelect column="totalDel" options={filterOptions.totalDel} label={<>Total Delivery<br/>(pcs)</>} />
+                    <th className="px-2 py-2 border border-black align-middle">
+                      <FilterSelect column="balance" options={filterOptions.balance} label="Balance" />
                     </th>
-                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
-                      <FilterSelect column="balance" options={filterOptions.balance} label={<>Balance<br/>(pcs)</>} />
+                    <th className="px-2 py-2 border border-black align-middle bg-yellow-200">
+                      <FilterSelect column="readyForDelivery" options={filterOptions.readyForDelivery} label={<>Ready For<br/>Deliver</>} />
                     </th>
-                    <th className="px-2 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider text-right border-r border-yellow-200 align-top">
-                      <FilterSelect column="readyForDelivery" options={filterOptions.readyForDelivery} label={<>Ready For Delivery<br/>(pcs)</>} />
-                    </th>
-                    <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
+                    <th className="px-2 py-2 border border-black align-middle w-[100px]">
                       <FilterSelect column="washType" options={filterOptions.washType} label="Type of Wash" />
                     </th>
-                    <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top">
+                    <th className="px-2 py-2 border border-black align-middle w-[60px]">
                       <FilterSelect column="floor" options={filterOptions.floor} label="Floor" />
                     </th>
-                    {customFields.map((field: any) => (
-                      <th key={field.id} className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-r border-yellow-200 align-top pt-3">
-                        {field.label}
-                      </th>
-                    ))}
-                    <th className="px-3 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-wider min-w-[200px] align-top pt-3">Remarks</th>
+                    <th className="px-3 py-2 border border-black align-middle min-w-[150px] bg-yellow-200">Remarks</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 text-xs text-slate-700 bg-white">
+                <tbody className="text-[11px] text-black bg-white">
                   {Object.keys(filteredGroups).length === 0 ? (
                     <tr>
-                      <td colSpan={17 + customFields.length} className="px-6 py-8 text-center text-slate-400 italic">No active orders found</td>
+                      <td colSpan={14} className="px-6 py-8 text-center text-slate-400 italic border border-black">No active orders found</td>
                     </tr>
                   ) : (
                     Object.entries(filteredGroups).map(([unit, stats]: [string, OrderStats[]]) => {
-                      const unitGrand = stats.reduce((acc, stat) => {
-                        acc.ord += stat.order.order_qty || 0;
-                        acc.tRcv += stat.todayRcv;
-                        acc.totRcv += stat.totalRcv;
-                        acc.tDel += stat.todayDel;
-                        acc.totDel += stat.totalDel;
-                        acc.bal += stat.balance;
-                        acc.ready += stat.totalReady;
-                        return acc;
-                      }, { ord: 0, tRcv: 0, totRcv: 0, tDel: 0, totDel: 0, bal: 0, ready: 0 });
-
                       return (
                         <React.Fragment key={unit}>
                           {stats.map((stat, idx) => (
                             <tr key={stat.order.id} className="hover:bg-blue-50/50">
-                              {idx === 0 && (
-                                <td rowSpan={stats.length + 1} className="p-2 border-r border-b border-slate-200 font-bold bg-[#43a1c6] text-slate-800 text-center transform -rotate-180" style={{ writingMode: 'vertical-rl' }}>
-                                  <span>{unit}</span>
-                                </td>
-                              )}
-                              <td className="px-2 py-3 text-center border-r border-slate-200 whitespace-nowrap">{stat.firstRcvDate ? formatDate(stat.firstRcvDate) : '-'}</td>
-                              <td className="px-3 py-3 border-r border-slate-200">{stat.order.style_no || '-'}</td>
-                              <td className="px-3 py-3 border-r border-slate-200 font-bold text-slate-800">{stat.order.buyer}</td>
-                              <td className="px-3 py-3 border-r border-slate-200 font-mono text-blue-600 font-bold">{stat.order.file_no}</td>
-                              <td className="px-3 py-3 border-r border-slate-200">{stat.order.color || '-'}</td>
-                              <td className="px-2 py-3 text-center border-r border-slate-200 whitespace-nowrap text-slate-400">{stat.order.erp_date ? formatDate(stat.order.erp_date) : '-'}</td>
-                              <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{formatNumber(stat.order.order_qty)}</td>
-                              <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.todayRcv > 0 ? formatNumber(stat.todayRcv) : 0}</td>
-                              <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.totalRcv > 0 ? formatNumber(stat.totalRcv) : 0}</td>
-                              <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.todayDel > 0 ? formatNumber(stat.todayDel) : 0}</td>
-                              <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.totalDel > 0 ? formatNumber(stat.totalDel) : 0}</td>
-                              <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums font-semibold text-orange-600">{formatNumber(stat.balance)}</td>
-                              <td className="px-2 py-3 text-right border-r border-slate-200 tabular-nums">{stat.totalReady > 0 ? formatNumber(stat.totalReady) : 0}</td>
-                              <td className="px-3 py-3 border-r border-slate-200">{stat.order.wash_type || '-'}</td>
-                              <td className="px-3 py-3 border-r border-slate-200">{stat.order.sew_floor || '-'}</td>
-                              {customFields.map((field: any) => (
-                                <td key={field.id} className="px-3 py-3 border-r border-slate-200 text-slate-600 font-medium">
-                                  {stat.order.custom_values?.[field.fieldname] || "-"}
-                                </td>
-                              ))}
-                              <td className="px-3 py-3 text-slate-400 italic">{stat.latestRemarks || '-'}</td>
+                              <td className="px-2 py-1.5 text-center border border-black whitespace-nowrap font-bold bg-yellow-200">{unit}</td>
+                              <td className="px-2 py-1.5 border border-black text-center">{stat.order.buyer}</td>
+                              <td className="px-2 py-1.5 border border-black text-center">{stat.order.file_no}</td>
+                              <td className={`px-2 py-1.5 border border-black text-center ${stat.order.color?.includes('46-215') ? 'bg-yellow-200 font-bold' : ''}`}>{stat.order.color || '-'}</td>
+                              <td className="px-2 py-1.5 text-center border border-black">{formatNumber(stat.order.order_qty)}</td>
+                              <td className="px-2 py-1.5 text-center border border-black">{stat.todayRcv > 0 ? formatNumber(stat.todayRcv) : 0}</td>
+                              <td className="px-2 py-1.5 text-center border border-black">{stat.totalRcv > 0 ? formatNumber(stat.totalRcv) : 0}</td>
+                              <td className="px-2 py-1.5 text-center border border-black">{stat.todayDel > 0 ? formatNumber(stat.todayDel) : 0}</td>
+                              <td className="px-2 py-1.5 text-center border border-black">{stat.totalDel > 0 ? formatNumber(stat.totalDel) : 0}</td>
+                              <td className="px-2 py-1.5 text-center border border-black">{formatNumber(stat.balance)}</td>
+                              <td className="px-2 py-1.5 text-center border border-black">{stat.totalReady > 0 ? formatNumber(stat.totalReady) : 0}</td>
+                              <td className="px-2 py-1.5 text-center border border-black">{stat.order.wash_type || '-'}</td>
+                              <td className="px-2 py-1.5 text-center border border-black">{stat.order.sew_floor || '-'}</td>
+                              <td className="px-2 py-1.5 border border-black bg-yellow-200">{stat.latestRemarks || '-'}</td>
                             </tr>
                           ))}
-                          {/* Unit Total Row */}
-                          <tr className="bg-yellow-200/50 font-bold border-b-2 border-yellow-300">
-                            <td colSpan={6} className="px-3 py-3 text-center border-r border-slate-300">{unit} Total</td>
-                            <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.ord)}</td>
-                            <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.tRcv)}</td>
-                            <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.totRcv)}</td>
-                            <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.tDel)}</td>
-                            <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.totDel)}</td>
-                            <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums text-orange-600">{formatNumber(unitGrand.bal)}</td>
-                            <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(unitGrand.ready)}</td>
-                            <td colSpan={3 + customFields.length}></td>
-                          </tr>
                         </React.Fragment>
+
                       );
                     })
                   )}
                 </tbody>
                 {Object.keys(filteredGroups).length > 0 && (
                   <tfoot>
-                    <tr className="bg-slate-200 font-bold border-t-2 border-slate-300 text-xs">
-                      <td colSpan={7} className="px-3 py-3 text-center border-r border-slate-300 uppercase tracking-widest">G.Total</td>
-                      <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.ordQty)}</td>
-                      <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.todayRcv)}</td>
-                      <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.totalRcv)}</td>
-                      <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.todayDel)}</td>
-                      <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.totalDel)}</td>
-                      <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums text-orange-700">{formatNumber(grandTotals.balance)}</td>
-                      <td className="px-2 py-3 text-right border-r border-slate-300 tabular-nums">{formatNumber(grandTotals.ready)}</td>
-                      <td colSpan={3 + customFields.length}></td>
+                    <tr className="font-bold text-[12px] bg-white text-black">
+                      <td className="px-2 py-2 text-center border border-black uppercase">G.Total</td>
+                      <td colSpan={3} className="px-2 py-2 text-center border border-black text-red-600">Auto Subtotal</td>
+                      <td className="px-2 py-2 text-center border border-black">{formatNumber(grandTotals.ordQty)}</td>
+                      <td className="px-2 py-2 text-center border border-black">{formatNumber(grandTotals.todayRcv)}</td>
+                      <td className="px-2 py-2 text-center border border-black">{formatNumber(grandTotals.totalRcv)}</td>
+                      <td className="px-2 py-2 text-center border border-black">{formatNumber(grandTotals.todayDel)}</td>
+                      <td className="px-2 py-2 text-center border border-black">{formatNumber(grandTotals.totalDel)}</td>
+                      <td className="px-2 py-2 text-center border border-black">{formatNumber(grandTotals.balance)}</td>
+                      <td className="px-2 py-2 text-center border border-black">{formatNumber(grandTotals.ready)}</td>
+                      <td colSpan={3} className="px-2 py-2 border border-black"></td>
                     </tr>
                   </tfoot>
                 )}
