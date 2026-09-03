@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { WashingMachine, User, KeyRound, LogIn, ShieldAlert, Phone } from 'lucide-react';
+import { WashingMachine, User, KeyRound, LogIn, ShieldAlert, PhoneCall } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -172,13 +172,23 @@ export default function Login() {
       </div>
 
       {/* Floating Bottom-Right Support Contact */}
-      <div className="fixed bottom-4 right-4 z-40">
+      <div className="fixed bottom-5 right-5 z-40">
         <a
           href="tel:01710110490"
-          className="flex items-center gap-2 bg-[#1E6BFF] hover:bg-blue-600 text-white font-bold px-4 py-2 rounded-full text-xs shadow-lg transition-all active:scale-95"
+          className="flex items-center gap-2.5 px-5 py-2.5 rounded-full shadow-[0_4px_20px_rgba(30,100,255,0.45)] hover:shadow-[0_6px_25px_rgba(106,71,255,0.6)] hover:scale-105 active:scale-95 transition-all cursor-pointer border border-blue-300/30 backdrop-blur-sm"
+          style={{
+            background: 'linear-gradient(90deg, #1E62FF 0%, #3B5FF6 45%, #6A47FF 100%)',
+          }}
         >
-          <Phone size={13} className="fill-white" />
-          <span>Support: 01710-110490</span>
+          <PhoneCall size={17} className="text-[#FFDE21] stroke-[2.5] shrink-0 drop-shadow-[0_0_4px_rgba(255,222,33,0.5)]" />
+          <div className="flex items-center gap-1.5 leading-none">
+            <span className="font-extrabold text-white text-[13px] tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+              Support:
+            </span>
+            <span className="font-extrabold text-[#FFE63B] text-[13px] tracking-wide font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+              01710-110490
+            </span>
+          </div>
         </a>
       </div>
     </div>

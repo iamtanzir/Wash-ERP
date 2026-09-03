@@ -21,12 +21,21 @@ export default function SupportWidget() {
       <div className="fixed bottom-12 right-4 md:bottom-12 md:right-6 z-40">
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all border border-blue-400/30"
+          className="flex items-center gap-2.5 px-5 py-2.5 rounded-full shadow-[0_4px_20px_rgba(30,100,255,0.45)] hover:shadow-[0_6px_25px_rgba(106,71,255,0.6)] hover:scale-105 active:scale-95 transition-all cursor-pointer border border-blue-300/30 backdrop-blur-sm"
+          style={{
+            background: 'linear-gradient(90deg, #1E62FF 0%, #3B5FF6 45%, #6A47FF 100%)',
+          }}
           title="Call for Support: 01710-110490"
         >
-          <PhoneCall size={14} className="animate-pulse text-yellow-300" />
-          <span className="hidden sm:inline">Support:</span>
-          <span className="font-mono text-yellow-200">01710-110490</span>
+          <PhoneCall size={17} className="text-[#FFDE21] stroke-[2.5] shrink-0 drop-shadow-[0_0_4px_rgba(255,222,33,0.5)]" />
+          <div className="flex items-center gap-1.5 leading-none">
+            <span className="font-extrabold text-white text-[13px] tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+              Support:
+            </span>
+            <span className="font-extrabold text-[#FFE63B] text-[13px] tracking-wide font-mono drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+              01710-110490
+            </span>
+          </div>
         </button>
       </div>
 
