@@ -1,46 +1,39 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { LogIn, ShieldAlert, KeyRound, User, Loader2, Shield, WashingMachine, PhoneCall } from "lucide-react";
-import { toast } from "sonner";
-import { useAuth } from "../contexts/AuthContext";
-import { motion } from "motion/react";
-import SupportWidget from "../components/SupportWidget";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'motion/react';
+import { WashingMachine, User, KeyRound, LogIn, ShieldAlert, Phone } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'sonner';
 
 export default function Login() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  const { user, refreshUser } = useAuth();
+  const { refreshUser } = useAuth();
   const navigate = useNavigate();
-
-  React.useEffect(() => {
-    if (user) {
-      navigate("/", { replace: true });
-    }
-  }, [user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!username || !password) {
+      toast.error("Please enter both ID and Password");
+      return;
+    }
+    
     setLoading(true);
     try {
-      const res = await fetch("/api/login", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-        credentials: "include",
+        body: JSON.stringify({ username, password })
       });
 
-      const contentType = res.headers.get("content-type");
       let data: any = {};
-      
+      const contentType = res.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         data = await res.json();
       } else if (!res.ok) {
         const textError = await res.text();
-        console.error("Server Error Response:", textError);
-        const cleanMsg = textError.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').substring(0, 150).trim();
-        throw new Error(`Server Error (${res.status}): ${cleanMsg || "No response details."}`);
+        throw new Error(`Server Error (${res.status})`);
       }
 
       if (res.ok) {
@@ -58,141 +51,136 @@ export default function Login() {
   };
 
   return (
-    <>
-      <SupportWidget />
-      <div className="fixed inset-0 bg-[#0f172a] overflow-y-auto [&::-webkit-scrollbar]:hidden p-4 sm:p-6" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        <div className="flex min-h-full items-center justify-center">
-        <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-[400px] flex flex-col justify-center my-8"
-      >
-        <div className="px-4 py-4 sm:px-8 space-y-4 sm:space-y-5 transition-all">
-          
-          {/* Brand Header */}
-          <div className="flex flex-col items-center text-center space-y-2">
+    <div className="fixed inset-0 bg-[#0A0F1D] overflow-y-auto flex items-center justify-center p-4 selection:bg-blue-500 selection:text-white">
+      <div className="w-full max-w-[380px] flex flex-col items-center my-auto py-8">
+        
+        {/* Top Logo Icon */}
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="w-14 h-14 bg-gradient-to-b from-[#3B82F6] to-[#1D4ED8] rounded-2xl flex items-center justify-center text-white shadow-[0_8px_25px_rgba(29,78,216,0.4)] mb-4"
+        >
+          <WashingMachine size={28} strokeWidth={2.2} className="text-white" />
+        </motion.div>
+
+        {/* Title */}
+        <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-1">
+          WASH<span className="text-[#3B82F6]">ERP</span>
+        </h1>
+
+        {/* Divider / Subtitle */}
+        <div className="flex items-center justify-center gap-3 w-48 mt-1.5 mb-6">
+          <div className="h-[1px] bg-slate-700/70 flex-1" />
+          <span className="text-[9px] font-bold tracking-[0.25em] text-slate-400 uppercase">
+            INTERNAL DATA HUB
+          </span>
+          <div className="h-[1px] bg-slate-700/70 flex-1" />
+        </div>
+
+        {/* Login Form */}
+        <form onSubmit={handleLogin} className="w-full space-y-4">
+          {/* User ID Field */}
+          <div className="space-y-1.5 text-left">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block pl-0.5">
+              USER ID
+            </label>
             <div className="relative">
-              <div className="absolute inset-0 bg-blue-500/10 blur-xl rounded-full" />
-              <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-[16px] shadow-lg flex items-center justify-center text-white overflow-hidden">
-                <WashingMachine size={24} strokeWidth={2.5} className="text-white" />
-              </div>
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                required
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                placeholder="User ID Name"
+                className="w-full bg-white text-slate-800 placeholder:text-slate-300 rounded-xl pl-11 pr-4 py-3.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Password Field */}
+          <div className="space-y-1.5 text-left">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block pl-0.5">
+              USER PASS
+            </label>
+            <div className="relative">
+              <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                required
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••"
+                className="w-full bg-white text-slate-800 placeholder:text-slate-300 rounded-xl pl-11 pr-4 py-3.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full mt-2 bg-[#1E6BFF] hover:bg-blue-600 text-white font-bold py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(30,107,255,0.35)] transition-all active:scale-[0.99] disabled:opacity-50 text-sm uppercase tracking-wider"
+          >
+            <span>{loading ? 'AUTHENTICATING...' : 'ENTER ERP'}</span>
+            {!loading && <span className="text-lg leading-none font-bold">→</span>}
+          </button>
+        </form>
+
+        {/* Legal Notice */}
+        <div className="w-full mt-5 border border-red-500/25 bg-[#180E14] rounded-xl overflow-hidden text-left shadow-lg">
+          <div className="flex items-center gap-2 px-3.5 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 font-bold text-[11px]">
+            <ShieldAlert size={15} className="shrink-0 text-red-400" />
+            <span>আইনগত সতর্কবার্তা ও কপিরাইট অধিকার (Legal Notice)</span>
+          </div>
+
+          <div className="p-3.5 space-y-2 text-[10px] leading-relaxed">
+            <div className="font-bold text-amber-400">
+              Developer & Owner: <span className="text-white">Tanzir Ahmed</span>
             </div>
             
-            <div className="space-y-1">
-              <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center justify-center gap-1">
-                WASH <span className="text-blue-500">ERP</span>
-              </h1>
-              <div className="flex items-center justify-center gap-2 opacity-60">
-                <div className="h-px w-6 bg-slate-700" />
-                <p className="text-slate-100 font-bold text-[8px] uppercase tracking-[0.4em]">Internal Data Hub</p>
-                <div className="h-px w-6 bg-slate-700" />
-              </div>
-            </div>
-          </div>
-
-          {/* Login Form */}
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-3">
-              {/* Username Field */}
-              <div className="space-y-1">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block px-1">USER ID</label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <User className="text-slate-300" size={16} />
-                  </div>
-                  <input 
-                    required
-                    type="text"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 focus:bg-white focus:border-blue-400 outline-none transition-all font-medium text-slate-700 placeholder:text-slate-300 text-sm"
-                    placeholder="User ID Name"
-                  />
-                </div>
-              </div>
-
-              {/* Password Field */}
-              <div className="space-y-1">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block px-1">USER PASS</label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <KeyRound className="text-slate-300" size={16} />
-                  </div>
-                  <input 
-                    required
-                    type="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 focus:bg-white focus:border-blue-400 outline-none transition-all font-medium text-slate-700 placeholder:text-slate-300 text-sm"
-                    placeholder="••••••"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full relative flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black py-3 px-8 rounded-xl transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-blue-500/20"
-            >
-              <span className="text-sm uppercase tracking-wider">Enter ERP</span>
-              {loading ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <LogIn size={16} />
-              )}
-            </button>
-          </form>
-
-          {/* Legal Notice & Copyright */}
-          <div className="border border-red-500/30 bg-red-950/30 rounded-xl overflow-hidden text-left p-0">
-            <div className="bg-red-500/20 px-3 py-1.5 border-b border-red-500/20 flex items-center gap-1.5 text-red-300 font-bold text-[10px]">
-              <ShieldAlert size={14} className="shrink-0 text-red-400" />
-              <span>আইনগত সতর্কবার্তা ও কপিরাইট অধিকার (Legal Notice)</span>
-            </div>
-            <div className="p-2.5 space-y-1 text-[10px] text-slate-200 leading-relaxed">
-              <div className="font-bold text-amber-300 text-[10px]">
-                Developer & Owner: <span className="text-white">Tanzir Ahmed</span>
-              </div>
-              <p className="text-slate-200 text-[10px] leading-normal font-medium">
-                এই সাইট, ডিজাইন ও কন্ট্রোল সিস্টেমের কোনো অংশ অনুমতি ছাড়া ক্লোন বা নকল করা সম্পূর্ণ বেআইনি। পাইরেসি করা হলে সাইবার সুরক্ষা আইন ও কপিরাইট আইনের অধীনে আইনি ব্যবস্থা নেয়া হবে।
-              </p>
-              <p className="text-slate-400 text-[9px] italic leading-tight pt-1 border-t border-slate-800/80">
-                Unauthorized cloning or replication will face direct legal action under Cyber Security & Copyright Laws of BD.
-              </p>
-            </div>
-          </div>
-
-          {/* Compliance & Branding */}
-          <div className="space-y-3 pt-1">
-            <div className="p-3 bg-white/5 border border-white/10 rounded-xl flex items-start gap-3 backdrop-blur-sm">
-              <Shield size={16} className="text-blue-400 shrink-0 mt-0.5" strokeWidth={2.5} />
-              <p className="text-[9px] leading-relaxed text-blue-100/40 font-medium italic">
-                Notice: All activity is monitoring by authorized ID only. System access logs are maintained as per company policy.
-              </p>
-            </div>
-
-            <div className="pt-3 border-t border-slate-800 flex flex-col items-center space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="w-1 h-1 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
-                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em]">
-                  AUTOMATICALLY UPDATE DATABASE
-                </p>
-              </div>
-              <div className="text-center space-y-1">
-                <p className="text-[9px] font-medium text-slate-500">
-                  Built with ❤️ <span className="text-slate-300 font-bold">Tanzir Ahmed.</span>
-                </p>
-                <p className="text-[7px] text-slate-600 font-black uppercase tracking-[0.3em]">BUILD V2.4.0-ERP</p>
-              </div>
-            </div>
+            <p className="text-slate-200 leading-normal font-medium">
+              এই সাইট, ডিজাইন ও কন্ট্রোল সিস্টেমের কোনো অংশ অনুমতি ছাড়া ক্লোন বা নকল করা সম্পূর্ণ বেআইনি। পাইরেসি করা হলে সাইবার সুরক্ষা আইন ও কপিরাইট আইনের অধীনে আইনি ব্যবস্থা নেয়া হবে।
+            </p>
+            
+            <p className="text-slate-400 text-[9px] italic leading-tight pt-1.5 border-t border-slate-800">
+              Unauthorized cloning or replication will face direct legal action under Cyber Security & Copyright Laws of BD.
+            </p>
           </div>
         </div>
-      </motion.div>
+
+        {/* Support Developer Button with Exact Requested Neon Pink Style */}
+        <div className="mt-5 flex justify-center w-full">
+          <a
+            href="https://www.supportkori.com/pay/tanzirahmed"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center border-2 border-[#E11D48] bg-[#170C1B] hover:bg-[#23102A] transition-all px-7 py-2 rounded-full shadow-[0_0_15px_rgba(225,29,72,0.35)] active:scale-95 group"
+          >
+            <span className="text-[#FF2D78] font-black text-xs tracking-wider uppercase drop-shadow-[0_0_8px_rgba(255,45,120,0.6)]">
+              SUPPORT
+            </span>
+            <span className="mx-1.5 text-sm drop-shadow-[0_0_6px_rgba(255,45,120,0.8)]">
+              💖
+            </span>
+            <span className="text-[#FF2D78] font-black text-xs tracking-wider uppercase drop-shadow-[0_0_8px_rgba(255,45,120,0.6)]">
+              DEVELOPER
+            </span>
+          </a>
+        </div>
+
       </div>
+
+      {/* Floating Bottom-Right Support Contact */}
+      <div className="fixed bottom-4 right-4 z-40">
+        <a
+          href="tel:01710110490"
+          className="flex items-center gap-2 bg-[#1E6BFF] hover:bg-blue-600 text-white font-bold px-4 py-2 rounded-full text-xs shadow-lg transition-all active:scale-95"
+        >
+          <Phone size={13} className="fill-white" />
+          <span>Support: 01710-110490</span>
+        </a>
       </div>
-    </>
+    </div>
   );
 }
-
