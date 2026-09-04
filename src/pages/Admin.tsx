@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Users, UserPlus, Shield, UserMinus, ShieldAlert, CheckCircle2, KeyRound, User } from "lucide-react";
+import { Users, UserPlus, Shield, UserMinus, ShieldAlert, CheckCircle2, KeyRound, User, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
@@ -19,6 +19,8 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUser, setNewUser] = useState({ username: "", password: "", role: "viewer" as const });
+  const [showTursoToken, setShowTursoToken] = useState(false);
+  const [showNewUserPassword, setShowNewUserPassword] = useState(false);
   const [tursoUrl, setTursoUrl] = useState("");
   const [tursoToken, setTursoToken] = useState("");
   const [savingTurso, setSavingTurso] = useState(false);
@@ -82,6 +84,7 @@ export default function Admin() {
       toast.success("User whitelisted successfully");
       setShowAddModal(false);
       setNewUser({ username: "", password: "", role: "viewer" });
+      setShowNewUserPassword(false);
       fetchUsers();
     } catch (error: any) {
       toast.error(error.message);
@@ -220,13 +223,23 @@ export default function Admin() {
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Turso Auth Token</label>
-                <input 
-                  type="password"
-                  value={tursoToken}
-                  onChange={e => setTursoToken(e.target.value)}
-                  placeholder="eyJhbG..."
-                  className="w-full bg-slate-950 border border-slate-700 text-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
-                />
+                <div className="relative">
+                  <input 
+                    type={showTursoToken ? "text" : "password"}
+                    value={tursoToken}
+                    onChange={e => setTursoToken(e.target.value)}
+                    placeholder="eyJhbG..."
+                    className="w-full bg-slate-950 border border-slate-700 text-slate-200 rounded-lg pl-4 pr-10 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowTursoToken(!showTursoToken)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 focus:outline-none p-1 rounded transition-colors"
+                    title={showTursoToken ? "Hide token" : "Show token"}
+                  >
+                    {showTursoToken ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
               <button 
                 type="submit"
@@ -393,12 +406,20 @@ export default function Admin() {
                   <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input 
                     required
-                    type="password"
+                    type={showNewUserPassword ? "text" : "password"}
                     value={newUser.password}
                     onChange={e => setNewUser({...newUser, password: e.target.value})}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-3 focus:ring-2 focus:ring-blue-500 outline-none font-bold"
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewUserPassword(!showNewUserPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-1 rounded-lg transition-colors"
+                    title={showNewUserPassword ? "Hide password" : "Show password"}
+                  >
+                    {showNewUserPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
               </div>
 
@@ -429,7 +450,10 @@ export default function Admin() {
               <div className="flex gap-3 pt-4">
                 <button 
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setShowNewUserPassword(false);
+                  }}
                   className="flex-1 px-6 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-all"
                 >
                   Cancel

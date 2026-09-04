@@ -63,8 +63,8 @@ function getSeedPromise() {
 }
 
 const ensureDb = async (req: any, res: any, next: any) => {
-    // Only intercept API calls
-    if (!req.path.startsWith("/api/")) {
+    // Only intercept API calls, skip health check
+    if (!req.path.startsWith("/api/") || req.path === "/api/health") {
         return next();
     }
     try {
@@ -101,6 +101,12 @@ const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_KEY);
 
 app.use(express.json());
 app.use(cookieParser(JWT_SECRET_KEY));
+
+// Health check API endpoint (First API route for container/proxy health checks)
+app.get("/api/health", (req, res) => {
+    res.json({ status: "ok" });
+});
+
 app.use(ensureDb);
 
 // Middleware: Auth Check
@@ -532,8 +538,7 @@ async function startServer() {
     if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
         const vite = await createViteServer({
             server: { 
-                middlewareMode: true,
-                hmr: { server: httpServer }
+                middlewareMode: true
             },
             appType: "spa",
         });
