@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 // Mock data as fallback for Risk Analysis
 const mockDataGroups = [
   {
-    name: "1st.Floor ERP Plan",
+    name: "1ST",
     items: [
       { erpId: "111-7992", washType: "Garment Dye Snow Wash", erpQty: 21754, wRecv: 9484, wDeli: 7846 },
       { erpId: "111-8013", washType: "GarmentDyesnowWash", erpQty: 28451, wRecv: 16500, wDeli: 11346 },
@@ -116,7 +116,7 @@ export default function HMTOD() {
 
     Object.keys(fileTargets).forEach(file => {
       const order = erpOrders?.find((o: any) => o.file_no === file || o.id === file);
-      const floor = order?.floor || '1st.Floor ERP Plan';
+      const floor = order?.floor || '1ST';
       
       // Calculate Recv and Deli
       const logs = recentLogs?.items?.filter((l: any) => l.expand?.erp_order?.file_no === file) || [];

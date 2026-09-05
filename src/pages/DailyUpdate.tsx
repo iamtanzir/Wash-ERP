@@ -13,7 +13,7 @@ export default function DailyUpdate() {
   // Tree Structure States
   const [transactionType, setTransactionType] = useState<'received' | 'delivery'>('received');
   const [entryCategory, setEntryCategory] = useState<'GMT' | 'CPL'>('GMT');
-  const [gmtFloor, setGmtFloor] = useState('G.F (INCTL)');
+  const [gmtFloor, setGmtFloor] = useState('1ST');
   const [cplUnit, setCplUnit] = useState('INCTL');
   const [entryQuantity, setEntryQuantity] = useState<number>(0);
   const [displayColor, setDisplayColor] = useState('');
@@ -179,10 +179,10 @@ export default function DailyUpdate() {
                   <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Floor Selection</label>
                     <select value={gmtFloor} onChange={e => setGmtFloor(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 font-bold text-slate-700">
-                      <option value="G.F (INCTL)">G.F (INCTL)</option>
-                      <option value="1st.F (INCTL)">1st.F (INCTL)</option>
-                      <option value="2nd.F (INCTL)">2nd.F (INCTL)</option>
-                      <option value="K.F (NKFL)">K.F (NKFL)</option>
+                      <option value="1ST">1ST</option>
+                      <option value="2ND">2ND</option>
+                      <option value="GND">GND</option>
+                      <option value="KF">KF</option>
                       <option value="B2B">B2B</option>
                     </select>
                   </div>
@@ -191,10 +191,9 @@ export default function DailyUpdate() {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unit Selection</label>
                     <select value={cplUnit} onChange={e => setCplUnit(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 font-bold text-slate-700">
                       <option value="INCTL">INCTL</option>
-                      <option value="Textile Unit">Textile Unit</option>
-                      <option value="Tex R&D">Tex R&D</option>
                       <option value="NKFL">NKFL</option>
                       <option value="B2B">B2B</option>
+                      <option value="Unit 2 (Out-Side)">Unit 2 (Out-Side)</option>
                     </select>
                   </div>
                 )}
