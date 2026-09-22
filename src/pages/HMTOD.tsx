@@ -505,6 +505,109 @@ export default function HMTOD() {
     toast.success("Downloaded Excel Sheet");
   };
 
+  // Import directly from Excel (.xlsx / .xls) for Master Plan
+  const handleImportExcelTod = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data: any[] = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+        let headerRowIdx = -1;
+        for (let i = 0; i < Math.min(data.length, 12); i++) {
+          const rowStr = JSON.stringify(data[i] || []).toLowerCase();
+          if (rowStr.includes('job') || rowStr.includes('floor') || rowStr.includes('ord qty')) {
+            headerRowIdx = i;
+            break;
+          }
+        }
+
+        if (headerRowIdx === -1) {
+          toast.error("Could not find table headers (Job / Floor / Ord Qty) in this Excel sheet.");
+          return;
+        }
+
+        const headers: string[] = (data[headerRowIdx] || []).map((h: any) => String(h || '').trim());
+        const rawRows = data.slice(headerRowIdx + 1);
+
+        const parsedTodRows: HmShipTodRow[] = [];
+        rawRows.forEach((r, idx) => {
+          if (!r || r.length === 0) return;
+          const rowObj: Record<string, any> = {};
+          headers.forEach((h, hIdx) => {
+            rowObj[h] = r[hIdx];
+          });
+
+          const job = String(rowObj['ERP/File/ Job'] || rowObj['ERP/File'] || rowObj['Job'] || rowObj['Job ref'] || '').trim();
+          if (!job || job.toLowerCase().includes('total') || job.toLowerCase().includes('g.total')) return;
+
+          parsedTodRows.push({
+            id: `imp-${Date.now()}-${idx}`,
+            floor: String(rowObj['Sew. Floor'] || rowObj['Floor'] || '1st.F'),
+            wPlan: String(rowObj['W. Plan'] || rowObj['Wash Plan'] || 'INCTL'),
+            job,
+            color: String(rowObj['Color'] || rowObj['Colour'] || ''),
+            ordQty: parseInt(rowObj['Ord Qty'] || rowObj['Order Qty'] || '0') || 0,
+            wRecv: parseInt(rowObj['TTL. W. Received'] || rowObj['W. Received'] || rowObj['W.Recv'] || '0') || 0,
+            wDeli: parseInt(rowObj['TTL. W. Delivery'] || rowObj['W. Delivery'] || rowObj['W.Deli'] || '0') || 0,
+            wReady: parseInt(rowObj['Wash Ready Qty'] || rowObj['Wash Ready'] || '0') || 0,
+            ship23: parseInt(rowObj['Ship Qty (23-Sep)'] || rowObj['23-Sep'] || '0') || 0,
+            ship26: parseInt(rowObj['Ship Qty (26-Sep)'] || rowObj['26-Sep'] || '0') || 0,
+            remarks: String(rowObj['REMARKS'] || rowObj['Remarks'] || ''),
+            isYellowJob: String(rowObj['Color'] || '').includes('09-103') || String(rowObj['Color'] || '').includes('15-103'),
+            isRedJob: ['111-8507', '111-8510', '111-8531', '111-8553', '111-8556', '111-8575', '111-8576'].includes(job)
+          });
+        });
+
+        if (parsedTodRows.length > 0) {
+          saveRows(parsedTodRows);
+          toast.success(`Loaded ${parsedTodRows.length} order rows from ${file.name}!`);
+        } else {
+          toast.error("No valid order rows detected in Excel file.");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Error parsing Excel file.");
+      }
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = '';
+  };
+
+  // Tab 2: Country-wise Excel File Upload handler
+  const handleUploadCutoffExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data: any[] = XLSX.utils.sheet_to_json(ws);
+        if (data && data.length > 0) {
+          setCutoffData(data);
+          toast.success(`Successfully loaded ${data.length} cutoff rows from ${file.name}`);
+        } else {
+          toast.error("Excel sheet is empty");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to parse Excel cutoff file");
+      }
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = '';
+  };
+
   // Tab 2: Country-wise paste handler
   const handlePasteData = () => {
     if (!pasteData.trim()) {
@@ -677,6 +780,20 @@ export default function HMTOD() {
             <Download size={14} />
             Excel Export
           </button>
+
+          <label 
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#107c41] hover:bg-[#0c5c30] text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
+            title="Upload and load an Excel (.xlsx / .xls) sheet directly into this plan"
+          >
+            <Upload size={14} />
+            Import Excel
+            <input 
+              type="file" 
+              accept=".xlsx, .xls, .csv" 
+              onChange={handleImportExcelTod} 
+              className="hidden" 
+            />
+          </label>
 
           <button 
             onClick={() => setIsAddModalOpen(true)}
@@ -1512,28 +1629,55 @@ export default function HMTOD() {
         {/* ================= TAB 2: COUNTRY-WISE CUTOFF INPUT ================= */}
         {activeTab === 'input' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
               <div>
-                <h2 className="text-base font-bold text-slate-900">Paste Excel Data (H&M Cutoff)</h2>
-                <p className="text-xs text-slate-500">Paste tab-separated TSV from Excel or CSV with shipment dates and colors</p>
+                <h2 className="text-base font-bold text-slate-900">Upload or Paste Buyer Cutoff Data</h2>
+                <p className="text-xs text-slate-500">Upload your buyer Excel workbook (.xlsx / .xls) directly or paste table data</p>
               </div>
-              <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Required: Job ref, Colour, Order Qty., Shipment date</span>
+              <span className="text-xs text-slate-600 bg-slate-100 border px-2.5 py-1 rounded font-medium">
+                Columns needed: Job ref, Colour, Order Qty., Shipment date
+              </span>
+            </div>
+
+            {/* Direct Excel File Upload Dropzone */}
+            <div className="bg-emerald-50/50 border-2 border-dashed border-emerald-300 rounded-xl p-6 text-center hover:bg-emerald-50 transition-colors">
+              <label className="cursor-pointer flex flex-col items-center justify-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                  <FileSpreadsheet size={24} />
+                </div>
+                <div>
+                  <span className="text-sm font-bold text-emerald-900">Click to upload Excel File (.xlsx, .xls)</span>
+                  <p className="text-xs text-emerald-700 mt-0.5">Directly parse cutoff sheet and generate Pivot & Risk matrix</p>
+                </div>
+                <input 
+                  type="file" 
+                  accept=".xlsx, .xls, .csv" 
+                  onChange={handleUploadCutoffExcel}
+                  className="hidden" 
+                />
+              </label>
+            </div>
+
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-slate-200"></div>
+              <span className="flex-shrink mx-4 text-xs font-bold uppercase text-slate-400">Or Paste Copied Cells from Excel</span>
+              <div className="flex-grow border-t border-slate-200"></div>
             </div>
             
             <textarea 
               value={pasteData}
               onChange={(e) => setPasteData(e.target.value)}
-              className="w-full h-44 p-3 border-2 border-slate-200 rounded-xl font-mono text-xs focus:border-blue-500 outline-none"
+              className="w-full h-36 p-3 border border-slate-300 rounded-xl font-mono text-xs focus:border-blue-500 outline-none"
               placeholder="Week&#9;ERP Ship Date&#9;Job ref&#9;Style No&#9;Colour&#9;Country&#9;Order Qty.&#9;Shipment date&#9;FLOOR..."
             />
             
             <div className="flex items-center justify-between">
               <button 
                 onClick={handlePasteData}
-                className="px-5 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 flex items-center gap-2 shadow-xs"
+                className="px-5 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 flex items-center gap-2 shadow-xs transition-colors"
               >
-                <Upload size={15} />
-                Process Cutoff Data
+                <Upload size={14} />
+                Process Pasted Data
               </button>
               
               {cutoffData.length > 0 && (
@@ -1541,7 +1685,7 @@ export default function HMTOD() {
                   onClick={() => setCutoffData([])}
                   className="text-xs text-red-600 font-semibold hover:underline"
                 >
-                  Clear Imported Cutoff Data
+                  Clear Imported Cutoff Data ({cutoffData.length} records)
                 </button>
               )}
             </div>
