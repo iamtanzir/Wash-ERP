@@ -43,6 +43,8 @@ import {
 
 const LOCAL_STORAGE_KEY = 'inctl_hm_ship_tod_data_v1';
 const LOCAL_STORAGE_DATE_KEY = 'inctl_hm_ship_tod_date_v1';
+const LOCAL_STORAGE_TOD_DATE1_KEY = 'inctl_hm_tod_date1_v1';
+const LOCAL_STORAGE_TOD_DATE2_KEY = 'inctl_hm_tod_date2_v1';
 
 // Mock data fallback for Risk Analysis
 const mockDataGroups = [
@@ -66,7 +68,13 @@ interface ColumnFilterState {
 export default function HMTOD() {
   const [activeTab, setActiveTab] = useState<'plan' | 'input' | 'pivot' | 'risk'>('plan');
   const [planDate, setPlanDate] = useState<string>(() => {
-    return localStorage.getItem(LOCAL_STORAGE_DATE_KEY) || '22-Sep-26';
+    return localStorage.getItem(LOCAL_STORAGE_DATE_KEY) || '12-Oct-26';
+  });
+  const [todDate1, setTodDate1] = useState<string>(() => {
+    return localStorage.getItem(LOCAL_STORAGE_TOD_DATE1_KEY) || '14-Oct';
+  });
+  const [todDate2, setTodDate2] = useState<string>(() => {
+    return localStorage.getItem(LOCAL_STORAGE_TOD_DATE2_KEY) || '17-Oct';
   });
 
   // Master H&M Ship TOD Data State
@@ -85,7 +93,7 @@ export default function HMTOD() {
 
   // Global Quick Filters
   const [searchQuery, setSearchQuery] = useState('');
-  const [riskFilter, setRiskFilter] = useState<'ALL' | 'SHORTAGE' | 'WIP' | 'REMARKS'>('ALL');
+  const [riskFilter, setRiskFilter] = useState<'ALL' | 'SHORTAGE' | 'COVERED' | 'WIP' | 'RFD_BAL' | 'REMARKS'>('ALL');
 
   // Excel-like Column Filters & Sorting
   const [columnFilters, setColumnFilters] = useState<ColumnFilterState>({});
@@ -243,8 +251,13 @@ export default function HMTOD() {
       if (riskFilter === 'SHORTAGE') {
         const hasShortage = metrics.target23 > 0 || metrics.rfd23 > 0 || metrics.target26 > 0 || metrics.rfd26 > 0;
         if (!hasShortage) return false;
+      } else if (riskFilter === 'COVERED') {
+        const isCovered = (metrics.target23 <= 0 && (row.ship23 > 0 || row.wDeli > 0)) || (metrics.target26 <= 0 && (row.ship26 > 0 || row.wDeli > 0));
+        if (!isCovered) return false;
       } else if (riskFilter === 'WIP') {
         if (metrics.wip <= 0) return false;
+      } else if (riskFilter === 'RFD_BAL') {
+        if (metrics.rfd23 <= 0 && metrics.rfd26 <= 0) return false;
       } else if (riskFilter === 'REMARKS') {
         if (!row.remarks || !row.remarks.trim()) return false;
       }
@@ -721,6 +734,7 @@ export default function HMTOD() {
   }, []);
 
   // Column header definition
+  // Column header definition
   const columns = [
     { key: 'floor', label: 'Sew. Floor', bg: '#ffff00', textColor: '#000000', align: 'center', width: 'w-24' },
     { key: 'wPlan', label: 'W. Plan', bg: '#ffff00', textColor: '#000000', align: 'center', width: 'w-24' },
@@ -732,12 +746,12 @@ export default function HMTOD() {
     { key: 'wip', label: 'Wash WIP Qty', bg: '#ffff00', textColor: '#000000', align: 'right', width: 'w-24' },
     { key: 'wReady', label: 'Wash Ready Qty', bg: '#ffff00', textColor: '#000000', align: 'right', width: 'w-24' },
     { key: 'target', label: 'Wash Target Qty', bg: '#ffc9bb', textColor: '#c00000', align: 'right', width: 'w-24' },
-    { key: 'ship23', label: 'Ship Qty (23-Sep)', bg: '#d9e1f2', textColor: '#000000', align: 'right', width: 'w-28' },
-    { key: 'target23', label: 'Wash. Target Qty (23-Sep)', bg: '#ffc9bb', textColor: '#c00000', align: 'right', width: 'w-28' },
-    { key: 'rfd23', label: 'Sew. RFD 23-Sep', bg: '#fff2cc', textColor: '#000000', align: 'right', width: 'w-28' },
-    { key: 'ship26', label: 'Ship Qty (26-Sep)', bg: '#d9e1f2', textColor: '#000000', align: 'right', width: 'w-28' },
-    { key: 'target26', label: 'Wash. Target Qty (26-Sep)', bg: '#ffc9bb', textColor: '#c00000', align: 'right', width: 'w-28' },
-    { key: 'rfd26', label: 'Sew. RFD 26-Sep', bg: '#fff2cc', textColor: '#000000', align: 'right', width: 'w-28' },
+    { key: 'ship23', label: `Ship Qty (${todDate1})`, bg: '#d9e1f2', textColor: '#000000', align: 'right', width: 'w-28' },
+    { key: 'target23', label: 'Need Wash Close upto', bg: '#ffc9bb', textColor: '#c00000', align: 'right', width: 'w-28' },
+    { key: 'rfd23', label: 'RFD Rcv Bal upto TOD', bg: '#fff2cc', textColor: '#000000', align: 'right', width: 'w-28' },
+    { key: 'ship26', label: `Ship Qty (${todDate2})`, bg: '#d9e1f2', textColor: '#000000', align: 'right', width: 'w-28' },
+    { key: 'target26', label: 'Need Wash Close upto', bg: '#ffc9bb', textColor: '#c00000', align: 'right', width: 'w-28' },
+    { key: 'rfd26', label: 'RFD Rcv Bal upto TOD', bg: '#fff2cc', textColor: '#000000', align: 'right', width: 'w-28' },
     { key: 'remarks', label: 'REMARKS', bg: '#ffff00', textColor: '#000000', align: 'center', width: 'min-w-[180px]' }
   ];
 
@@ -746,20 +760,23 @@ export default function HMTOD() {
       {/* Top Header Bar */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
         <div>
-          <div className="flex items-center gap-3">
-            <span className="bg-amber-100 text-amber-900 text-xs font-black px-2.5 py-1 rounded-md uppercase tracking-wider">H&M Exclusive</span>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">H&M SHIP TOD REPORT & RISK PLAN</h1>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="bg-[#ffd966] text-amber-950 text-xs font-black px-2.5 py-1 rounded-md uppercase tracking-wider shadow-xs border border-amber-300">
+              ★ RISK ZONE NEXT TOD ★
+            </span>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">INCTL WASH RISK ANALYSIS & WORKING MATRIX</h1>
           </div>
           <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
-            Exact Excel-Style Layout: Wash WIP, Shortage Tracking, 23-Sep & 26-Sep Delivery Plans
+            Live Factory Working Matrix: Sewing RFD Bal, Wash WIP, Delivery Close Target, and Sub-Factory Floor Tracking
           </p>
         </div>
 
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2 self-stretch lg:self-auto justify-end">
-          <div className="flex items-center bg-[#fce4d6] border border-[#f8cbad] rounded-lg px-3 py-1.5 text-xs font-bold text-[#c00000] shadow-xs">
-            <Calendar size={14} className="mr-1.5 text-[#c00000]" />
-            <span className="text-slate-600 mr-1 font-semibold">Date:</span>
+          {/* Working Matrix Date in peach container */}
+          <div className="flex items-center bg-[#fce4d6] border border-[#f8cbad] rounded-lg px-2.5 py-1 text-xs font-bold text-[#c00000] shadow-xs">
+            <Calendar size={13} className="mr-1 text-[#c00000]" />
+            <span className="text-slate-600 mr-1 font-semibold text-[11px]">Date:</span>
             <input 
               type="text" 
               value={planDate}
@@ -767,25 +784,90 @@ export default function HMTOD() {
                 setPlanDate(e.target.value);
                 localStorage.setItem(LOCAL_STORAGE_DATE_KEY, e.target.value);
               }}
-              className="bg-transparent font-black text-[#c00000] outline-none w-24 text-center cursor-pointer hover:bg-white rounded px-1 transition-colors"
-              title="Click to edit sheet date"
+              className="bg-transparent font-black text-[#c00000] outline-none w-20 text-center cursor-pointer hover:bg-white rounded px-1 transition-colors text-xs"
+              title="Click to edit matrix sheet date (e.g. 12-Oct-26)"
             />
+          </div>
+
+          {/* TOD Target Dates */}
+          <div className="flex items-center bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 text-xs font-bold text-amber-900 shadow-xs gap-1">
+            <Clock size={12} className="text-amber-700" />
+            <span className="text-amber-800 text-[10px]">TOD 1:</span>
+            <input 
+              type="text" 
+              value={todDate1}
+              onChange={(e) => {
+                setTodDate1(e.target.value);
+                localStorage.setItem(LOCAL_STORAGE_TOD_DATE1_KEY, e.target.value);
+              }}
+              className="bg-white border border-amber-300 rounded px-1 py-0.5 w-16 text-center font-black text-amber-950 text-[11px]"
+              title="Target 1 cutoff date (e.g. 14-Oct or 23-Sep)"
+            />
+            <span className="text-amber-800 text-[10px] ml-1">TOD 2:</span>
+            <input 
+              type="text" 
+              value={todDate2}
+              onChange={(e) => {
+                setTodDate2(e.target.value);
+                localStorage.setItem(LOCAL_STORAGE_TOD_DATE2_KEY, e.target.value);
+              }}
+              className="bg-white border border-amber-300 rounded px-1 py-0.5 w-16 text-center font-black text-amber-950 text-[11px]"
+              title="Target 2 cutoff date (e.g. 17-Oct or 26-Sep)"
+            />
+          </div>
+
+          {/* Preset switch */}
+          <div className="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200">
+            <button 
+              onClick={() => {
+                setPlanDate('12-Oct-26');
+                setTodDate1('14-Oct');
+                setTodDate2('17-Oct');
+                localStorage.setItem(LOCAL_STORAGE_DATE_KEY, '12-Oct-26');
+                localStorage.setItem(LOCAL_STORAGE_TOD_DATE1_KEY, '14-Oct');
+                localStorage.setItem(LOCAL_STORAGE_TOD_DATE2_KEY, '17-Oct');
+                toast.success('Loaded 12-Oct Working Matrix layout');
+              }}
+              className={cn(
+                "px-2 py-1 rounded text-[10px] font-black transition-colors",
+                planDate === '12-Oct-26' ? "bg-amber-500 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
+              )}
+            >
+              12-Oct Matrix
+            </button>
+            <button 
+              onClick={() => {
+                setPlanDate('22-Sep-26');
+                setTodDate1('23-Sep');
+                setTodDate2('26-Sep');
+                localStorage.setItem(LOCAL_STORAGE_DATE_KEY, '22-Sep-26');
+                localStorage.setItem(LOCAL_STORAGE_TOD_DATE1_KEY, '23-Sep');
+                localStorage.setItem(LOCAL_STORAGE_TOD_DATE2_KEY, '26-Sep');
+                toast.info('Loaded 22-Sep Matrix layout');
+              }}
+              className={cn(
+                "px-2 py-1 rounded text-[10px] font-black transition-colors",
+                planDate === '22-Sep-26' ? "bg-blue-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
+              )}
+            >
+              22-Sep Matrix
+            </button>
           </div>
 
           <button 
             onClick={handleExportExcel}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#217346] hover:bg-[#1a5c37] text-white rounded-lg text-xs font-bold shadow-xs transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-[#217346] hover:bg-[#1a5c37] text-white rounded-lg text-xs font-bold shadow-xs transition-colors"
             title="Download formatted Excel (.xlsx) file"
           >
-            <Download size={14} />
+            <Download size={13} />
             Excel Export
           </button>
 
           <label 
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#107c41] hover:bg-[#0c5c30] text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-[#107c41] hover:bg-[#0c5c30] text-white rounded-lg text-xs font-bold shadow-xs transition-colors cursor-pointer"
             title="Upload and load an Excel (.xlsx / .xls) sheet directly into this plan"
           >
-            <Upload size={14} />
+            <Upload size={13} />
             Import Excel
             <input 
               type="file" 
@@ -797,18 +879,18 @@ export default function HMTOD() {
 
           <button 
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors"
           >
-            <Plus size={14} />
+            <Plus size={13} />
             Add Row
           </button>
 
           <button 
             onClick={handleResetToDefault}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-colors"
-            title="Reset to 22-Sep standard data (54 rows)"
+            className="flex items-center gap-1 px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-colors"
+            title="Reset to default factory data"
           >
-            <RefreshCw size={13} />
+            <RefreshCw size={12} />
             Reset
           </button>
         </div>
@@ -825,7 +907,7 @@ export default function HMTOD() {
           }`}
         >
           <FileSpreadsheet size={16} className="text-yellow-600" />
-          1. H&M Ship TOD Plan (Master Sheet)
+          1. Working Matrix (Risk Zone Next TOD)
           <span className="ml-1 bg-yellow-200 text-yellow-900 text-[10px] px-2 py-0.5 rounded-full font-black">
             {todRows.length}
           </span>
@@ -936,7 +1018,7 @@ export default function HMTOD() {
                 </div>
 
                 {/* Risk Filter */}
-                <div className="flex items-center gap-1 bg-white border border-slate-300 p-0.5 rounded-lg">
+                <div className="flex items-center gap-1 bg-white border border-slate-300 p-0.5 rounded-lg flex-wrap">
                   <button 
                     onClick={() => setRiskFilter('ALL')}
                     className={`px-2.5 py-1 rounded text-[11px] font-bold transition-colors ${riskFilter === 'ALL' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
@@ -944,10 +1026,25 @@ export default function HMTOD() {
                     All ({todRows.length})
                   </button>
                   <button 
+                    onClick={() => setRiskFilter('COVERED')}
+                    className={`px-2.5 py-1 rounded text-[11px] font-bold transition-colors ${riskFilter === 'COVERED' ? 'bg-[#70ad47] text-white shadow-xs' : 'text-emerald-800 hover:bg-emerald-50'}`}
+                    title="Orders where wash delivery covers the TOD target (Green rows)"
+                  >
+                    ✓ Covered (Safe Green)
+                  </button>
+                  <button 
                     onClick={() => setRiskFilter('SHORTAGE')}
                     className={`px-2.5 py-1 rounded text-[11px] font-bold transition-colors ${riskFilter === 'SHORTAGE' ? 'bg-[#ff0000] text-white' : 'text-red-700 hover:bg-red-50'}`}
+                    title="Orders with positive Need Wash Close (Shortage)"
                   >
-                    Shortage (Red)
+                    Need Wash Close (Short)
+                  </button>
+                  <button 
+                    onClick={() => setRiskFilter('RFD_BAL')}
+                    className={`px-2.5 py-1 rounded text-[11px] font-bold transition-colors ${riskFilter === 'RFD_BAL' ? 'bg-amber-600 text-white' : 'text-amber-800 hover:bg-amber-50'}`}
+                    title="Orders where sewing has not delivered enough to wash (RFD Balance > 0)"
+                  >
+                    Need Sew RFD
                   </button>
                   <button 
                     onClick={() => setRiskFilter('WIP')}
@@ -1075,6 +1172,32 @@ export default function HMTOD() {
                     <td className="px-2 py-1.5 bg-[#ff0000] text-white font-black text-center text-sm tracking-wide">
                       {formatNumber(filteredSubtotals.totalPositiveShortage)}
                     </td>
+                  </tr>
+
+                  {/* Category Group Header Row */}
+                  <tr className="text-[10px] font-black uppercase tracking-wider border-b border-slate-300">
+                    <th className="px-1 py-1 border-r border-slate-300 bg-slate-200 text-slate-500 text-center sticky left-0 z-40"></th>
+                    <th colSpan={4} className="px-2 py-1 border-r border-slate-300 bg-slate-100 text-slate-700 text-center sticky left-10 z-30 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
+                      Order Identification
+                    </th>
+                    <th colSpan={1} className="px-2 py-1 border-r border-slate-300 bg-slate-50 text-slate-600 text-center">
+                      Order
+                    </th>
+                    <th colSpan={2} className="px-2 py-1 border-r border-slate-300 bg-emerald-100 text-emerald-900 text-center">
+                      Wash Actuals (RFD / Wash)
+                    </th>
+                    <th colSpan={3} className="px-2 py-1 border-r border-slate-300 bg-amber-100 text-amber-900 text-center">
+                      WIP & Wash Target
+                    </th>
+                    <th colSpan={3} className="px-2 py-1 border-r border-slate-300 bg-[#ffe599] text-amber-950 text-center font-black shadow-xs tracking-wider">
+                      ★ RISK ZONE NEXT TOD ({todDate1}) ★
+                    </th>
+                    <th colSpan={3} className="px-2 py-1 border-r border-slate-300 bg-indigo-50 text-indigo-900 text-center font-black">
+                      Extended Cutoff ({todDate2})
+                    </th>
+                    <th colSpan={1} className="px-2 py-1 bg-yellow-100 text-yellow-900 text-center font-bold">
+                      Remarks
+                    </th>
                   </tr>
 
                   {/* Header Row: Exact Colors and Columns from image */}
@@ -1240,37 +1363,45 @@ export default function HMTOD() {
 
                     // Color highlight rules
                     const isYellowColor = row.isYellowJob || row.color === '09-103' || row.color === '15-103';
+                    const isCovered = (m.target23 <= 0 && (row.ship23 > 0 || row.wDeli > 0));
 
-                    // 23-Sep cell styling
+                    // TOD 1 cell styling (Need Wash Close upto)
                     const target23Bg = m.target23 > 0 
-                      ? 'bg-[#ff0000] text-white font-bold' 
-                      : m.target23 < 0 
-                        ? 'bg-[#00b050] text-slate-900 font-bold' 
-                        : (row.ship23 > 0 || row.wDeli > 0) ? 'bg-[#00b050] text-slate-900 font-bold' : 'bg-white text-slate-900';
+                      ? 'bg-[#ffc9bb] text-[#c00000] font-black' 
+                      : isCovered
+                        ? 'bg-[#e2efda] text-emerald-900 font-bold' 
+                        : (row.ship23 > 0 || row.wDeli > 0) ? 'bg-[#e2efda] text-emerald-900 font-bold' : 'bg-white text-slate-700';
 
+                    // TOD 1 RFD Rcv Bal upto TOD
                     const rfd23Bg = m.rfd23 > 0 
-                      ? 'bg-[#ff0000] text-white font-bold' 
-                      : m.rfd23 < 0 
-                        ? 'bg-[#00b050] text-slate-900 font-bold' 
-                        : (row.ship23 > 0 || row.wRecv > 0) ? 'bg-[#00b050] text-slate-900 font-bold' : 'bg-white text-slate-900';
+                      ? 'bg-[#fff2cc] text-[#c00000] font-black' 
+                      : isCovered
+                        ? 'bg-[#e2efda] text-emerald-900 font-bold' 
+                        : (row.ship23 > 0 || row.wRecv > 0) ? 'bg-[#e2efda] text-emerald-900 font-bold' : 'bg-white text-slate-700';
 
-                    // 26-Sep cell styling
+                    // TOD 2 cell styling (Need Wash Close upto)
                     const target26Bg = m.target26 > 0 
-                      ? 'bg-[#ff0000] text-white font-bold' 
+                      ? 'bg-[#ffc9bb] text-[#c00000] font-black' 
                       : m.target26 < 0 
-                        ? 'bg-[#00b050] text-slate-900 font-bold' 
-                        : (row.ship26 > 0 || row.wDeli > 0) ? 'bg-[#00b050] text-slate-900 font-bold' : 'bg-white text-slate-900';
+                        ? 'bg-[#e2efda] text-emerald-900 font-bold' 
+                        : (row.ship26 > 0 || row.wDeli > 0) ? 'bg-[#e2efda] text-emerald-900 font-bold' : 'bg-white text-slate-700';
 
                     const rfd26Bg = m.rfd26 > 0 
-                      ? 'bg-[#ff0000] text-white font-bold' 
+                      ? 'bg-[#fff2cc] text-[#c00000] font-black' 
                       : m.rfd26 < 0 
-                        ? 'bg-[#00b050] text-slate-900 font-bold' 
-                        : (row.ship26 > 0 || row.wRecv > 0) ? 'bg-[#00b050] text-slate-900 font-bold' : 'bg-white text-slate-900';
+                        ? 'bg-[#e2efda] text-emerald-900 font-bold' 
+                        : (row.ship26 > 0 || row.wRecv > 0) ? 'bg-[#e2efda] text-emerald-900 font-bold' : 'bg-white text-slate-700';
+
+                    const rowBgClass = isCovered
+                      ? "bg-[#e2efda]/80 hover:bg-[#d5e8cb]"
+                      : row.isYellowJob
+                        ? "bg-[#fff2cc]/40 hover:bg-[#ffe599]/50"
+                        : "bg-white hover:bg-blue-50/40";
 
                     return (
                       <tr 
                         key={row.id} 
-                        className="hover:bg-blue-50/40 transition-colors group"
+                        className={cn("transition-colors group", rowBgClass)}
                         onDoubleClick={() => setEditingRowId(row.id)}
                       >
                         {/* Row Index */}
@@ -1279,7 +1410,10 @@ export default function HMTOD() {
                         </td>
 
                         {/* Sew Floor */}
-                        <td className="px-2 py-1.5 border-r border-slate-200 text-slate-900 font-bold text-center sticky left-10 bg-white group-hover:bg-blue-50/50 z-20 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
+                        <td className={cn(
+                          "px-2 py-1.5 border-r border-slate-200 text-slate-900 font-bold text-center sticky left-10 z-20 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]",
+                          isCovered ? "bg-[#e2efda]" : "bg-white group-hover:bg-blue-50/50"
+                        )}>
                           {isEditing ? (
                             <select 
                               value={row.floor} 
@@ -1841,8 +1975,8 @@ export default function HMTOD() {
                     <th className="px-2 py-1 border-r border-t bg-emerald-50 text-emerald-800 text-center">W.Deli (Wash)</th>
                     <th className="px-2 py-1 border-r border-t bg-emerald-50 text-emerald-800 text-center">W.Bln (WIP)</th>
 
-                    <th className="px-2 py-1 border-r border-t bg-orange-50 text-orange-800 text-center leading-tight">Need RFD<br />from Sew</th>
-                    <th className="px-2 py-1 border-r border-t bg-orange-50 text-orange-800 text-center leading-tight">Need Wash<br />Close</th>
+                    <th className="px-2 py-1 border-r border-t bg-orange-50 text-orange-800 text-center leading-tight">RFD Rcv Bal<br />upto TOD</th>
+                    <th className="px-2 py-1 border-r border-t bg-orange-50 text-orange-800 text-center leading-tight">Need Wash<br />Close upto</th>
 
                     <th className="px-2 py-1 border-r border-t bg-blue-50 text-blue-800 text-center">Wash Ready</th>
                     <th className="px-2 py-1 border-r border-t bg-blue-50 text-blue-800 text-center">Wash Daily Target</th>
@@ -1878,10 +2012,14 @@ export default function HMTOD() {
                         const wBln = Math.max(0, row.wRecv - row.wDeli);
                         const needRfd = Math.max(0, totalShip - row.wRecv);
                         const needWash = Math.max(0, totalShip - row.wDeli);
+                        const isCovered = needWash <= 0 && totalShip > 0;
                         
                         return (
-                          <tr key={`${groupIdx}-${idx}`} className="hover:bg-blue-50/50 transition-colors">
-                            <td className="px-2 py-1.5 border-r sticky left-0 z-10 w-[140px] bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                          <tr key={`${groupIdx}-${idx}`} className={cn("transition-colors", isCovered ? "bg-[#e2efda]/80 hover:bg-[#d5e8cb]" : "hover:bg-blue-50/50")}>
+                            <td className={cn(
+                              "px-2 py-1.5 border-r sticky left-0 z-10 w-[140px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]",
+                              isCovered ? "bg-[#e2efda]" : "bg-white"
+                            )}>
                               <div className="font-bold text-slate-800 font-mono">{row.erpId}</div>
                               <div className="text-[9px] text-slate-500 leading-tight mt-0.5">{row.washType}</div>
                             </td>
@@ -1898,8 +2036,12 @@ export default function HMTOD() {
                             <td className="px-2 py-1.5 border-r text-center text-emerald-700 font-medium">{formatNumber(row.wDeli)}</td>
                             <td className="px-2 py-1.5 border-r text-center font-bold text-amber-700 bg-amber-50/40">{formatNumber(wBln)}</td>
                             
-                            <td className="px-2 py-1.5 border-r text-center font-bold text-orange-700 bg-orange-50/50">{formatNumber(needRfd)}</td>
-                            <td className="px-2 py-1.5 border-r text-center font-bold text-orange-700 bg-orange-50/50">{formatNumber(needWash)}</td>
+                            <td className={cn("px-2 py-1.5 border-r text-center font-bold", needRfd > 0 ? "text-[#c00000] bg-[#fff2cc]" : "text-emerald-800")}>
+                              {needRfd > 0 ? formatNumber(needRfd) : `(${formatNumber(Math.abs(totalShip - row.wRecv))})`}
+                            </td>
+                            <td className={cn("px-2 py-1.5 border-r text-center font-bold", needWash > 0 ? "text-[#c00000] bg-[#ffc9bb]" : "text-emerald-800")}>
+                              {needWash > 0 ? formatNumber(needWash) : `(${formatNumber(Math.abs(totalShip - row.wDeli))})`}
+                            </td>
                             <td className="px-2 py-1.5 border-r text-center text-slate-700">{formatNumber(Math.max(0, wBln))}</td>
                             <td className="px-2 py-1.5 border-r text-center text-slate-800 bg-yellow-100 font-bold">{formatNumber(Math.ceil(needWash / 4))}</td>
                             <td className="px-2 py-1.5 border-r text-center text-slate-700 font-bold bg-green-50">0</td>
