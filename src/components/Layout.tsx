@@ -34,7 +34,7 @@ const navItems = [
   { name: "GARMENTS R&D LOG", href: "/daily-update", icon: ClipboardCheck, desc: "Log daily received and delivered quantities" },
   { name: "WASH M/C LOAD PLAN", href: "/wash-mc-plan", icon: WashingMachine, desc: "Wet process garments washing machine load plan & recipes" },
   { name: "CPL FABRIC REPORT", href: "/cpl-report", icon: FileText, desc: "Fabrics status and CPL calculations" },
-  { name: "H&M SHIP RISK", href: "/hm-tod", icon: ClipboardCheck, desc: "H&M ship risk & target order delivery" },
+  { name: "WORKING MATRIX (TOD)", href: "/hm-tod", icon: ClipboardCheck, desc: "INCTL Wash Risk Analysis & TOD working matrix" },
   { name: "PROACTIVE PLAN", href: "/proactive-plan", icon: Sparkles, desc: "AI Master Production Schedule & T&A Tracking" },
   { name: "IOT TRACKING", href: "/iot-tracking", icon: Activity, desc: "IoT-driven real-time production & critical path tracking" },
   { name: "CLOSE ERP ORDER", href: "/close-order", icon: Lock, desc: "Archive completed ERP orders" },
@@ -88,7 +88,7 @@ export default function Layout() {
       case '/cpl-report': return 'CPL Report (Fabrics)';
       case '/daily-update': return 'Daily Update';
       case '/wash-mc-plan': return 'Garments Wash M/C Load Plan (Wet Process)';
-      case '/hm-tod': return 'H&M Target Order Delivery';
+      case '/hm-tod': return 'Working Matrix & Risk Analysis';
       case '/proactive-plan': return 'Proactive AI Planner';
       case '/iot-tracking': return 'IoT Nidle Smart Tracking';
       case '/close-order': return 'Close ERP Orders';
