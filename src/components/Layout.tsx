@@ -207,12 +207,9 @@ export default function Layout() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSidebarFocused(true)}
                 onBlur={() => setTimeout(() => setIsSidebarFocused(false), 200)}
-                placeholder="Search module, order, buyer, style or press '/'..."
-                className="w-full pl-9 pr-4 py-1.5 bg-slate-50 hover:bg-black/30 focus:bg-black/40 text-xs text-slate-700 rounded-lg border border-slate-200 focus:border-emerald-500/50 focus:outline-none transition-all placeholder:text-slate-400 font-medium shadow-inner"
+                placeholder="Search module, order, buyer, style..."
+                className="w-full pl-9 pr-4 py-1.5 bg-slate-50 hover:bg-slate-100 focus:bg-white text-xs text-slate-700 rounded-lg border border-slate-200 focus:border-blue-500 focus:outline-none transition-all placeholder:text-slate-400 font-medium shadow-inner"
               />
-              <kbd className="absolute right-2.5 hidden sm:inline-block text-[10px] bg-slate-200 border border-slate-300 text-slate-400 rounded px-1.5 py-0.5 font-mono shadow-sm">
-                Ctrl + K
-              </kbd>
             </div>
 
             {/* Awesome Bar Search Dropdown */}
