@@ -764,7 +764,7 @@ export default function HMTOD() {
             <span className="bg-[#ffd966] text-amber-950 text-xs font-black px-2.5 py-1 rounded-md uppercase tracking-wider shadow-xs border border-amber-300">
               ★ RISK ZONE NEXT TOD ★
             </span>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">INCTL WASH RISK ANALYSIS & WORKING MATRIX</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">WASH RISK ANALYSIS & WORKING MATRIX</h1>
           </div>
           <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
             Live Factory Working Matrix: Sewing RFD Bal, Wash WIP, Delivery Close Target, and Sub-Factory Floor Tracking
