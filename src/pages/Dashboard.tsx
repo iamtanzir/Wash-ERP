@@ -6,7 +6,6 @@ import { useState, useMemo } from 'react';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Filter, PlusCircle, Database, RefreshCw, Cpu, Package, Receipt, Users, Settings, WashingMachine, Target, TrendingUp, TrendingDown, Award, Search, X, Download, FileSpreadsheet, FolderKanban, ShoppingCart, Layers } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import {
   ResponsiveContainer,
@@ -24,15 +23,16 @@ import {
   Cell
 } from 'recharts';
 
-import ErpManufacturing from '../components/ErpManufacturing';
-import ErpStock from '../components/ErpStock';
-import ErpAccounts from '../components/ErpAccounts';
-import ErpHR from '../components/ErpHR';
-import ErpCustomizer from '../components/ErpCustomizer';
-import ErpCRM from '../components/ErpCRM';
-import ErpProject from '../components/ErpProject';
-import ErpPurchase from '../components/ErpPurchase';
-import ErpApex from '../components/ErpApex';
+// Rollup optimized dynamic code-splitting for ERP submodules
+const ErpManufacturing = React.lazy(() => import('../components/ErpManufacturing'));
+const ErpStock = React.lazy(() => import('../components/ErpStock'));
+const ErpAccounts = React.lazy(() => import('../components/ErpAccounts'));
+const ErpHR = React.lazy(() => import('../components/ErpHR'));
+const ErpCustomizer = React.lazy(() => import('../components/ErpCustomizer'));
+const ErpCRM = React.lazy(() => import('../components/ErpCRM'));
+const ErpProject = React.lazy(() => import('../components/ErpProject'));
+const ErpPurchase = React.lazy(() => import('../components/ErpPurchase'));
+const ErpApex = React.lazy(() => import('../components/ErpApex'));
 
 interface OrderStats {
   order: Order;
@@ -249,7 +249,7 @@ export default function Dashboard() {
 
   const { grouped, totalWip, todayRcv, todayDel, grandTotals } = processedData;
 
-  const handleExportToExcel = () => {
+  const handleExportToExcel = async () => {
     if (!filteredGroups || Object.keys(filteredGroups).length === 0) {
       toast.warning("No data to export");
       return;
@@ -359,7 +359,8 @@ export default function Dashboard() {
         excelRows.push(grandTotalRow);
       }
 
-      // Convert to excel workbook
+      // Dynamically load xlsx only when user exports (Rollup optimized)
+      const XLSX = await import('xlsx');
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(excelRows);
 
@@ -1336,15 +1337,22 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {workspace === "crm" && <ErpCRM />}
-      {workspace === "manufacturing" && <ErpManufacturing />}
-      {workspace === "stock" && <ErpStock />}
-      {workspace === "purchase" && <ErpPurchase />}
-      {workspace === "projects" && <ErpProject />}
-      {workspace === "accounts" && <ErpAccounts />}
-      {workspace === "hr" && <ErpHR />}
-      {workspace === "customizer" && <ErpCustomizer />}
-      {workspace === "apex" && <ErpApex />}
+      <React.Suspense fallback={
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-slate-500 font-medium animate-pulse flex flex-col items-center justify-center gap-3">
+          <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-sm font-semibold text-slate-600">Loading ERP Workspace Module...</span>
+        </div>
+      }>
+        {workspace === "crm" && <ErpCRM />}
+        {workspace === "manufacturing" && <ErpManufacturing />}
+        {workspace === "stock" && <ErpStock />}
+        {workspace === "purchase" && <ErpPurchase />}
+        {workspace === "projects" && <ErpProject />}
+        {workspace === "accounts" && <ErpAccounts />}
+        {workspace === "hr" && <ErpHR />}
+        {workspace === "customizer" && <ErpCustomizer />}
+        {workspace === "apex" && <ErpApex />}
+      </React.Suspense>
 
       {workspace === "wash" && (
         <>

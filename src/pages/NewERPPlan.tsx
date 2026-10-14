@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { api } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
-import * as XLSX from "xlsx";
 import { useQuery } from '@tanstack/react-query';
 import { formatNumber, formatDate } from '../lib/utils';
 
@@ -20,7 +19,8 @@ export default function NewERPPlan() {
     queryFn: () => api.getActiveOrders()
   });
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
+    const XLSX = await import('xlsx');
     const ws = XLSX.utils.aoa_to_sheet([
       ["Buyer Name", "ERP Ship Date", "Job Ref / File Name", "Style No / Developing Name", "CPL Qty (kg)", "Order Qty (pcs)", "Sew Floor", "Item List", "Type of Wash", "Wash Status", "P.P/ Plan", "Print/ Emb", "Source.Ref", "Remarks/ 1st TOD"],
       ["Example Buyer", "2024-05-10", "F-12345", "STL-99", "500", "12000", "Floor-A", "74-202", "Enzyme Wash", "Pending", "Sample Plan", "Print/Emb Details", "Source Reference", "Sample Remark"]

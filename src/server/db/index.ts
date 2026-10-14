@@ -78,7 +78,11 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
           const { FirebaseAdapter } = await import("./adapters/firebase.js");
           return new FirebaseAdapter();
         }
-        case "sqlite": {
+        case "sqlite":
+        case "local":
+        case "pc":
+        case "rpi":
+        case "gdrive": {
           const { SQLiteAdapter } = await import("./adapters/sqlite.js");
           return new SQLiteAdapter();
         }
@@ -87,16 +91,21 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
           return new MemoryAdapter();
         }
         default: {
-          console.warn(`[DB] Unsupported database mode "${dbType}", falling back to MemoryAdapter`);
-          const { MemoryAdapter } = await import("./adapters/memory.js");
-          return new MemoryAdapter();
+          console.warn(`[DB] Unsupported database mode "${dbType}", falling back to local SQLite`);
+          const { SQLiteAdapter } = await import("./adapters/sqlite.js");
+          return new SQLiteAdapter();
         }
       }
     } catch (loadErr: any) {
       console.error(`[DB] ❌ Failed to load adapter for "${dbType}":`, loadErr.message);
-      console.log("[DB] 💡 Falling back to MemoryAdapter for seamless execution");
-      const { MemoryAdapter } = await import("./adapters/memory.js");
-      return new MemoryAdapter();
+      console.log("[DB] 💡 Falling back to SQLiteAdapter for local file persistence");
+      try {
+        const { SQLiteAdapter } = await import("./adapters/sqlite.js");
+        return new SQLiteAdapter();
+      } catch (sqErr) {
+        const { MemoryAdapter } = await import("./adapters/memory.js");
+        return new MemoryAdapter();
+      }
     }
   }
 
