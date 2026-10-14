@@ -13,6 +13,7 @@ import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { getDatabase } from "./src/server/db/index.js";
+import { generateProactivePlan, simulatePlanningScenario } from "./src/server/aiPlanner.js";
 
 let db = getDatabase();
 const app = express();
@@ -837,6 +838,66 @@ app.post("/api/erp/upload", authenticate, authorize(["admin", "editor"]), upload
   } catch (error) {
     res.status(500).json({ error: "Failed to parse Excel file" });
   }
+});
+
+// ProactivePlan: Cloud-Based AI Apparel Planning Solution (FreeModel / Gemini / CPM)
+app.post("/api/ai/proactive-plan", authenticate, async (req, res) => {
+    try {
+        const { orders, provider, freemodelApiKey, freemodelEndpoint, freemodelModel, options } = req.body;
+        let ordersToPlan = orders;
+        if (!ordersToPlan || !Array.isArray(ordersToPlan) || ordersToPlan.length === 0) {
+            ordersToPlan = await db.getDocs("erp_orders");
+        }
+        const plan = await generateProactivePlan({
+            orders: ordersToPlan,
+            provider,
+            freemodelApiKey,
+            freemodelEndpoint,
+            freemodelModel,
+            options
+        });
+        
+        // Cache plan as latest in DB
+        await db.setDoc("proactive_plans", "latest", plan).catch(() => {});
+        res.json(plan);
+    } catch (error: any) {
+        console.error("[AI] Error generating proactive plan:", error);
+        res.status(500).json({ error: error.message || "Failed to generate AI plan" });
+    }
+});
+
+app.get("/api/ai/proactive-plan/latest", authenticate, async (req, res) => {
+    try {
+        const plan = await db.getDoc("proactive_plans", "latest");
+        if (!plan) return res.status(404).json({ error: "No saved plan found" });
+        res.json(plan);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post("/api/ai/scenario-simulate", authenticate, async (req, res) => {
+    try {
+        const { prompt, orders, currentPlan, provider, freemodelApiKey, freemodelEndpoint, freemodelModel } = req.body;
+        if (!prompt) return res.status(400).json({ error: "Scenario prompt is required" });
+        let ordersList = orders;
+        if (!ordersList || !Array.isArray(ordersList)) {
+            ordersList = await db.getDocs("erp_orders");
+        }
+        const result = await simulatePlanningScenario({
+            prompt,
+            orders: ordersList,
+            currentPlan,
+            provider,
+            freemodelApiKey,
+            freemodelEndpoint,
+            freemodelModel
+        });
+        res.json(result);
+    } catch (error: any) {
+        console.error("[AI] Error simulating scenario:", error);
+        res.status(500).json({ error: error.message || "Failed to simulate scenario" });
+    }
 });
 
 // Generic Database API

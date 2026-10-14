@@ -200,5 +200,42 @@ export const api = {
     const logs = await fetchJSON("/api/db/daily_logs");
     return logs.filter((l: DailyLog) => l.erp_order === orderId)
                .sort((a, b) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime());
+  },
+
+  async generateProactivePlan(payload: {
+    orders?: any[];
+    provider?: 'gemini' | 'freemodel' | 'auto';
+    freemodelApiKey?: string;
+    freemodelEndpoint?: string;
+    freemodelModel?: string;
+    options?: Record<string, any>;
+  }): Promise<any> {
+    return fetchJSON("/api/ai/proactive-plan", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async getLatestProactivePlan(): Promise<any> {
+    try {
+      return await fetchJSON("/api/ai/proactive-plan/latest");
+    } catch {
+      return null;
+    }
+  },
+
+  async simulatePlanningScenario(payload: {
+    prompt: string;
+    orders?: any[];
+    currentPlan?: any;
+    provider?: 'gemini' | 'freemodel' | 'auto';
+    freemodelApiKey?: string;
+    freemodelEndpoint?: string;
+    freemodelModel?: string;
+  }): Promise<any> {
+    return fetchJSON("/api/ai/scenario-simulate", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
   }
 };

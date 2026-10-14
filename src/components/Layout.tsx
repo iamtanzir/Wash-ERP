@@ -43,7 +43,7 @@ const navItems: NavItem[] = [
   { name: "WASH M/C LOAD PLAN", href: "/wash-mc-plan", icon: WashingMachine, desc: "Wet process garments washing machine load plan & recipes" },
   { name: "CPL FABRIC REPORT", href: "/cpl-report", icon: FileText, desc: "Fabrics status and CPL calculations" },
   { name: "WORKING MATRIX (TOD)", href: "/hm-tod", icon: ClipboardCheck, desc: "INCTL Wash Risk Analysis & TOD working matrix" },
-  { name: "PROACTIVE PLAN", href: "/proactive-plan", icon: Sparkles, desc: "AI Master Production Schedule & T&A Tracking" },
+  { name: "PROACTIVE PLAN", href: "/proactive-plan", icon: Sparkles, desc: "AI Powered Cloud-Based Apparel Planning Solution (MPS & T&A)" },
   { name: "IOT TRACKING", href: "/iot-tracking", icon: Activity, desc: "IoT-driven real-time production & critical path tracking" },
   { name: "CLOSE ERP ORDER", href: "/close-order", icon: Lock, desc: "Archive completed ERP orders" },
   { name: "ALL BUYER BANK", href: "/data-bank", icon: Database, desc: "Historic buyer data bank archive" },
@@ -111,7 +111,7 @@ export default function Layout() {
       case '/daily-update': return 'Daily Update';
       case '/wash-mc-plan': return 'Garments Wash M/C Load Plan (Wet Process)';
       case '/hm-tod': return 'Working Matrix & Risk Analysis';
-      case '/proactive-plan': return 'Proactive AI Planner';
+      case '/proactive-plan': return 'ProactivePlan (AI Apparel Planning Solution)';
       case '/iot-tracking': return 'IoT Nidle Smart Tracking';
       case '/close-order': return 'Close ERP Orders';
       case '/data-bank': return 'All Buyer Data';

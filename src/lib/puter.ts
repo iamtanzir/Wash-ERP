@@ -22,6 +22,9 @@ declare global {
         create: (subdomain: string, dir: string) => Promise<any>;
         list: () => Promise<any[]>;
       };
+      ai?: {
+        chat: (prompt: string, options?: { model?: string; stream?: boolean }) => Promise<any>;
+      };
     };
   }
 }
@@ -185,4 +188,20 @@ puter.hosting.create("${subdomain}", "dist/")
 
 # Access your live ERP on Puter serverless infrastructure:
 # https://${subdomain}.puter.site`;
+}
+
+/**
+ * Query Puter Serverless Free AI (Zero-config, client-side serverless)
+ * Docs: https://developer.puter.com/
+ */
+export async function queryPuterServerlessAi(prompt: string, model: string = 'gpt-4o-mini'): Promise<string> {
+  const ready = await loadPuterServerless();
+  if (!ready || !window.puter?.ai?.chat) {
+    throw new Error('Puter Serverless AI could not be initialized in this browser environment.');
+  }
+  const res = await window.puter.ai.chat(prompt, { model });
+  if (typeof res === 'string') return res;
+  if (res?.message?.content) return res.message.content;
+  if (typeof res?.text === 'string') return res.text;
+  return JSON.stringify(res);
 }
