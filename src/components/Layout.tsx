@@ -59,7 +59,7 @@ const navItems: NavItem[] = [
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAdmin, isSuperAdmin, isEditor, logout } = useAuth();
+  const { user, isAdmin, isSuperAdmin, isEditor, isWashMD, isWashManager, canViewFinancialMetrics, getRoleDisplayName, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSidebarFocused] = useState(false);
@@ -182,13 +182,25 @@ export default function Layout() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate uppercase">{user?.username}</p>
               <div className="flex items-center gap-1">
-                <ShieldCheck size={12} className={cn(isSuperAdmin ? "text-amber-400" : isAdmin ? "text-red-400" : "text-blue-400")} />
-                <p className={cn(
-                  "text-[10px] uppercase font-bold tracking-wider",
-                  isSuperAdmin ? "text-amber-400 font-black" : "text-slate-400"
-                )}>
-                  {isSuperAdmin ? "SUPER ADMIN" : (user?.role || "viewer")}
-                </p>
+                <ShieldCheck size={12} className={cn(isSuperAdmin ? "text-amber-400" : isWashMD ? "text-emerald-400" : isWashManager ? "text-teal-400" : isAdmin ? "text-red-400" : "text-blue-400")} />
+                <div className="flex flex-col">
+                  <p className={cn(
+                    "text-[10px] uppercase font-bold tracking-wider",
+                    isSuperAdmin ? "text-amber-400 font-black" :
+                    isWashMD ? "text-emerald-400 font-black" :
+                    isWashManager ? "text-teal-400 font-black" :
+                    user?.role === "operator" ? "text-purple-400" :
+                    isAdmin ? "text-red-400" : "text-slate-400"
+                  )}>
+                    {getRoleDisplayName()}
+                  </p>
+                  {canViewFinancialMetrics && (
+                    <span className="text-[8px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      Financial Clearance (MD/Manager)
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

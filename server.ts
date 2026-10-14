@@ -51,6 +51,71 @@ async function seedDatabase() {
             updated_at: new Date().toISOString()
         });
     }
+
+    // Default Wash MD (Full Financial Access)
+    const mdUser = await db.getDoc("users", "washmd");
+    if (!mdUser) {
+        console.log("[SEED] Wash MD missing, creating default...");
+        const hashedPassword = await bcrypt.hash("washmd123", 10);
+        await db.setDoc("users", "washmd", {
+            id: "washmd",
+            username: "washmd",
+            password_hash: hashedPassword,
+            role: "wash_md",
+            status: "active",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+    }
+
+    // Default Wash Manager (Operations & Financial Access)
+    const managerUser = await db.getDoc("users", "washmanager");
+    if (!managerUser) {
+        console.log("[SEED] Wash Manager missing, creating default...");
+        const hashedPassword = await bcrypt.hash("manager123", 10);
+        await db.setDoc("users", "washmanager", {
+            id: "washmanager",
+            username: "washmanager",
+            password_hash: hashedPassword,
+            role: "wash_manager",
+            status: "active",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+    }
+
+    // Default Data Entry Operator (No Financial Access)
+    const operatorUser = await db.getDoc("users", "operator");
+    if (!operatorUser) {
+        console.log("[SEED] Operator missing, creating default...");
+        const hashedPassword = await bcrypt.hash("operator123", 10);
+        await db.setDoc("users", "operator", {
+            id: "operator",
+            username: "operator",
+            password_hash: hashedPassword,
+            role: "operator",
+            status: "active",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+    }
+
+    // Default Viewer (Normal User - No Financial Access)
+    const viewerUser = await db.getDoc("users", "viewer");
+    if (!viewerUser) {
+        console.log("[SEED] Viewer missing, creating default...");
+        const hashedPassword = await bcrypt.hash("viewer123", 10);
+        await db.setDoc("users", "viewer", {
+            id: "viewer",
+            username: "viewer",
+            password_hash: hashedPassword,
+            role: "viewer",
+            status: "active",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+    }
+
     console.log("[SEED] Database seeding check completed.");
 }
 
@@ -140,7 +205,16 @@ const authenticate = async (req: any, res: any, next: any) => {
 
 const authorize = (roles: string[]) => {
     return (req: any, res: any, next: any) => {
-        if (!req.user || !roles.includes(req.user.role)) {
+        if (!req.user) {
+            return res.status(403).json({ error: "Forbidden: Insufficient permissions" });
+        }
+        const userRole = (req.user.role || "").toLowerCase();
+        const hasAccess = 
+            roles.includes(userRole) || 
+            (roles.includes("admin") && (userRole === "admin" || userRole === "wash_md")) ||
+            (roles.includes("editor") && (userRole === "admin" || userRole === "wash_md" || userRole === "wash_manager"));
+
+        if (!hasAccess) {
             return res.status(403).json({ error: "Forbidden: Insufficient permissions" });
         }
         next();

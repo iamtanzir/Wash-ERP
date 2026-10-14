@@ -23,6 +23,7 @@ import {
   Cell
 } from 'recharts';
 
+import { useAuth } from '../contexts/AuthContext';
 // Rollup optimized dynamic code-splitting for ERP submodules
 import WashRevenuePnLBar from '../components/WashRevenuePnLBar';
 const ErpManufacturing = React.lazy(() => import('../components/ErpManufacturing'));
@@ -49,6 +50,7 @@ interface OrderStats {
 }
 
 export default function Dashboard() {
+  const { canViewFinancialMetrics, user } = useAuth();
   const [workspace, setWorkspace] = useState<"wash" | "manufacturing" | "stock" | "accounts" | "hr" | "crm" | "projects" | "purchase" | "apex" | "customizer">("wash");
   const [dailyTarget, setDailyTarget] = useState<number>(12000);
   const [globalSearch, setGlobalSearch] = useState("");
@@ -1067,8 +1069,8 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* Accounts Invoices */}
-              {searchResults.invoices.length > 0 && (
+              {/* Accounts Invoices (Wash MD and Wash Manager Only) */}
+              {canViewFinancialMetrics && searchResults.invoices.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <span>🧾</span> Accounts & Invoices ({searchResults.invoices.length})
@@ -1276,20 +1278,23 @@ export default function Dashboard() {
             </div>
           </button>
 
-          <button 
-            onClick={() => setWorkspace("accounts")}
-            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
-              workspace === "accounts" 
-                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
-                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-            }`}
-          >
-            <Receipt size={16} className={workspace === "accounts" ? "text-slate-800" : "text-slate-400"} />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide">Accounts</p>
-              <p className={`text-[9px] mt-0.5 ${workspace === "accounts" ? "text-blue-100" : "text-slate-400"}`}>Finance & Invoicing</p>
-            </div>
-          </button>
+          {/* Financial Accounts - Only visible to Wash MD or Wash Manager */}
+          {canViewFinancialMetrics && (
+            <button 
+              onClick={() => setWorkspace("accounts")}
+              className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
+                workspace === "accounts" 
+                  ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
+                  : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              <Receipt size={16} className={workspace === "accounts" ? "text-slate-800" : "text-slate-400"} />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide">Accounts</p>
+                <p className={`text-[9px] mt-0.5 ${workspace === "accounts" ? "text-blue-100" : "text-slate-400"}`}>Finance & Invoicing</p>
+              </div>
+            </button>
+          )}
 
           <button 
             onClick={() => setWorkspace("hr")}
@@ -1349,7 +1354,21 @@ export default function Dashboard() {
         {workspace === "stock" && <ErpStock />}
         {workspace === "purchase" && <ErpPurchase />}
         {workspace === "projects" && <ErpProject />}
-        {workspace === "accounts" && <ErpAccounts />}
+        {workspace === "accounts" && (
+          canViewFinancialMetrics ? (
+            <ErpAccounts />
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center shadow-xs">
+              <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-3">
+                <Receipt size={24} />
+              </div>
+              <h3 className="text-base font-bold text-slate-800">Financial Metrics Restricted</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
+                Accounts, invoicing, and financial profit & loss calculations are only accessible to <strong>Wash MD</strong> or <strong>Wash Manager</strong>. Normal users and data entry operators do not have access to view this option.
+              </p>
+            </div>
+          )
+        )}
         {workspace === "hr" && <ErpHR />}
         {workspace === "customizer" && <ErpCustomizer />}
         {workspace === "apex" && <ErpApex />}
@@ -1765,11 +1784,13 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Monthly Wash Type-wise Revenue (Ravinow) & Wash Profit / Loss Analytics */}
-          <WashRevenuePnLBar 
-            orders={activeOrders || []} 
-            logs={allLogsRes?.items || []} 
-          />
+          {/* Monthly Wash Type-wise Revenue (Ravinow) & Wash Profit / Loss Analytics - Wash MD and Wash Manager Only */}
+          {canViewFinancialMetrics && (
+            <WashRevenuePnLBar 
+              orders={activeOrders || []} 
+              logs={allLogsRes?.items || []} 
+            />
+          )}
 
           {/* Quick Access Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
