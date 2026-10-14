@@ -22,7 +22,7 @@ import {
 interface UserRecord {
   id: string;
   username: string;
-  role: "admin" | "editor" | "viewer" | "operator";
+  role: "admin" | "wash_md" | "wash_manager" | "editor" | "viewer" | "operator" | string;
   status: "active" | "inactive";
   created_at?: any;
 }
@@ -1714,27 +1714,36 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
                                 onChange={(e) => handleUpdateRole(user.id, e.target.value)}
                                 className={cn(
                                   "text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border-2 transition-all cursor-pointer hover:shadow-sm",
+                                  user.role === 'wash_md' ? "bg-emerald-50 text-emerald-700 border-emerald-300" :
+                                  user.role === 'wash_manager' ? "bg-teal-50 text-teal-700 border-teal-300" :
                                   user.role === 'admin' ? "bg-red-50 text-red-700 border-red-200" :
                                   user.role === 'editor' ? "bg-amber-50 text-amber-700 border-amber-200" :
                                   user.role === 'operator' ? "bg-purple-50 text-purple-700 border-purple-200" :
                                   "bg-blue-50 text-blue-700 border-blue-200"
                                 )}
                               >
-                                {isSuperAdmin && <option value="admin">Admin</option>}
-                                {user.role === 'admin' && !isSuperAdmin && <option value="admin">Admin</option>}
-                                <option value="editor">Editor</option>
-                                <option value="operator">Operator</option>
-                                <option value="viewer">Viewer</option>
+                                {isSuperAdmin && <option value="admin">System Admin</option>}
+                                {user.role === 'admin' && !isSuperAdmin && <option value="admin">System Admin</option>}
+                                <option value="wash_md">Wash MD (Financial Access)</option>
+                                <option value="wash_manager">Wash Manager (Financial Access)</option>
+                                <option value="editor">Editor (Normal User)</option>
+                                <option value="operator">Data Entry Operator</option>
+                                <option value="viewer">Viewer (Normal User)</option>
                               </select>
                             ) : (
                               <span className={cn(
                                 "text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest border-2 inline-block opacity-80",
+                                user.role === 'wash_md' ? "bg-emerald-50 text-emerald-700 border-emerald-300" :
+                                user.role === 'wash_manager' ? "bg-teal-50 text-teal-700 border-teal-300" :
                                 user.role === 'admin' ? "bg-red-50 text-red-700 border-red-200" :
                                 user.role === 'editor' ? "bg-amber-50 text-amber-700 border-amber-200" :
                                 user.role === 'operator' ? "bg-purple-50 text-purple-700 border-purple-200" :
                                 "bg-blue-50 text-blue-700 border-blue-200"
                               )}>
-                                {user.role}
+                                {user.role === 'wash_md' ? 'WASH MD' :
+                                 user.role === 'wash_manager' ? 'WASH MANAGER' :
+                                 user.role === 'operator' ? 'DATA ENTRY OPERATOR' :
+                                 user.role}
                               </span>
                             )}
                           </td>
@@ -2450,9 +2459,11 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none font-bold"
                   >
                     {isSuperAdmin && <option value="admin">Administrator (Full Access)</option>}
-                    <option value="editor">Editor (Upload + Edit)</option>
-                    <option value="operator">Operator (Daily Logs)</option>
-                    <option value="viewer">Viewer (Read Only)</option>
+                    <option value="wash_md">Wash MD (Managing Director - Financial Metrics Access)</option>
+                    <option value="wash_manager">Wash Manager (Operations & Financial Access)</option>
+                    <option value="editor">Editor (Normal User - No Financial Access)</option>
+                    <option value="operator">Data Entry Operator (Daily Logs - No Financial Access)</option>
+                    <option value="viewer">Viewer (Normal User - Read Only)</option>
                   </select>
                   {!isSuperAdmin && (
                     <p className="text-[10px] text-slate-400 mt-1">

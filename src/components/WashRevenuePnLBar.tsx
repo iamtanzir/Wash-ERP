@@ -26,8 +26,11 @@ import {
   AlertTriangle, 
   Calendar,
   Layers,
-  RotateCcw
+  RotateCcw,
+  ShieldCheck,
+  Lock
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { Order, DailyLog } from '../lib/api';
 import { formatNumber } from '../lib/utils';
 import { toast } from 'sonner';
@@ -63,12 +66,19 @@ interface WashRevenuePnLBarProps {
 }
 
 export default function WashRevenuePnLBar({ orders = [], logs = [] }: WashRevenuePnLBarProps) {
+  const { canViewFinancialMetrics, isWashMD, isWashManager, user } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState<string>('2026-10');
   const [currency, setCurrency] = useState<'USD' | 'BDT'>('USD');
   const [bdtRate, setBdtRate] = useState<number>(121); // USD to BDT
   const [activeTab, setActiveTab] = useState<'chart' | 'table' | 'breakdown'>('chart');
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [costingConfig, setCostingConfig] = useState<Record<string, WashCostingConfig>>(DEFAULT_WASH_COSTING);
+
+  // Financial Metrics are only shown for Wash MD or Wash Manager.
+  // Normal users and data entry operators do not have access to view this option.
+  if (!canViewFinancialMetrics) {
+    return null;
+  }
 
   // Extract available months from logs
   const availableMonths = useMemo(() => {
@@ -323,6 +333,10 @@ export default function WashRevenuePnLBar({ orders = [], logs = [] }: WashRevenu
             </h3>
             <span className="px-2 py-0.5 text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full">
               Wet Plant Financials
+            </span>
+            <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full flex items-center gap-1">
+              <ShieldCheck size={12} className="text-emerald-600" />
+              <span>{isWashMD ? "Wash MD Clearance" : isWashManager ? "Wash Manager Clearance" : "Executive Financial Clearance"}</span>
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
