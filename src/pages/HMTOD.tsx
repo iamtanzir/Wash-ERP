@@ -32,7 +32,6 @@ import { cn, formatNumber } from '../lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { 
   INITIAL_HM_SHIP_TOD_DATA, 
@@ -424,8 +423,9 @@ export default function HMTOD() {
     }
   };
 
-  // Export to Excel (.xlsx) with authentic columns
-  const handleExportExcel = () => {
+  // Export to Excel (.xlsx) with authentic columns (Rollup optimized)
+  const handleExportExcel = async () => {
+    const XLSX = await import('xlsx');
     const headers = [
       'Sew. Floor',
       'W. Plan',
@@ -524,8 +524,9 @@ export default function HMTOD() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
+        const XLSX = await import('xlsx');
         const bstr = evt.target?.result;
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];
@@ -599,8 +600,9 @@ export default function HMTOD() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
+        const XLSX = await import('xlsx');
         const bstr = evt.target?.result;
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];

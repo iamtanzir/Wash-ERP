@@ -5,7 +5,6 @@ import { Download, Filter, Search, History, X, Calendar, FileText, CheckCircle2,
 import { formatNumber, formatDate } from '../lib/utils';
 import { BUYERS } from '../lib/constants';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
 
 export default function DataBank() {
   const [activeTab, setActiveTab] = useState<'archive' | 'maintenance'>('archive');
@@ -155,7 +154,7 @@ export default function DataBank() {
     });
   }, [mcLoads, dbMachines]);
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (!archiveData || archiveData.length === 0) {
       toast.warning("No data to export");
       return;
@@ -177,7 +176,8 @@ export default function DataBank() {
         'Locked At': item.locked_at ? item.locked_at.split('T')[0] : ''
       }));
 
-      // Create workbook and worksheet
+      // Create workbook and worksheet (Rollup optimized dynamic import)
+      const XLSX = await import('xlsx');
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(exportedData);
 

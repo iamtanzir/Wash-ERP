@@ -4,6 +4,8 @@ import express from "express";
 import http from "http";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import os from "node:os";
+import fs from "node:fs";
 import multer from "multer";
 import pkgXLSX from "xlsx";
 const XLSX = pkgXLSX;
@@ -77,8 +79,17 @@ const ensureDb = async (req: any, res: any, next: any) => {
             process.env.TURSO_AUTH_TOKEN = req.cookies.turso_token;
             changed = true;
         }
+        if (req.cookies?.db_mode && req.cookies.db_mode !== process.env.DATABASE_MODE) {
+            process.env.DATABASE_MODE = req.cookies.db_mode;
+            changed = true;
+        }
+        if (req.cookies?.local_db_path && req.cookies.local_db_path !== process.env.LOCAL_DB_PATH) {
+            process.env.LOCAL_DB_PATH = req.cookies.local_db_path;
+            process.env.SQLITE_PATH = req.cookies.local_db_path;
+            changed = true;
+        }
         if (changed) {
-            console.log("[DB] Turso credentials overridden by cookie. Reinitializing db.");
+            console.log(`[DB] Database configuration updated (Mode: "${process.env.DATABASE_MODE || 'default'}"). Reinitializing db.`);
             db = getDatabase();
             dbSeedPromise = null;
         }
@@ -133,6 +144,13 @@ const authorize = (roles: string[]) => {
         }
         next();
     };
+};
+
+const requireSuperAdmin = (req: any, res: any, next: any) => {
+    if (!req.user || req.user.username?.toLowerCase() !== "tanzirerp") {
+        return res.status(403).json({ error: "Forbidden: Host & Cloud Admin access is restricted to Super Admin (tanzirerp)" });
+    }
+    next();
 };
 
 // API: Login
@@ -249,16 +267,9 @@ app.get("/api/me", authenticate, (req: any, res) => {
 });
 
 // User Management API
-app.post("/api/admin/config/turso", authenticate, authorize(["admin"]), async (req, res) => {
+app.post("/api/admin/config/turso", authenticate, requireSuperAdmin, async (req, res) => {
     const { url, token } = req.body;
     if (!url || !token) return res.status(400).json({ error: "Missing fields" });
-
-    const currentUser = (req as any).user;
-    const isSuperAdmin = currentUser.username.toLowerCase() === "tanzirerp";
-
-    if (!isSuperAdmin) {
-        return res.status(403).json({ error: "Forbidden: Super Admin only" });
-    }
 
     try {
         process.env.TURSO_DATABASE_URL = url;
@@ -274,6 +285,370 @@ app.post("/api/admin/config/turso", authenticate, authorize(["admin"]), async (r
         res.json({ success: true, message: "Database credentials updated and verified." });
     } catch (e: any) {
         res.status(500).json({ error: "Failed to verify new credentials", details: e.message });
+    }
+});
+
+// Host & System Info API (For Local PC, Raspberry Pi, LAN IPs, Google Drive Sync - Super Admin Only)
+app.get("/api/system/host-info", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const networkInterfaces = os.networkInterfaces();
+        const localIps: string[] = [];
+        
+        for (const interfaceName of Object.keys(networkInterfaces)) {
+            const ifaceList = networkInterfaces[interfaceName];
+            if (ifaceList) {
+                for (const iface of ifaceList) {
+                    if (iface.family === "IPv4" && !iface.internal) {
+                        localIps.push(iface.address);
+                    }
+                }
+            }
+        }
+
+        const isRaspberryPi = 
+            os.arch().includes("arm") || 
+            fs.existsSync("/etc/rpi-issue") || 
+            fs.existsSync("/proc/device-tree/model");
+
+        const localDbPath = path.resolve(process.env.LOCAL_DB_PATH || process.env.SQLITE_PATH || "./data/erp_database.sqlite");
+        let dbFileExists = false;
+        let dbFileSize = 0;
+        try {
+            if (fs.existsSync(localDbPath)) {
+                dbFileExists = true;
+                const stats = fs.statSync(localDbPath);
+                dbFileSize = stats.size;
+            }
+        } catch (e) {}
+
+        const backupDir = path.resolve("./data/gdrive_backups");
+        let backupCount = 0;
+        try {
+            if (fs.existsSync(backupDir)) {
+                backupCount = fs.readdirSync(backupDir).filter(f => f.endsWith(".json")).length;
+            }
+        } catch (e) {}
+
+        let publicOnlineUrl = process.env.PUBLIC_ONLINE_URL || process.env.CLOUDFLARE_TUNNEL_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+        const onlineConfigPath = path.resolve("./data/online_config.json");
+        if (!publicOnlineUrl && fs.existsSync(onlineConfigPath)) {
+            try {
+                const conf = JSON.parse(fs.readFileSync(onlineConfigPath, "utf-8"));
+                publicOnlineUrl = conf.publicUrl || "";
+            } catch (e) {}
+        }
+
+        res.json({
+            hostname: os.hostname(),
+            platform: os.platform(),
+            arch: os.arch(),
+            nodeVersion: process.version,
+            isRaspberryPi,
+            localIps,
+            port: PORT,
+            dbMode: process.env.DATABASE_MODE || "local",
+            localDbPath,
+            dbFileExists,
+            dbFileSize,
+            backupCount,
+            gdriveSyncPath: process.env.GDRIVE_DB_PATH || "",
+            publicOnlineUrl,
+            timestamp: Date.now()
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: "Failed to fetch host info", details: error.message });
+    }
+});
+
+// Public Online URL Management (For Cloudflare Tunnel, Vercel, Custom Domains - Super Admin Only)
+app.get("/api/system/public-url", authenticate, requireSuperAdmin, (req, res) => {
+    let publicOnlineUrl = process.env.PUBLIC_ONLINE_URL || process.env.CLOUDFLARE_TUNNEL_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+    const onlineConfigPath = path.resolve("./data/online_config.json");
+    if (!publicOnlineUrl && fs.existsSync(onlineConfigPath)) {
+        try {
+            const conf = JSON.parse(fs.readFileSync(onlineConfigPath, "utf-8"));
+            publicOnlineUrl = conf.publicUrl || "";
+        } catch (e) {}
+    }
+    res.json({ publicUrl: publicOnlineUrl });
+});
+
+app.post("/api/system/public-url", authenticate, requireSuperAdmin, (req, res) => {
+    try {
+        const { publicUrl } = req.body;
+        const onlineConfigPath = path.resolve("./data/online_config.json");
+        fs.mkdirSync(path.dirname(onlineConfigPath), { recursive: true });
+        const cleanUrl = (publicUrl || "").trim();
+        fs.writeFileSync(onlineConfigPath, JSON.stringify({ publicUrl: cleanUrl, updatedAt: new Date().toISOString() }, null, 2), "utf-8");
+        process.env.PUBLIC_ONLINE_URL = cleanUrl;
+        res.json({ success: true, publicUrl: cleanUrl });
+    } catch (err: any) {
+        res.status(500).json({ error: "Failed to save public URL", details: err.message });
+    }
+});
+
+// Check Online and Cloud Database Connectivity
+app.get("/api/system/check-online", authenticate, async (req, res) => {
+    try {
+        const isTursoCloud = (process.env.DATABASE_MODE || "").toLowerCase() === "turso";
+        res.json({
+            online: true,
+            dbMode: process.env.DATABASE_MODE || "local",
+            isTursoCloud,
+            serverTime: new Date().toISOString()
+        });
+    } catch (e: any) {
+        res.status(500).json({ online: false, error: e.message });
+    }
+});
+
+// Database Mode Switcher (Local SQLite, Google Drive Sync, Turso, Memory - Super Admin Only)
+app.post("/api/admin/config/db-mode", authenticate, requireSuperAdmin, async (req, res) => {
+    const { mode, localPath } = req.body;
+    if (!mode) return res.status(400).json({ error: "Database mode is required" });
+
+    try {
+        process.env.DATABASE_MODE = mode;
+        res.cookie("db_mode", mode, { httpOnly: true, secure: true, sameSite: 'none', path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
+
+        if (localPath) {
+            process.env.LOCAL_DB_PATH = localPath;
+            process.env.SQLITE_PATH = localPath;
+            process.env.GDRIVE_DB_PATH = localPath;
+            res.cookie("local_db_path", localPath, { httpOnly: true, secure: true, sameSite: 'none', path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
+        }
+
+        db = getDatabase();
+        dbSeedPromise = null;
+        await getSeedPromise();
+
+        res.json({ 
+            success: true, 
+            message: `Database switched to ${mode.toUpperCase()} mode successfully.`,
+            mode,
+            localPath: process.env.LOCAL_DB_PATH || "./data/erp_database.sqlite"
+        });
+    } catch (e: any) {
+        res.status(500).json({ error: "Failed to switch database mode", details: e.message });
+    }
+});
+
+// Full Database Export (For 15 GB Google Drive Backup or Local Archiving)
+app.get("/api/backup/export", authenticate, async (req: any, res) => {
+    try {
+        console.log(`[BACKUP] Export initiated by user: ${req.user.username}`);
+        const [orders, logs, buyers, users, audit] = await Promise.all([
+            db.getDocs("erp_orders").catch(() => []),
+            db.getDocs("daily_logs").catch(() => []),
+            db.getDocs("buyer_data_bank").catch(() => []),
+            db.getDocs("users").catch(() => []),
+            db.getDocs("audit_logs").catch(() => [])
+        ]);
+
+        const backupPayload = {
+            app: "INCTL Wash ERP",
+            version: "2.5.0",
+            exported_at: new Date().toISOString(),
+            exported_by: req.user.username,
+            counts: {
+                erp_orders: orders.length,
+                daily_logs: logs.length,
+                buyer_data_bank: buyers.length,
+                users: users.length,
+                audit_logs: audit.length
+            },
+            data: {
+                erp_orders: orders,
+                daily_logs: logs,
+                buyer_data_bank: buyers,
+                users: users,
+                audit_logs: audit
+            }
+        };
+
+        const filename = `inctl_wash_erp_backup_${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+        res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+        res.setHeader("Content-Type", "application/json");
+        res.send(JSON.stringify(backupPayload, null, 2));
+    } catch (error: any) {
+        console.error("[BACKUP] Export failed:", error);
+        res.status(500).json({ error: "Failed to generate database export", details: error.message });
+    }
+});
+
+// Restore Database from Snapshot
+app.post("/api/backup/restore", authenticate, authorize(["admin"]), upload.single("file"), async (req: any, res) => {
+    try {
+        let backupPayload: any = null;
+
+        if (req.file) {
+            const fileContent = req.file.buffer.toString("utf-8");
+            backupPayload = JSON.parse(fileContent);
+        } else if (req.body.backupData) {
+            backupPayload = typeof req.body.backupData === "string" 
+                ? JSON.parse(req.body.backupData) 
+                : req.body.backupData;
+        }
+
+        if (!backupPayload || !backupPayload.data) {
+            return res.status(400).json({ error: "Invalid backup format. Missing 'data' object." });
+        }
+
+        const counts: any = {};
+        const collections = ["erp_orders", "daily_logs", "buyer_data_bank", "users", "audit_logs"];
+
+        for (const col of collections) {
+            const records = backupPayload.data[col];
+            if (Array.isArray(records)) {
+                let colCount = 0;
+                for (const item of records) {
+                    if (item && item.id) {
+                        // Protect super admin if already exists or preserve integrity
+                        if (col === "users" && item.username === "tanzirerp") {
+                            const existingTanzir = await db.getDoc("users", "tanzirerp");
+                            if (existingTanzir) {
+                                continue;
+                            }
+                        }
+                        await db.setDoc(col, item.id, item);
+                        colCount++;
+                    }
+                }
+                counts[col] = colCount;
+            }
+        }
+
+        // Save record into system_backups
+        try {
+            await db.addDoc("system_backups", {
+                filename: req.file ? req.file.originalname : "direct_restore.json",
+                action: "restore",
+                restored_by: req.user.username,
+                counts: JSON.stringify(counts),
+                created_at: new Date().toISOString()
+            });
+        } catch (e) {}
+
+        res.json({
+            success: true,
+            message: "Database successfully restored from snapshot.",
+            restoredCounts: counts
+        });
+    } catch (error: any) {
+        console.error("[BACKUP] Restore error:", error);
+        res.status(500).json({ error: "Failed to restore database", details: error.message });
+    }
+});
+
+// Google Drive Cloud Sync Trigger & Auto Snapshot
+app.post("/api/backup/gdrive/sync", authenticate, async (req: any, res) => {
+    try {
+        const backupDir = path.resolve("./data/gdrive_backups");
+        if (!fs.existsSync(backupDir)) {
+            fs.mkdirSync(backupDir, { recursive: true });
+        }
+
+        const [orders, logs, buyers, users] = await Promise.all([
+            db.getDocs("erp_orders").catch(() => []),
+            db.getDocs("daily_logs").catch(() => []),
+            db.getDocs("buyer_data_bank").catch(() => []),
+            db.getDocs("users").catch(() => [])
+        ]);
+
+        const timestampStr = new Date().toISOString().replace(/[:.]/g, "-");
+        const filename = `inctl_erp_gdrive_snapshot_${timestampStr}.json`;
+        const filePath = path.join(backupDir, filename);
+
+        const snapshot = {
+            app: "INCTL Wash ERP",
+            version: "2.5.0",
+            target: "Google Drive Cloud 15GB Backup",
+            timestamp: new Date().toISOString(),
+            synced_by: req.user.username,
+            counts: {
+                erp_orders: orders.length,
+                daily_logs: logs.length,
+                buyer_data_bank: buyers.length,
+                users: users.length
+            },
+            data: {
+                erp_orders: orders,
+                daily_logs: logs,
+                buyer_data_bank: buyers,
+                users: users
+            }
+        };
+
+        const jsonContent = JSON.stringify(snapshot, null, 2);
+        fs.writeFileSync(filePath, jsonContent, "utf-8");
+        const fileSize = Buffer.byteLength(jsonContent);
+
+        // If custom Google Drive local sync directory is configured (e.g. G:\My Drive\... or /mnt/gdrive/...)
+        const gdrivePath = process.env.GDRIVE_DB_PATH || req.body.targetFolder;
+        let syncedToExternalFolder = false;
+        if (gdrivePath) {
+            try {
+                const targetDir = path.resolve(gdrivePath);
+                if (fs.existsSync(targetDir)) {
+                    fs.writeFileSync(path.join(targetDir, filename), jsonContent, "utf-8");
+                    syncedToExternalFolder = true;
+                }
+            } catch (extErr: any) {
+                console.warn("[BACKUP] Notice: external drive sync directory skipped:", extErr.message);
+            }
+        }
+
+        // Record in system_backups
+        try {
+            await db.addDoc("system_backups", {
+                filename,
+                size_bytes: fileSize,
+                record_counts: JSON.stringify(snapshot.counts),
+                storage_target: syncedToExternalFolder ? `Google Drive (${gdrivePath})` : "Local Snapshot Archive",
+                created_at: new Date().toISOString()
+            });
+        } catch (e) {}
+
+        res.json({
+            success: true,
+            filename,
+            sizeBytes: fileSize,
+            syncedToExternalFolder,
+            counts: snapshot.counts,
+            message: `Snapshot successfully saved (${(fileSize / 1024).toFixed(1)} KB). Ready for Google Drive storage.`
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: "Failed to create Google Drive snapshot", details: error.message });
+    }
+});
+
+// List Historical Backups
+app.get("/api/backup/list", authenticate, async (req, res) => {
+    try {
+        const backupDir = path.resolve("./data/gdrive_backups");
+        const backups: any[] = [];
+
+        if (fs.existsSync(backupDir)) {
+            const files = fs.readdirSync(backupDir).filter(f => f.endsWith(".json"));
+            for (const file of files) {
+                try {
+                    const stats = fs.statSync(path.join(backupDir, file));
+                    backups.push({
+                        filename: file,
+                        sizeBytes: stats.size,
+                        createdAt: stats.mtime.toISOString(),
+                        type: "local_snapshot"
+                    });
+                } catch (e) {}
+            }
+        }
+
+        // Sort latest first
+        backups.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        res.json({ backups });
+    } catch (error: any) {
+        res.status(500).json({ error: "Failed to list backups" });
     }
 });
 
@@ -538,7 +913,8 @@ async function startServer() {
     if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
         const vite = await createViteServer({
             server: { 
-                middlewareMode: true
+                middlewareMode: true,
+                hmr: process.env.DISABLE_HMR === 'true' ? false : { server: httpServer }
             },
             appType: "spa",
         });
@@ -552,6 +928,14 @@ async function startServer() {
     }
 
     if (!process.env.VERCEL) {
+        httpServer.on("error", (err: any) => {
+            if (err.code === "EADDRINUSE") {
+                console.error(`[SERVER] ⚠️ Port ${PORT} already in use. Retrying or binding to existing handle.`);
+            } else {
+                console.error("[SERVER] HTTP Server error:", err);
+            }
+        });
+
         httpServer.listen(PORT, "0.0.0.0", () => {
             console.log(`Server running on http://localhost:${PORT}`);
         });

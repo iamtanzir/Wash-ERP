@@ -1,47 +1,97 @@
-import * as knexPkg from "knex";
-const knex = (knexPkg as any).default || knexPkg;
-import type { Knex } from "knex";
+import * as libsql from "@libsql/client";
+import type { Client } from "@libsql/client";
+const { createClient } = (libsql as any).default || libsql;
 import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import type { DatabaseAdapter } from "../index.js";
-import path from "path";
+import { MemoryAdapter } from "./memory.js";
 
 export class SQLiteAdapter implements DatabaseAdapter {
-  private db: Knex;
+  private client: Client;
   private initPromise: Promise<void>;
-  private CORE_TABLES = ['users', 'erp_orders', 'daily_logs', 'buyer_data_bank', 'audit_logs'];
+  private filePath: string;
+  private fallbackMemory = new MemoryAdapter();
+  private hasError = false;
+  private CORE_TABLES = ["users", "erp_orders", "daily_logs", "buyer_data_bank", "audit_logs", "system_backups"];
+  private ensuredTables = new Set<string>();
 
   constructor() {
-    const filename = process.env.SQLITE_FILENAME || "erp_database.sqlite";
-    const dbPath = path.resolve(process.cwd(), filename);
+    // Determine the database file path
+    // Supports custom path (e.g. Google Drive sync folder or custom directory on RPi / PC)
+    let dbFile = process.env.SQLITE_PATH || process.env.LOCAL_DB_PATH || process.env.GDRIVE_DB_PATH;
     
-    this.db = knex({
-      client: 'better-sqlite3',
-      connection: {
-        filename: dbPath
-      },
-      useNullAsDefault: true
-    });
+    if (!dbFile) {
+      const filename = process.env.SQLITE_FILENAME || "erp_database.sqlite";
+      const dataDir = path.resolve(process.cwd(), "data");
+      try {
+        if (!fs.existsSync(dataDir)) {
+          fs.mkdirSync(dataDir, { recursive: true });
+        }
+      } catch (err: any) {
+        console.warn("[SQLITE] Could not create data directory:", err.message);
+      }
+      dbFile = path.join(dataDir, filename);
+    } else {
+      // Ensure directory for custom path exists
+      try {
+        const customDir = path.dirname(path.resolve(dbFile.replace(/^file:/, "")));
+        if (!fs.existsSync(customDir)) {
+          fs.mkdirSync(customDir, { recursive: true });
+        }
+      } catch (err: any) {
+        console.warn("[SQLITE] Could not create custom database directory:", err.message);
+      }
+    }
+
+    this.filePath = dbFile;
+    const clientUrl = dbFile.startsWith("file:") ? dbFile : `file:${path.resolve(dbFile)}`;
+    console.log(`[SQLITE] 💽 Initializing Local/RPi/Google Drive SQLite file: ${clientUrl}`);
+
+    try {
+      this.client = createClient({
+        url: clientUrl
+      });
+    } catch (err: any) {
+      console.error("[SQLITE] 🚨 Failed to create client:", err.message);
+      this.hasError = true;
+      this.client = {
+        execute: () => { throw new Error("SQLite client failed to initialize"); },
+        batch: () => { throw new Error("SQLite client failed to initialize"); },
+        close: () => {},
+        sync: () => { throw new Error("SQLite client failed to initialize"); }
+      } as any;
+    }
 
     this.initPromise = this.init();
   }
 
+  public getDbFilePath(): string {
+    return this.filePath;
+  }
+
   private async init() {
+    if (this.hasError) return;
     try {
-        await this.db.raw(`
-          CREATE TABLE IF NOT EXISTS users (
+      console.log("[SQLITE] 🏗️ Initializing ERP tables on local storage...");
+
+      const tables = [
+        {
+          name: "users",
+          sql: `CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             role TEXT NOT NULL DEFAULT 'viewer',
             status TEXT NOT NULL DEFAULT 'active',
             created_by TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          )
-        `);
-
-        await this.db.raw(`
-          CREATE TABLE IF NOT EXISTS erp_orders (
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+          )`
+        },
+        {
+          name: "erp_orders",
+          sql: `CREATE TABLE IF NOT EXISTS erp_orders (
             id TEXT PRIMARY KEY,
             buyer TEXT,
             erp_date TEXT,
@@ -56,40 +106,20 @@ export class SQLiteAdapter implements DatabaseAdapter {
             floor TEXT,
             item TEXT,
             wash_type TEXT,
-            wash_status TEXT DEFAULT 'Pending',
+            wash_status TEXT DEFAULT 'Pending' COLLATE BINARY,
             status TEXT DEFAULT 'New',
             plan TEXT,
             print_emb TEXT,
             source_ref TEXT,
             remarks TEXT,
             uploaded_by TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          )
-        `);
-
-        // Migration logic for existing tables if they were created with the old schema
-        const erpOrderColumns = [
-            { name: 'erp_ship_date', type: 'TEXT' },
-            { name: 'floor', type: 'TEXT' },
-            { name: 'status', type: 'TEXT DEFAULT "New"' },
-            { name: 'plan', type: 'TEXT' },
-            { name: 'print_emb', type: 'TEXT' },
-            { name: 'source_ref', type: 'TEXT' },
-            { name: 'remarks', type: 'TEXT' },
-            { name: 'uploaded_by', type: 'TEXT' }
-        ];
-
-        for (const col of erpOrderColumns) {
-            try {
-                await this.db.raw(`ALTER TABLE erp_orders ADD COLUMN ${col.name} ${col.type}`);
-            } catch (e: any) {
-                // Ignore "duplicate column name" errors
-            }
-        }
-
-        await this.db.raw(`
-          CREATE TABLE IF NOT EXISTS daily_logs (
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+          )`
+        },
+        {
+          name: "daily_logs",
+          sql: `CREATE TABLE IF NOT EXISTS daily_logs (
             id TEXT PRIMARY KEY,
             erp_order TEXT,
             log_date TEXT,
@@ -99,12 +129,12 @@ export class SQLiteAdapter implements DatabaseAdapter {
             ready_for_delivery_qty REAL,
             remarks TEXT,
             created_by TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          )
-        `);
-
-        await this.db.raw(`
-          CREATE TABLE IF NOT EXISTS buyer_data_bank (
+            created_at TEXT DEFAULT (datetime('now'))
+          )`
+        },
+        {
+          name: "buyer_data_bank",
+          sql: `CREATE TABLE IF NOT EXISTS buyer_data_bank (
             id TEXT PRIMARY KEY,
             erp_order TEXT,
             buyer TEXT,
@@ -119,104 +149,247 @@ export class SQLiteAdapter implements DatabaseAdapter {
             wash_type TEXT,
             closed_by TEXT,
             is_locked INTEGER DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          )
-        `);
-
-        await this.db.raw(`
-          CREATE TABLE IF NOT EXISTS audit_logs (
+            created_at TEXT DEFAULT (datetime('now'))
+          )`
+        },
+        {
+          name: "audit_logs",
+          sql: `CREATE TABLE IF NOT EXISTS audit_logs (
             id TEXT PRIMARY KEY,
             action TEXT,
             userId TEXT,
             ip TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          )
-        `);
-        console.log(`[SQLITE] All ERP tables ensured.`);
+            created_at TEXT DEFAULT (datetime('now'))
+          )`
+        },
+        {
+          name: "system_backups",
+          sql: `CREATE TABLE IF NOT EXISTS system_backups (
+            id TEXT PRIMARY KEY,
+            filename TEXT,
+            size_bytes INTEGER,
+            record_counts TEXT,
+            storage_target TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+          )`
+        }
+      ];
+
+      for (const table of tables) {
+        await this.client.execute(table.sql);
+        this.ensuredTables.add(table.name);
+      }
+
+      console.log("[SQLITE] ✅ Local storage ready. All ERP tables initialized.");
     } catch (err: any) {
-        console.error(`[SQLITE] Initialization Error:`, err.message);
+      console.error("[SQLITE] ⚠️ Init warning:", err.message);
+      this.hasError = true;
     }
   }
 
   private async ensureTable(col: string) {
-      await this.initPromise;
-      if (this.CORE_TABLES.includes(col)) return;
-      try {
-          const tableExists = await this.db.raw(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`, [col]);
-          if (tableExists.response?.length === 0 || (Array.isArray(tableExists) && tableExists.length === 0)) {
-              await this.db.raw(`
-                CREATE TABLE IF NOT EXISTS ${col} (
-                  id TEXT PRIMARY KEY,
-                  data TEXT,
-                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-              `);
-          }
-      } catch (err) {
-          console.error(`Error ensuring table ${col}:`, err);
-      }
+    if (this.hasError || this.ensuredTables.has(col)) return;
+    try {
+      await this.client.execute(`
+        CREATE TABLE IF NOT EXISTS ${col} (
+          id TEXT PRIMARY KEY,
+          data TEXT,
+          created_at TEXT DEFAULT (datetime('now')),
+          updated_at TEXT DEFAULT (datetime('now'))
+        )
+      `);
+      this.ensuredTables.add(col);
+    } catch (err: any) {
+      console.error(`[SQLITE] Error ensuring table ${col}:`, err.message);
+    }
   }
 
-  async getDoc(col: string, id: string) {
-    await this.initPromise;
-    if (col === 'users') {
-        const user = await this.db(col).where({ id }).orWhere({ username: id }).first();
-        return user || null;
-    }
-    await this.ensureTable(col);
-    const row = await this.db(col).where({ id }).first();
+  private rowToObject(row: any): any {
     if (!row) return null;
-    
-    if (this.CORE_TABLES.includes(col)) return row;
-    return { id: row.id, ...JSON.parse(row.data) };
+    const obj: any = {};
+    for (const key of Object.keys(row)) {
+      obj[key] = row[key];
+    }
+    return obj;
   }
 
-  async setDoc(col: string, id: string, data: any) {
-    await this.initPromise;
-    await this.ensureTable(col);
-    const existing = await this.db(col).where({ id }).first();
-    
-    if (this.CORE_TABLES.includes(col)) {
-        if (existing) {
-            await this.db(col).where({ id }).update({ ...data, updated_at: this.db.fn.now() });
-        } else {
-            await this.db(col).insert({ ...data, id });
-        }
-    } else {
-        const jsonStr = JSON.stringify(data);
-        if (existing) {
-            await this.db(col).where({ id }).update({ data: jsonStr, updated_at: this.db.fn.now() });
-        } else {
-            await this.db(col).insert({ id, data: jsonStr, created_at: this.db.fn.now(), updated_at: this.db.fn.now() });
-        }
+  async getDoc(collection: string, id: string): Promise<any> {
+    if (this.hasError) return this.fallbackMemory.getDoc(collection, id);
+    try {
+      await this.initPromise;
+      if (this.hasError) return this.fallbackMemory.getDoc(collection, id);
+
+      if (collection === "users") {
+        const result = await this.client.execute({
+          sql: "SELECT * FROM users WHERE id = ? OR username = ?",
+          args: [id, id],
+        });
+        return result.rows[0] ? this.rowToObject(result.rows[0]) : null;
+      }
+
+      await this.ensureTable(collection);
+
+      const result = await this.client.execute({
+        sql: `SELECT * FROM ${collection} WHERE id = ?`,
+        args: [id],
+      });
+
+      if (!result.rows[0]) return null;
+
+      if (this.CORE_TABLES.includes(collection)) {
+        return this.rowToObject(result.rows[0]);
+      }
+
+      const row: any = result.rows[0];
+      let dataObj = {};
+      try {
+        if (row.data) dataObj = typeof row.data === "string" ? JSON.parse(row.data) : row.data;
+      } catch (e) {}
+      return { id: row.id, ...dataObj };
+    } catch (err: any) {
+      console.error(`[SQLITE] Error in getDoc for ${collection}:`, err.message);
+      return this.fallbackMemory.getDoc(collection, id);
     }
   }
 
-  async addDoc(col: string, data: any) {
+  async setDoc(collection: string, id: string, data: any): Promise<void> {
+    if (this.hasError) return this.fallbackMemory.setDoc(collection, id, data);
+    try {
+      await this.initPromise;
+      if (this.hasError) return this.fallbackMemory.setDoc(collection, id, data);
+
+      if (!data.id) data.id = id;
+      await this.ensureTable(collection);
+
+      if (this.CORE_TABLES.includes(collection)) {
+        const keys = Object.keys(data);
+        if (collection === "users") {
+          const existing = await this.getDoc("users", id);
+          if (existing) {
+            const updates = keys.filter(k => k !== "id").map(k => `${k} = ?`).join(", ");
+            const args = keys.filter(k => k !== "id").map(k => data[k]);
+            args.push(id);
+            await this.client.execute({
+              sql: `UPDATE users SET ${updates}, updated_at = (datetime('now')) WHERE id = ?`,
+              args,
+            });
+          } else {
+            const columns = Object.keys(data).join(", ");
+            const placeholders = Object.keys(data).map(() => "?").join(", ");
+            await this.client.execute({
+              sql: `INSERT INTO users (${columns}) VALUES (${placeholders})`,
+              args: Object.values(data),
+            });
+          }
+          return;
+        }
+
+        const updates = keys.filter(k => k !== "id").map(k => `${k} = ?`).join(", ");
+        const args = keys.filter(k => k !== "id").map(k => data[k]);
+        args.push(id);
+        
+        const result = await this.client.execute({
+          sql: `UPDATE ${collection} SET ${updates} WHERE id = ?`,
+          args,
+        });
+
+        if (result.rowsAffected === 0) {
+          const columns = Object.keys(data).join(", ");
+          const placeholders = Object.keys(data).map(() => "?").join(", ");
+          await this.client.execute({
+            sql: `INSERT INTO ${collection} (${columns}) VALUES (${placeholders})`,
+            args: Object.values(data),
+          });
+        }
+      } else {
+        const jsonStr = JSON.stringify(data);
+        const result = await this.client.execute({
+          sql: `UPDATE ${collection} SET data = ?, updated_at = (datetime('now')) WHERE id = ?`,
+          args: [jsonStr, id]
+        });
+
+        if (result.rowsAffected === 0) {
+          await this.client.execute({
+            sql: `INSERT INTO ${collection} (id, data) VALUES (?, ?)`,
+            args: [id, jsonStr]
+          });
+        }
+      }
+    } catch (err: any) {
+      console.error(`[SQLITE] Error in setDoc for ${collection}:`, err.message);
+      return this.fallbackMemory.setDoc(collection, id, data);
+    }
+  }
+
+  async addDoc(collection: string, data: any): Promise<string> {
     const id = randomUUID();
-    await this.setDoc(col, id, data);
+    await this.setDoc(collection, id, data);
     return id;
   }
 
-  async updateDoc(col: string, id: string, data: any) {
+  async updateDoc(collection: string, id: string, data: any): Promise<void> {
+    if (this.hasError) return this.fallbackMemory.updateDoc(collection, id, data);
+    try {
       await this.initPromise;
-      await this.ensureTable(col);
-      const existing = await this.getDoc(col, id);
-      if (!existing) throw new Error("Not found");
-      await this.setDoc(col, id, { ...existing, ...data });
+      if (this.hasError) return this.fallbackMemory.updateDoc(collection, id, data);
+
+      const existing = await this.getDoc(collection, id);
+      if (!existing) throw new Error("Document not found");
+
+      await this.setDoc(collection, id, { ...existing, ...data });
+    } catch (err: any) {
+      console.error(`[SQLITE] Error in updateDoc for ${collection}:`, err.message);
+      return this.fallbackMemory.updateDoc(collection, id, data);
+    }
   }
 
-  async deleteDoc(col: string, id: string) {
+  async deleteDoc(collection: string, id: string): Promise<void> {
+    if (this.hasError) return this.fallbackMemory.deleteDoc(collection, id);
+    try {
       await this.initPromise;
-      await this.ensureTable(col);
-      await this.db(col).where({ id }).delete();
+      if (this.hasError) return this.fallbackMemory.deleteDoc(collection, id);
+
+      await this.ensureTable(collection);
+      await this.client.execute({
+        sql: `DELETE FROM ${collection} WHERE id = ?`,
+        args: [id],
+      });
+    } catch (err: any) {
+      console.error(`[SQLITE] Error in deleteDoc for ${collection}:`, err.message);
+      return this.fallbackMemory.deleteDoc(collection, id);
+    }
   }
 
-  async getDocs(col: string) {
-    await this.ensureTable(col);
-    const rows = await this.db(col).select("*").orderBy('created_at', 'desc');
-    if (this.CORE_TABLES.includes(col)) return rows;
-    return rows.map(r => ({ id: r.id, ...JSON.parse(r.data) }));
+  async getDocs(collection: string, filters?: any[]): Promise<any[]> {
+    if (this.hasError) return this.fallbackMemory.getDocs(collection);
+    try {
+      await this.initPromise;
+      if (this.hasError) return this.fallbackMemory.getDocs(collection);
+
+      await this.ensureTable(collection);
+
+      let sql = `SELECT * FROM ${collection}`;
+      if (collection === "erp_orders" || collection === "daily_logs" || collection === "buyer_data_bank") {
+        sql += " ORDER BY created_at DESC";
+      }
+
+      const result = await this.client.execute(sql);
+      const rows = result.rows || [];
+
+      if (this.CORE_TABLES.includes(collection)) {
+        return rows.map((r: any) => this.rowToObject(r));
+      }
+
+      return rows.map((row: any) => {
+        let dataObj = {};
+        try {
+          if (row.data) dataObj = typeof row.data === "string" ? JSON.parse(row.data) : row.data;
+        } catch (e) {}
+        return { id: row.id, ...dataObj };
+      });
+    } catch (err: any) {
+      console.error(`[SQLITE] Error in getDocs for ${collection}:`, err.message);
+      return this.fallbackMemory.getDocs(collection);
+    }
   }
 }

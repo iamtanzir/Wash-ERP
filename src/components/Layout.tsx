@@ -28,7 +28,15 @@ import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 import { useRealTimeClock, formatDhakaTime } from "../hooks/useRealTime";
 
-const navItems = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string; size?: number }>;
+  desc: string;
+  superAdminOnly?: boolean;
+}
+
+const navItems: NavItem[] = [
   { name: "WASH DASHBOARD", href: "/", icon: LayoutDashboard, desc: "Overview, charts and live metrics" },
   { name: "NEXT ERP PLAN", href: "/new-plan", icon: PlusCircle, desc: "Import and add new ERP plans" },
   { name: "GARMENTS R&D LOG", href: "/daily-update", icon: ClipboardCheck, desc: "Log daily received and delivered quantities" },
@@ -39,13 +47,19 @@ const navItems = [
   { name: "IOT TRACKING", href: "/iot-tracking", icon: Activity, desc: "IoT-driven real-time production & critical path tracking" },
   { name: "CLOSE ERP ORDER", href: "/close-order", icon: Lock, desc: "Archive completed ERP orders" },
   { name: "ALL BUYER BANK", href: "/data-bank", icon: Database, desc: "Historic buyer data bank archive" },
-  { name: "USER MANAGEMENT", href: "/admin", icon: ShieldCheck, desc: "Manage user roles and permissions" },
+  { 
+    name: "HOST & CLOUD ADMIN", 
+    href: "/admin", 
+    icon: ShieldCheck, 
+    desc: "Local PC, Raspberry Pi hosting & Google Drive 15GB Cloud DB",
+    superAdminOnly: true 
+  },
 ];
 
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAdmin, isEditor, logout } = useAuth();
+  const { user, isAdmin, isSuperAdmin, isEditor, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSidebarFocused] = useState(false);
@@ -53,7 +67,15 @@ export default function Layout() {
     return document.documentElement.classList.contains("dark-mode");
   });
 
-  const filteredNavItems = navItems.filter(item => 
+  // HOST & CLOUD ADMIN is ONLY visible to Super Admin (tanzirerp), NOT for all admins
+  const visibleNavItems = navItems.filter(item => {
+    if (item.superAdminOnly && !isSuperAdmin) {
+      return false;
+    }
+    return true;
+  });
+
+  const filteredNavItems = visibleNavItems.filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.desc.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -93,6 +115,7 @@ export default function Layout() {
       case '/iot-tracking': return 'IoT Nidle Smart Tracking';
       case '/close-order': return 'Close ERP Orders';
       case '/data-bank': return 'All Buyer Data';
+      case '/admin': return 'Host & Cloud Database (PC, RPi, Google Drive)';
       default: return 'Wash ERP';
     }
   };
@@ -125,7 +148,7 @@ export default function Layout() {
         </div>
         
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto min-w-max">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
                 const isActive = location.pathname === item.href;
                 return (
                   <Link
@@ -150,14 +173,22 @@ export default function Layout() {
         
         <div className="p-4 border-t border-slate-800 bg-slate-900/50 min-w-max">
           <div className="flex items-center gap-3 px-2 mb-4">
-            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-300">
+            <div className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center text-slate-300",
+              isSuperAdmin ? "bg-amber-500/20 text-amber-400 border border-amber-500/40" : "bg-slate-700"
+            )}>
                <UserIcon size={20} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate uppercase">{user?.username}</p>
               <div className="flex items-center gap-1">
-                <ShieldCheck size={12} className={cn(isAdmin ? "text-red-400" : isEditor ? "text-blue-400" : "text-blue-400")} />
-                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">{user?.role || "viewer"}</p>
+                <ShieldCheck size={12} className={cn(isSuperAdmin ? "text-amber-400" : isAdmin ? "text-red-400" : "text-blue-400")} />
+                <p className={cn(
+                  "text-[10px] uppercase font-bold tracking-wider",
+                  isSuperAdmin ? "text-amber-400 font-black" : "text-slate-400"
+                )}>
+                  {isSuperAdmin ? "SUPER ADMIN" : (user?.role || "viewer")}
+                </p>
               </div>
             </div>
           </div>
@@ -253,6 +284,16 @@ export default function Layout() {
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
+            {isSuperAdmin && (
+              <Link 
+                to="/admin" 
+                title="Puter.com 100% Free Cloud & Host Admin"
+                className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 border border-amber-200 text-amber-900 hover:bg-amber-100 transition-all shadow-xs"
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                <span>Puter Cloud</span>
+              </Link>
+            )}
             <span className="sm:hidden px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/15 border border-blue-200 text-blue-600 whitespace-nowrap shadow-[0_0_10px_rgba(16,185,129,0.1)]">Auto Sync</span>
             <div className="flex flex-col items-end hidden sm:flex">
               <p className="text-xs text-slate-400">Real Time</p>

@@ -11,6 +11,7 @@ interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   isEditor: boolean;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextType>({
     user: null, 
     loading: true, 
     isAdmin: false, 
+    isSuperAdmin: false,
     isEditor: false,
     logout: async () => {},
     refreshUser: async () => {} 
@@ -59,10 +61,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     toast.success("Logged out");
   };
 
+  const isSuperAdmin = user?.username?.trim().toLowerCase() === "tanzirerp";
+
   const value = {
     user,
     loading,
     isAdmin: user?.role === "admin",
+    isSuperAdmin,
     isEditor: user?.role === "admin" || user?.role === "editor",
     logout,
     refreshUser: fetchUser
