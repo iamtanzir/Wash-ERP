@@ -24,6 +24,7 @@ import {
 } from 'recharts';
 
 // Rollup optimized dynamic code-splitting for ERP submodules
+import WashRevenuePnLBar from '../components/WashRevenuePnLBar';
 const ErpManufacturing = React.lazy(() => import('../components/ErpManufacturing'));
 const ErpStock = React.lazy(() => import('../components/ErpStock'));
 const ErpAccounts = React.lazy(() => import('../components/ErpAccounts'));
@@ -1763,6 +1764,12 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+
+          {/* Monthly Wash Type-wise Revenue (Ravinow) & Wash Profit / Loss Analytics */}
+          <WashRevenuePnLBar 
+            orders={activeOrders || []} 
+            logs={allLogsRes?.items || []} 
+          />
 
           {/* Quick Access Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
