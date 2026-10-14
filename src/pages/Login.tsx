@@ -129,14 +129,14 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-blue-600/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-2 bg-[#1E62FF] hover:bg-blue-600 text-white font-black py-3.5 px-4 rounded-xl shadow-[0_4px_20px_rgba(30,98,255,0.4)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
               <>
                 <LogIn size={18} />
-                <span>SIGN IN TO ERP</span>
+                <span>LOGIN / প্রবেশ করুন</span>
               </>
             )}
           </button>
