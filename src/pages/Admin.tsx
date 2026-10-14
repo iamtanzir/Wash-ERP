@@ -51,12 +51,16 @@ interface BackupItem {
   type: string;
 }
 
+import SiaBackupManager from "../components/SiaBackupManager";
+import OfficeCLICommandCenter from "../components/OfficeCLICommandCenter";
+import AionSuperAdminControl from "../components/AionSuperAdminControl";
+
 export default function Admin() {
   const { user: currentUser, isAdmin } = useAuth();
   const isSuperAdmin = currentUser?.username?.toLowerCase() === "tanzirerp";
   
-  // Navigation Tabs: 'online' | 'users' | 'hosting' | 'gdrive' | 'database'
-  const [activeTab, setActiveTab] = useState<"online" | "users" | "hosting" | "gdrive" | "database">("online");
+  // Navigation Tabs: 'online' | 'users' | 'hosting' | 'gdrive' | 'database' | 'sia' | 'cli' | 'aion'
+  const [activeTab, setActiveTab] = useState<"online" | "users" | "hosting" | "gdrive" | "database" | "sia" | "cli" | "aion">("online");
 
   // Users State
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -627,6 +631,45 @@ export default function Admin() {
         >
           <Database size={16} />
           🔌 Database Mode ({selectedDbMode.toUpperCase()})
+        </button>
+
+        <button
+          onClick={() => setActiveTab("sia")}
+          className={cn(
+            "flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all",
+            activeTab === "sia" 
+              ? "bg-emerald-600 text-white shadow-md shadow-emerald-200" 
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+          )}
+        >
+          <Cloud size={16} />
+          ⚡ Sia Cloud & Self-Hosted
+        </button>
+
+        <button
+          onClick={() => setActiveTab("cli")}
+          className={cn(
+            "flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all",
+            activeTab === "cli" 
+              ? "bg-blue-600 text-white shadow-md shadow-blue-200" 
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+          )}
+        >
+          <Terminal size={16} />
+          🤖 iOfficeAI / OfficeCLI Suite
+        </button>
+
+        <button
+          onClick={() => setActiveTab("aion")}
+          className={cn(
+            "flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all",
+            activeTab === "aion" 
+              ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" 
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+          )}
+        >
+          <Globe size={16} />
+          🌐 AionUI Global Omni Control
         </button>
       </div>
 
@@ -2403,6 +2446,27 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
             </div>
           )}
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 5: SIA DECENTRALIZED CLOUD & AWESOME-SELFHOSTED INTEGRATION          */}
+      {/* ========================================================================= */}
+      {activeTab === "sia" && (
+        <SiaBackupManager />
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 6: iOfficeAI / OfficeCLI AUTOMATION CENTER                             */}
+      {/* ========================================================================= */}
+      {activeTab === "cli" && (
+        <OfficeCLICommandCenter />
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 7: AionUI GLOBAL SUPER ADMIN OMNI CONTROL SUITE                      */}
+      {/* ========================================================================= */}
+      {activeTab === "aion" && (
+        <AionSuperAdminControl />
       )}
 
       {/* Whitelist User Modal */}
