@@ -175,6 +175,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 const JWT_SECRET_KEY = process.env.JWT_SECRET || "inctl-internal-security-secret-key-2024";
 const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_KEY);
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
 app.use(express.json());
 app.use(cookieParser(JWT_SECRET_KEY));
@@ -277,8 +278,8 @@ const handleLogin = async (req: any, res: any) => {
 
         res.cookie("auth_token", token, {
             httpOnly: true,
-            secure: true,
-            sameSite: "none",
+            secure: IS_PRODUCTION,
+            sameSite: IS_PRODUCTION ? "none" : "lax",
             path: "/",
             maxAge: 24 * 60 * 60 * 1000 // 24h
         });
@@ -328,8 +329,8 @@ app.post("/api/auth/login", handleLogin);
 app.post("/api/logout", (req, res) => {
     res.clearCookie("auth_token", {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: IS_PRODUCTION,
+        sameSite: IS_PRODUCTION ? "none" : "lax",
         path: "/"
     });
     res.json({ success: true });
@@ -350,8 +351,8 @@ app.post("/api/admin/config/turso", authenticate, requireSuperAdmin, async (req,
         process.env.TURSO_DATABASE_URL = url;
         process.env.TURSO_AUTH_TOKEN = token;
         
-        res.cookie("turso_url", url, { httpOnly: true, secure: true, sameSite: 'none', path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
-        res.cookie("turso_token", token, { httpOnly: true, secure: true, sameSite: 'none', path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
+        res.cookie("turso_url", url, { httpOnly: true, secure: IS_PRODUCTION, sameSite: IS_PRODUCTION ? "none" : "lax", path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
+        res.cookie("turso_token", token, { httpOnly: true, secure: IS_PRODUCTION, sameSite: IS_PRODUCTION ? "none" : "lax", path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
 
         db = getDatabase();
         dbSeedPromise = null;
@@ -484,13 +485,13 @@ app.post("/api/admin/config/db-mode", authenticate, requireSuperAdmin, async (re
 
     try {
         process.env.DATABASE_MODE = mode;
-        res.cookie("db_mode", mode, { httpOnly: true, secure: true, sameSite: 'none', path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
+        res.cookie("db_mode", mode, { httpOnly: true, secure: IS_PRODUCTION, sameSite: IS_PRODUCTION ? "none" : "lax", path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
 
         if (localPath) {
             process.env.LOCAL_DB_PATH = localPath;
             process.env.SQLITE_PATH = localPath;
             process.env.GDRIVE_DB_PATH = localPath;
-            res.cookie("local_db_path", localPath, { httpOnly: true, secure: true, sameSite: 'none', path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
+            res.cookie("local_db_path", localPath, { httpOnly: true, secure: IS_PRODUCTION, sameSite: IS_PRODUCTION ? "none" : "lax", path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
         }
 
         db = getDatabase();
