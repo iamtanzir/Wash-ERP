@@ -39,6 +39,9 @@ export default function Login() {
       }
 
       if (res.ok) {
+        if (data.token) {
+          localStorage.setItem("erp_token", data.token);
+        }
         toast.success("Login successful");
         await refreshUser();
         navigate("/", { replace: true });

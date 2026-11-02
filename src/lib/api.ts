@@ -39,10 +39,15 @@ export interface DailyLog {
 }
 
 const fetchJSON = async (url: string, options: RequestInit = {}) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem("erp_token") : null;
+  const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
   const res = await fetch(url, {
     ...options,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders,
       ...options.headers,
     },
   });

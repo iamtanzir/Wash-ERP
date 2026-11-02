@@ -50,13 +50,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUser = async () => {
     try {
       console.log("Fetching user...");
-      const res = await fetch("/api/me", { credentials: 'include' });
+      const token = typeof window !== 'undefined' ? localStorage.getItem("erp_token") : null;
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      
+      const res = await fetch("/api/me", {
+        credentials: 'include',
+        headers
+      });
       if (res.ok) {
         const data = await res.json();
         console.log("User fetched successfully:", data.user);
         setUser(data.user);
       } else {
         console.warn("User fetch failed with status:", res.status);
+        if (res.status === 401) {
+          localStorage.removeItem("erp_token");
+        }
         setUser(null);
       }
     } catch (error) {
@@ -72,9 +81,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = async () => {
-    await fetch("/api/logout", { method: "POST", credentials: "include" });
-    setUser(null);
-    toast.success("Logged out");
+    try {
+      localStorage.removeItem("erp_token");
+      await fetch("/api/logout", { method: "POST", credentials: "include" });
+    } catch (e) {
+      console.warn("Logout request failed:", e);
+    } finally {
+      setUser(null);
+      toast.success("Logged out");
+    }
   };
 
   const usernameLower = user?.username?.trim().toLowerCase() || "";
