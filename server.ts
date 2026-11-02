@@ -17,6 +17,7 @@ import { generateProactivePlan, simulatePlanningScenario } from "./src/server/ai
 
 let db = getDatabase();
 const app = express();
+app.set("trust proxy", 1);
 
 let dbSeedPromise: Promise<void> | null = null;
 
@@ -181,15 +182,22 @@ app.use(express.json());
 app.use(cookieParser(JWT_SECRET_KEY));
 
 // Health check API endpoint (First API route for container/proxy health checks)
-app.get("/api/health", (req, res) => {
+app.get(["/api/health", "/health"], (req, res) => {
     res.json({ status: "ok" });
 });
 
 app.use(ensureDb);
 
-// Middleware: Auth Check
+// Middleware: Auth Check supporting both secure iframe cookies and Bearer headers
 const authenticate = async (req: any, res: any, next: any) => {
-    const token = req.cookies.auth_token;
+    let token = req.cookies?.auth_token;
+    
+    if (!token && req.headers.authorization) {
+        const parts = req.headers.authorization.split(" ");
+        if (parts.length === 2 && parts[0].toLowerCase() === "bearer") {
+            token = parts[1];
+        }
+    }
     
     if (!token) {
         return res.status(401).json({ error: "Unauthorized" });
@@ -278,14 +286,15 @@ const handleLogin = async (req: any, res: any) => {
 
         res.cookie("auth_token", token, {
             httpOnly: true,
-            secure: IS_PRODUCTION,
-            sameSite: IS_PRODUCTION ? "none" : "lax",
+            secure: true,
+            sameSite: "none",
             path: "/",
             maxAge: 24 * 60 * 60 * 1000 // 24h
         });
 
         res.json({
             success: true,
+            token,
             user: {
                 id: userData.id,
                 username: userData.username,
@@ -323,24 +332,27 @@ const handleLogin = async (req: any, res: any) => {
     }
 };
 
-app.post("/api/login", handleLogin);
-app.post("/api/auth/login", handleLogin);
+app.post(["/api/login", "/api/auth/login"], handleLogin);
 
-app.post("/api/logout", (req, res) => {
+const handleLogout = (req: any, res: any) => {
     res.clearCookie("auth_token", {
         httpOnly: true,
-        secure: IS_PRODUCTION,
-        sameSite: IS_PRODUCTION ? "none" : "lax",
+        secure: true,
+        sameSite: "none",
         path: "/"
     });
     res.json({ success: true });
-});
+};
+
+app.post(["/api/logout", "/api/auth/logout"], handleLogout);
 
 app.get("/api/time", (req, res) => { res.json({ time: Date.now() }); });
 
-app.get("/api/me", authenticate, (req: any, res) => {
+const handleMe = (req: any, res: any) => {
     res.json({ user: req.user });
-});
+};
+
+app.get(["/api/me", "/api/auth/me", "/api/auth/user"], authenticate, handleMe);
 
 // User Management API
 app.post("/api/admin/config/turso", authenticate, requireSuperAdmin, async (req, res) => {
@@ -1046,20 +1058,45 @@ async function startServer() {
         console.warn("[SERVER] Non-critical database initialization notice during startup:", err.message);
     });
 
-    if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+    const isProd = process.env.NODE_ENV === "production";
+    const distPath = path.join(process.cwd(), "dist");
+    const distIndexExists = fs.existsSync(path.join(distPath, "index.html"));
+
+    if (isProd && distIndexExists) {
+        console.log("[SERVER] Mode: Production static bundle");
+        app.use(express.static(distPath));
+        app.get("*", (req, res) => {
+            if (req.originalUrl.startsWith("/api/")) {
+                return res.status(404).json({ error: "API endpoint not found" });
+            }
+            res.sendFile(path.join(distPath, "index.html"));
+        });
+    } else {
+        console.log("[SERVER] Mode: Vite Dev Middleware with SPA fallback");
         const vite = await createViteServer({
             server: { 
                 middlewareMode: true,
                 hmr: process.env.DISABLE_HMR === 'true' ? false : { server: httpServer }
             },
-            appType: "spa",
+            appType: "custom",
         });
         app.use(vite.middlewares);
-    } else {
-        const distPath = path.join(process.cwd(), "dist");
-        app.use(express.static(distPath));
-        app.get("*", (req, res) => {
-            res.sendFile(path.join(distPath, "index.html"));
+
+        // Catch-all SPA handler for dev mode to ensure all routes (/login, /cpl-report, etc.) serve index.html
+        app.use("*", async (req, res, next) => {
+            const url = req.originalUrl;
+            if (url.startsWith("/api/")) {
+                return res.status(404).json({ error: "API endpoint not found" });
+            }
+            try {
+                const indexPath = path.resolve(process.cwd(), "index.html");
+                let template = fs.readFileSync(indexPath, "utf-8");
+                template = await vite.transformIndexHtml(url, template);
+                res.status(200).set({ "Content-Type": "text/html" }).end(template);
+            } catch (e: any) {
+                vite.ssrFixStacktrace(e);
+                next(e);
+            }
         });
     }
 
