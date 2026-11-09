@@ -54,13 +54,14 @@ interface BackupItem {
 import SiaBackupManager from "../components/SiaBackupManager";
 import OfficeCLICommandCenter from "../components/OfficeCLICommandCenter";
 import AionSuperAdminControl from "../components/AionSuperAdminControl";
+import RecommendedFreeSetupHub from "../components/RecommendedFreeSetupHub";
 
 export default function Admin() {
   const { user: currentUser, isAdmin } = useAuth();
   const isSuperAdmin = currentUser?.username?.toLowerCase() === "tanzirerp";
   
-  // Navigation Tabs: 'online' | 'users' | 'hosting' | 'gdrive' | 'database' | 'sia' | 'cli' | 'aion'
-  const [activeTab, setActiveTab] = useState<"online" | "users" | "hosting" | "gdrive" | "database" | "sia" | "cli" | "aion">("online");
+  // Navigation Tabs: 'setup' | 'online' | 'users' | 'hosting' | 'gdrive' | 'database' | 'sia' | 'cli' | 'aion'
+  const [activeTab, setActiveTab] = useState<"setup" | "online" | "users" | "hosting" | "gdrive" | "database" | "sia" | "cli" | "aion">("setup");
 
   // Users State
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -569,6 +570,19 @@ export default function Admin() {
       {/* Main Tabs Navigation */}
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-2">
         <button
+          onClick={() => setActiveTab("setup")}
+          className={cn(
+            "flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all",
+            activeTab === "setup" 
+              ? "bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 text-white shadow-md shadow-indigo-200" 
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+          )}
+        >
+          <Zap size={16} className="text-amber-400" />
+          🏆 Recommended Free Setup (Oracle + PC + Drive)
+        </button>
+
+        <button
           onClick={() => setActiveTab("online")}
           className={cn(
             "flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all",
@@ -672,6 +686,13 @@ export default function Admin() {
           🌐 AionUI Global Omni Control
         </button>
       </div>
+
+      {/* ========================================================================= */}
+      {/* TAB: RECOMMENDED FREE SETUP (ORACLE CLOUD + PC OFFLINE + HOURLY DRIVE)    */}
+      {/* ========================================================================= */}
+      {activeTab === "setup" && (
+        <RecommendedFreeSetupHub />
+      )}
 
       {/* ========================================================================= */}
       {/* TAB 0: 24/7 GLOBAL ONLINE ACCESS & 100% FREE CLOUD ARCHITECTURE (A TO Z)   */}

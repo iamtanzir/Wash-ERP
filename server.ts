@@ -564,6 +564,159 @@ app.get("/api/backup/export", authenticate, async (req: any, res) => {
     }
 });
 
+// Full MySQL / MariaDB SQL Dump for XAMPP, PC & Oracle Cloud Ubuntu MySQL
+app.get("/api/backup/export-sql", authenticate, async (req: any, res) => {
+    try {
+        console.log(`[BACKUP] SQL Export initiated by user: ${req.user.username}`);
+        const [orders, logs, buyers, users] = await Promise.all([
+            db.getDocs("erp_orders").catch(() => []),
+            db.getDocs("daily_logs").catch(() => []),
+            db.getDocs("buyer_data_bank").catch(() => []),
+            db.getDocs("users").catch(() => [])
+        ]);
+
+        const escapeSql = (val: any) => {
+            if (val === null || val === undefined) return "NULL";
+            if (typeof val === "number") return val;
+            if (typeof val === "boolean") return val ? 1 : 0;
+            if (typeof val === "object") val = JSON.stringify(val);
+            return `'${String(val).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+        };
+
+        const lines: string[] = [
+            `-- ========================================================`,
+            `-- INCTL Wash ERP - Complete MySQL Database Dump`,
+            `-- Target: XAMPP / Laragon (PC) & Oracle Cloud Ubuntu MySQL`,
+            `-- Generated at: ${new Date().toISOString()}`,
+            `-- Exported by: ${req.user.username}`,
+            `-- ========================================================\n`,
+            `CREATE DATABASE IF NOT EXISTS \`erp_db\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`,
+            `USE \`erp_db\`;\n`,
+            `SET FOREIGN_KEY_CHECKS = 0;\n`,
+            
+            `-- Table: erp_orders`,
+            `DROP TABLE IF EXISTS \`erp_orders\`;`,
+            `CREATE TABLE \`erp_orders\` (`,
+            `  \`id\` VARCHAR(64) NOT NULL PRIMARY KEY,`,
+            `  \`buyer\` VARCHAR(128) NULL,`,
+            `  \`file_no\` VARCHAR(128) NULL,`,
+            `  \`style_no\` VARCHAR(128) NULL,`,
+            `  \`order_qty\` INT DEFAULT 0,`,
+            `  \`wash_type\` VARCHAR(128) NULL,`,
+            `  \`sew_floor\` VARCHAR(64) NULL,`,
+            `  \`status\` VARCHAR(64) DEFAULT 'Running',`,
+            `  \`color\` VARCHAR(64) NULL,`,
+            `  \`erp_date\` VARCHAR(64) NULL,`,
+            `  \`erp_ship_date\` VARCHAR(64) NULL,`,
+            `  \`cpl_qty_kg\` DECIMAL(10,2) DEFAULT 0,`,
+            `  \`item\` VARCHAR(128) NULL,`,
+            `  \`plan\` VARCHAR(128) NULL,`,
+            `  \`remarks\` TEXT NULL,`,
+            `  \`created_at\` VARCHAR(64) NULL,`,
+            `  \`updated_at\` VARCHAR(64) NULL,`,
+            `  \`custom_values\` LONGTEXT NULL`,
+            `) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n`
+        ];
+
+        if (orders.length > 0) {
+            lines.push(`-- Data for erp_orders (${orders.length} rows)`);
+            for (const o of orders) {
+                lines.push(
+                    `INSERT INTO \`erp_orders\` (\`id\`, \`buyer\`, \`file_no\`, \`style_no\`, \`order_qty\`, \`wash_type\`, \`sew_floor\`, \`status\`, \`color\`, \`erp_date\`, \`erp_ship_date\`, \`cpl_qty_kg\`, \`item\`, \`plan\`, \`remarks\`, \`created_at\`, \`updated_at\`, \`custom_values\`) VALUES (${escapeSql(o.id)}, ${escapeSql(o.buyer)}, ${escapeSql(o.file_no)}, ${escapeSql(o.style_no)}, ${o.order_qty || 0}, ${escapeSql(o.wash_type)}, ${escapeSql(o.sew_floor)}, ${escapeSql(o.status || 'Running')}, ${escapeSql(o.color)}, ${escapeSql(o.erp_date)}, ${escapeSql(o.erp_ship_date)}, ${o.cpl_qty_kg || 0}, ${escapeSql(o.item)}, ${escapeSql(o.plan)}, ${escapeSql(o.remarks)}, ${escapeSql(o.created_at)}, ${escapeSql(o.updated_at)}, ${escapeSql(o.custom_values)});`
+                );
+            }
+            lines.push("");
+        }
+
+        lines.push(
+            `-- Table: daily_logs`,
+            `DROP TABLE IF EXISTS \`daily_logs\`;`,
+            `CREATE TABLE \`daily_logs\` (`,
+            `  \`id\` VARCHAR(64) NOT NULL PRIMARY KEY,`,
+            `  \`erp_order\` VARCHAR(64) NULL,`,
+            `  \`log_date\` VARCHAR(64) NULL,`,
+            `  \`received_qty\` INT DEFAULT 0,`,
+            `  \`delivered_qty\` INT DEFAULT 0,`,
+            `  \`unit\` VARCHAR(32) DEFAULT 'Pcs',`,
+            `  \`ready_for_delivery_qty\` INT DEFAULT 0,`,
+            `  \`remarks\` TEXT NULL,`,
+            `  \`created_by\` VARCHAR(64) NULL,`,
+            `  \`created_at\` VARCHAR(64) NULL`,
+            `) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n`
+        );
+
+        if (logs.length > 0) {
+            lines.push(`-- Data for daily_logs (${logs.length} rows)`);
+            for (const l of logs) {
+                lines.push(
+                    `INSERT INTO \`daily_logs\` (\`id\`, \`erp_order\`, \`log_date\`, \`received_qty\`, \`delivered_qty\`, \`unit\`, \`ready_for_delivery_qty\`, \`remarks\`, \`created_by\`, \`created_at\`) VALUES (${escapeSql(l.id)}, ${escapeSql(l.erp_order)}, ${escapeSql(l.log_date)}, ${l.received_qty || 0}, ${l.delivered_qty || 0}, ${escapeSql(l.unit || 'Pcs')}, ${l.ready_for_delivery_qty || 0}, ${escapeSql(l.remarks)}, ${escapeSql(l.created_by)}, ${escapeSql(l.created_at)});`
+                );
+            }
+            lines.push("");
+        }
+
+        lines.push(
+            `-- Table: buyer_data_bank`,
+            `DROP TABLE IF EXISTS \`buyer_data_bank\`;`,
+            `CREATE TABLE \`buyer_data_bank\` (`,
+            `  \`id\` VARCHAR(64) NOT NULL PRIMARY KEY,`,
+            `  \`buyer\` VARCHAR(128) NULL,`,
+            `  \`file_no\` VARCHAR(128) NULL,`,
+            `  \`style_no\` VARCHAR(128) NULL,`,
+            `  \`order_qty\` INT DEFAULT 0,`,
+            `  \`archived_at\` VARCHAR(64) NULL,`,
+            `  \`total_received\` INT DEFAULT 0,`,
+            `  \`total_delivered\` INT DEFAULT 0,`,
+            `  \`custom_values\` LONGTEXT NULL`,
+            `) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n`
+        );
+
+        if (buyers.length > 0) {
+            lines.push(`-- Data for buyer_data_bank (${buyers.length} rows)`);
+            for (const b of buyers) {
+                lines.push(
+                    `INSERT INTO \`buyer_data_bank\` (\`id\`, \`buyer\`, \`file_no\`, \`style_no\`, \`order_qty\`, \`archived_at\`, \`total_received\`, \`total_delivered\`, \`custom_values\`) VALUES (${escapeSql(b.id)}, ${escapeSql(b.buyer)}, ${escapeSql(b.file_no)}, ${escapeSql(b.style_no)}, ${b.order_qty || 0}, ${escapeSql(b.archived_at)}, ${b.total_received || 0}, ${b.total_delivered || 0}, ${escapeSql(b.custom_values)});`
+                );
+            }
+            lines.push("");
+        }
+
+        lines.push(
+            `-- Table: users`,
+            `DROP TABLE IF EXISTS \`users\`;`,
+            `CREATE TABLE \`users\` (`,
+            `  \`id\` VARCHAR(64) NOT NULL PRIMARY KEY,`,
+            `  \`username\` VARCHAR(64) UNIQUE,`,
+            `  \`password_hash\` VARCHAR(255) NULL,`,
+            `  \`role\` VARCHAR(64) DEFAULT 'viewer',`,
+            `  \`status\` VARCHAR(32) DEFAULT 'active',`,
+            `  \`created_at\` VARCHAR(64) NULL`,
+            `) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n`
+        );
+
+        if (users.length > 0) {
+            lines.push(`-- Data for users (${users.length} rows)`);
+            for (const u of users) {
+                lines.push(
+                    `INSERT INTO \`users\` (\`id\`, \`username\`, \`password_hash\`, \`role\`, \`status\`, \`created_at\`) VALUES (${escapeSql(u.id)}, ${escapeSql(u.username)}, ${escapeSql(u.password_hash)}, ${escapeSql(u.role)}, ${escapeSql(u.status)}, ${escapeSql(u.created_at)});`
+                );
+            }
+            lines.push("");
+        }
+
+        lines.push(`SET FOREIGN_KEY_CHECKS = 1;`);
+        lines.push(`-- Dump completed on ${new Date().toISOString()}`);
+
+        const filename = `erp_db_${new Date().toISOString().replace(/[:.]/g, "-")}.sql`;
+        res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+        res.setHeader("Content-Type", "application/sql");
+        res.send(lines.join("\n"));
+    } catch (error: any) {
+        console.error("[BACKUP] SQL Export failed:", error);
+        res.status(500).json({ error: "Failed to generate SQL database dump", details: error.message });
+    }
+});
+
 // Restore Database from Snapshot
 app.post("/api/backup/restore", authenticate, authorize(["admin"]), upload.single("file"), async (req: any, res) => {
     try {
