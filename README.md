@@ -1,4 +1,4 @@
-# INCTL Wash ERP - Industrial Garment Washing ERP
+# Industrial Garment Washing ERP (RMG)
 
 <p align="center">
   <img src="./public/logo.png" width="120" height="120" alt="Wash ERP Logo" />
