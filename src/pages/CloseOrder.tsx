@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function CloseOrder() {
   const queryClient = useQueryClient();
-  const { isEditor, isAdmin } = useAuth();
+  const { isEditor, isAdmin, user } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderLogs, setOrderLogs] = useState<DBLog[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,7 +61,7 @@ export default function CloseOrder() {
       erp_order_id: selectedOrder.id,
       close_date: closeDate,
       final_delivered: parseInt(finalDelivered),
-      closed_by: "planning_head",
+      closed_by: user?.username || "planning_head",
       confirmed
     });
   };

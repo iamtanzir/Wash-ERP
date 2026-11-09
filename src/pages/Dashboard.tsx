@@ -1793,42 +1793,48 @@ export default function Dashboard() {
           )}
 
           {/* Quick Access Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <Link to="/wash-mc-plan" className="group bg-indigo-900 p-6 rounded-2xl shadow-xl shadow-indigo-900/20 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
-              <div className="text-slate-800">
+              <div className="text-white">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-300">Wet Process Floor</span>
                 <h4 className="text-lg font-black mt-0.5">WASH M/C LOAD PLAN</h4>
-                <p className="text-xs text-indigo-200 mt-1">Batch loading, recipes & wet process scheduling</p>
+                <p className="text-xs text-indigo-200 mt-1">Batch loading & recipes</p>
               </div>
-              <div className="w-12 h-12 bg-slate-200 rounded-xl flex items-center justify-center text-slate-800 group-hover:rotate-12 transition-transform shrink-0">
-                <WashingMachine size={28} />
+              <div className="w-12 h-12 bg-indigo-800 text-white rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform shrink-0 border border-indigo-700">
+                <WashingMachine size={26} />
               </div>
             </Link>
 
             <Link to="/new-plan" className="group bg-blue-600 p-6 rounded-2xl shadow-xl shadow-blue-500/20 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
-              <div className="text-slate-800">
+              <div className="text-white">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200">Import & Planning</span>
                 <h4 className="text-lg font-black mt-0.5">NEXT ERP PLAN</h4>
-                <p className="text-xs text-blue-100 mt-1">Excel import & buyer order planning</p>
+                <p className="text-xs text-blue-100 mt-1">Excel import & buyer orders</p>
               </div>
-              <div className="w-12 h-12 bg-slate-200 rounded-xl flex items-center justify-center text-slate-800 group-hover:rotate-12 transition-transform shrink-0">
-                <PlusCircle size={28} />
-              </div>
-            </Link>
-            <Link to="/cpl-report" className="group bg-slate-900 p-6 rounded-2xl shadow-xl shadow-slate-500/20 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
-              <div className="text-slate-800">
-                <h4 className="text-xl font-black mt-1">CPL FABRIC REPORT</h4>
-              </div>
-              <div className="w-12 h-12 bg-slate-200 rounded-xl flex items-center justify-center text-slate-800 group-hover:rotate-12 transition-transform">
-                <Filter size={32} />
+              <div className="w-12 h-12 bg-blue-500 text-white rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform shrink-0 border border-blue-400">
+                <PlusCircle size={26} />
               </div>
             </Link>
-            <Link to="/data-bank" className="group bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-xl shadow-slate-500/5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
-              <div className="text-slate-800 drop-shadow-sm">
-                <h4 className="text-xl font-black mt-1">BUYER DATA BANK (DB)</h4>
+
+            <Link to="/cpl-report" className="group bg-slate-900 p-6 rounded-2xl shadow-xl shadow-slate-900/20 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
+              <div className="text-white">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Fabric Tracking</span>
+                <h4 className="text-lg font-black mt-0.5">CPL FABRIC REPORT</h4>
+                <p className="text-xs text-slate-300 mt-1">Fabrics status & CPL analysis</p>
               </div>
-              <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-800 drop-shadow-sm group-hover:rotate-12 transition-transform border border-slate-200">
-                <Database size={32} />
+              <div className="w-12 h-12 bg-slate-800 text-slate-200 rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform shrink-0 border border-slate-700">
+                <Filter size={26} />
+              </div>
+            </Link>
+
+            <Link to="/data-bank" className="group bg-emerald-800 p-6 rounded-2xl shadow-xl shadow-emerald-900/20 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-[0.98]">
+              <div className="text-white">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-300">Master Archive</span>
+                <h4 className="text-lg font-black mt-0.5">BUYER DATA BANK</h4>
+                <p className="text-xs text-emerald-100 mt-1">Historic closed orders & logs</p>
+              </div>
+              <div className="w-12 h-12 bg-emerald-700 text-white rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform shrink-0 border border-emerald-600">
+                <Database size={26} />
               </div>
             </Link>
           </div>

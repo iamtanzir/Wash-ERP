@@ -48,10 +48,15 @@ export default function NewERPPlan() {
       const formData = new FormData();
       formData.append("file", file);
 
+      const token = typeof window !== 'undefined' ? localStorage.getItem("erp_token") : null;
+      const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
       const response = await fetch("/api/erp/upload", {
         method: "POST",
+        credentials: "include",
         headers: {
-          "Accept": "application/json"
+          "Accept": "application/json",
+          ...authHeaders
         },
         body: formData,
       });

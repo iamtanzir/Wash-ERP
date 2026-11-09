@@ -1140,7 +1140,16 @@ app.post("/api/ai/scenario-simulate", authenticate, async (req, res) => {
     }
 });
 
-// Generic Database API
+// Generic Database API & Core Aliases
+app.get("/api/orders", authenticate, async (req, res) => {
+    try {
+        const data = await db.getDocs("erp_orders");
+        res.json(data);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.get("/api/db/:collection", authenticate, async (req, res) => {
     try {
         const data = await db.getDocs(req.params.collection);

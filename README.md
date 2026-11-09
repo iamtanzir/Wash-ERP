@@ -1,7 +1,11 @@
 # Industrial Garment Washing ERP (RMG)
 
 <p align="center">
-  <img src="./public/logo.png" width="120" height="120" alt="Wash ERP Logo" />
+  <img src="public/banner.jpg" width="100%" alt="INCTL Wash ERP Banner" style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.3);" />
+</p>
+
+<p align="center">
+  <img src="public/logo.png" width="130" height="130" alt="INCTL Wash ERP Logo" style="border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);" />
 </p>
 
 <p align="center">
@@ -344,6 +348,53 @@ JWT_SECRET=inctl-internal-security-secret-key-2024
 
 ---
 
-## 📄 License
-MIT License - Developed with ❤️ for INCTL Wash ERP System.
-All scripts, configs, and architecture setups are 100% Free & Open-Source.
+## ⚖️ আইনগত সতর্কবার্তা ও কপিরাইট অধিকার (Legal Notice)
+
+> **Developer & Owner:** **Tanzir Ahmed**  
+> **Official ERP Software:** INCTL Wash ERP System  
+> **Copyright:** © 2026 Tanzir Ahmed. All Rights Reserved.
+
+### ⚠️ পাইরেসি ও অননুমোদিত নকল সংক্রান্ত সতর্কবার্তা:
+এই সাইট, ডিজাইন ও কন্ট্রোল সিস্টেমের কোনো অংশ অনুমতি ছাড়া ক্লোন বা নকল করা **সম্পূর্ণ বেআইনি**। পাইরেসি করা হলে সাইবার সুরক্ষা আইন ও কপিরাইট আইনের অধীনে আইনি ব্যবস্থা নেয়া হবে।
+
+সোর্স কোড, ডাটাবেজ মডেল, অ্যালগরিদম বা ইন্টারফেস ডিজাইন অনুমতি ছাড়া বাণিজ্যিক বা ব্যক্তিগতভাবে চুরি/অনুকরণ করা হলে জাতীয় ও আন্তর্জাতিক বুদ্ধিবৃত্তিক সম্পদ সুরক্ষা আইন (WIPO Intellectual Property Rights) এবং ডিজিটাল সাইবার আইনের অধীনে তাৎক্ষণিক ক্ষতিপূরণ দাবি ও ফৌজদারি মামলা দায়ের করা হবে।
+
+---
+
+## 🤝 Support the Developer (ডেভেলপারকে সমর্থন)
+
+এই সম্পূর্ণ ERP সিস্টেমটি তৈরি এবং পরিচালনা করছেন **Tanzir Ahmed**। 
+* **Developer & Architect:** Tanzir Ahmed
+* **Official Support Email:** `tanzir.iu@gmail.com`
+* **Custom Enterprise Support:** আপনার ওয়াশ প্ল্যান্টের কাস্টম রিকোয়ারমেন্ট, আইওটি মেশিন কানেক্টিভিটি বা ক্লাউড অটোমেশনের জন্য সরাসরি যোগাযোগ করুন।
+* **Feedback & Collaboration:** যেকোনো বাগ রিপোর্ট বা নতুন ফিচার প্রস্তাবনার জন্য ডেভেলপার ইমেইল উন্মুক্ত।
+
+---
+
+## 📜 MIT License
+
+This project is licensed under the terms of the official **MIT License** with proprietary developer recognition and trademark ownership retained by **Tanzir Ahmed**.
+
+```text
+MIT License
+
+Copyright (c) 2026 Tanzir Ahmed
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

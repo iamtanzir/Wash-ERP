@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function DailyUpdate() {
   const queryClient = useQueryClient();
-  const { isEditor } = useAuth();
+  const { isEditor, user } = useAuth();
   
   // Tree Structure States
   const [transactionType, setTransactionType] = useState<'received' | 'delivery'>('received');
@@ -90,7 +90,7 @@ export default function DailyUpdate() {
       received_qty: transactionType === 'received' ? entryQuantity : 0,
       delivered_qty: transactionType === 'delivery' ? entryQuantity : 0,
       unit: entryCategory === 'GMT' ? gmtFloor : cplUnit,
-      created_by: "operator" // In a real app derived from auth
+      created_by: user?.username || "operator"
     });
   };
 

@@ -131,12 +131,19 @@ export default function Layout() {
       )}>
         <div className="p-6 flex items-center justify-between overflow-hidden">
           <div className="flex items-center gap-3 min-w-max">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-900/40 shrink-0 overflow-hidden">
-                <WashingMachine size={20} className="text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-900/40 shrink-0 overflow-hidden border border-blue-400/30">
+              <img 
+                src="/logo.png" 
+                alt="INCTL Wash ERP Logo" 
+                className="w-full h-full object-cover" 
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }} 
+              />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-white font-black text-xl tracking-tighter leading-none ">WASH</h1>
-              <span className="text-blue-400 font-bold text-[10px] tracking-[0.2em] leading-none mt-1">ERP SYSTEM</span>
+              <h1 className="text-white font-black text-xl tracking-tighter leading-none ">INCTL</h1>
+              <span className="text-blue-400 font-bold text-[10px] tracking-[0.2em] leading-none mt-1">WASH ERP</span>
             </div>
           </div>
           <button 
@@ -323,16 +330,18 @@ export default function Layout() {
 
         {/* Desktop Tooltip / Status Footer */}
         <footer className="h-10 bg-slate-50 backdrop-blur-md px-4 md:px-6 flex items-center justify-between text-[10px] md:text-xs text-slate-400 shrink-0 border-t border-slate-200">
-          <div className="flex gap-2 md:gap-4">
-            <span className="hidden sm:inline">System: PocketBase v0.22</span>
-            <span className="hidden sm:inline text-slate-200">|</span>
-            <span className="hidden sm:inline text-slate-400">Host: LOCAL-SRV-01</span>
-            <span className="hidden sm:inline text-slate-200">|</span>
-            <span className="flex items-center gap-1 text-emerald-500/80"><div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div> Tailscale Connected</span>
+          <div className="flex gap-2 md:gap-4 items-center">
+            <span className="font-bold text-slate-700">INCTL Wash ERP</span>
+            <span className="hidden sm:inline text-slate-300">|</span>
+            <span className="hidden sm:inline text-slate-600 font-medium">© 2026 Tanzir Ahmed • All Rights Reserved</span>
+            <span className="hidden sm:inline text-slate-300">|</span>
+            <span className="flex items-center gap-1 text-emerald-600 font-medium">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div> 
+              Cloud Sync Active
+            </span>
           </div>
-          <div className="flex gap-2 md:gap-4 italic items-center">
-            <span title="সব রিসিভ এবং ডেলিভারি সম্পন্ন হলে ক্লোজ করুন">Hints (hover)</span>
-            <span className="font-semibold text-slate-600 uppercase hidden sm:inline tracking-wider">Wash Planning</span>
+          <div className="flex gap-2 md:gap-4 items-center text-[10px] md:text-xs">
+            <span className="text-slate-500 font-medium hidden md:inline">Protected by Cyber Security & Copyright Law</span>
           </div>
         </footer>
       </main>
