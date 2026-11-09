@@ -5,10 +5,6 @@
 </p>
 
 <p align="center">
-  <img src="public/logo.png" width="130" height="130" alt="Industrial Garment Washing ERP (RMG) Logo" style="border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);" />
-</p>
-
-<p align="center">
   <b>A High-Performance Enterprise ERP System for Garment Washing Plants, Industrial Dyeing, Fabric Tracking (CPL), and Buyer Order Analytics with Multi-Adapter SQL/NoSQL Storage and 100% Free Lifetime Self-Hosted & Cloud Architecture.</b>
 </p>
 
