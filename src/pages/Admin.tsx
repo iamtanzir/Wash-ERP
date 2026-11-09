@@ -127,7 +127,7 @@ export default function Admin() {
     setPuterSyncingKv(true);
     try {
       const res = await syncKpisToPuterKv({
-        factory: "INCTL Wash ERP",
+        factory: "Industrial Garment Washing ERP (RMG)",
         orders: hostInfo?.totalOrders || 0,
         syncTime: new Date().toISOString(),
         status: "Active & Synced"

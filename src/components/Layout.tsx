@@ -42,7 +42,7 @@ const navItems: NavItem[] = [
   { name: "GARMENTS R&D LOG", href: "/daily-update", icon: ClipboardCheck, desc: "Log daily received and delivered quantities" },
   { name: "WASH M/C LOAD PLAN", href: "/wash-mc-plan", icon: WashingMachine, desc: "Wet process garments washing machine load plan & recipes" },
   { name: "CPL FABRIC REPORT", href: "/cpl-report", icon: FileText, desc: "Fabrics status and CPL calculations" },
-  { name: "WORKING MATRIX (TOD)", href: "/hm-tod", icon: ClipboardCheck, desc: "INCTL Wash Risk Analysis & TOD working matrix" },
+  { name: "WORKING MATRIX (TOD)", href: "/hm-tod", icon: ClipboardCheck, desc: "Garment Wash Risk Analysis & TOD working matrix" },
   { name: "PROACTIVE PLAN", href: "/proactive-plan", icon: Sparkles, desc: "AI Powered Cloud-Based Apparel Planning Solution (MPS & T&A)" },
   { name: "IOT TRACKING", href: "/iot-tracking", icon: Activity, desc: "IoT-driven real-time production & critical path tracking" },
   { name: "CLOSE ERP ORDER", href: "/close-order", icon: Lock, desc: "Archive completed ERP orders" },
@@ -134,7 +134,7 @@ export default function Layout() {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-900/40 shrink-0 overflow-hidden border border-blue-400/30">
               <img 
                 src="/logo.png" 
-                alt="INCTL Wash ERP Logo" 
+                alt="Industrial Garment Washing ERP (RMG)" 
                 className="w-full h-full object-cover" 
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
@@ -142,7 +142,7 @@ export default function Layout() {
               />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-white font-black text-xl tracking-tighter leading-none ">INCTL</h1>
+              <h1 className="text-white font-black text-xl tracking-tighter leading-none ">RMG</h1>
               <span className="text-blue-400 font-bold text-[10px] tracking-[0.2em] leading-none mt-1">WASH ERP</span>
             </div>
           </div>
@@ -331,7 +331,7 @@ export default function Layout() {
         {/* Desktop Tooltip / Status Footer */}
         <footer className="h-10 bg-slate-50 backdrop-blur-md px-4 md:px-6 flex items-center justify-between text-[10px] md:text-xs text-slate-400 shrink-0 border-t border-slate-200">
           <div className="flex gap-2 md:gap-4 items-center">
-            <span className="font-bold text-slate-700">INCTL Wash ERP</span>
+            <span className="font-bold text-slate-700">Industrial Garment Washing ERP (RMG)</span>
             <span className="hidden sm:inline text-slate-300">|</span>
             <span className="hidden sm:inline text-slate-600 font-medium">© 2026 Tanzir Ahmed • All Rights Reserved</span>
             <span className="hidden sm:inline text-slate-300">|</span>

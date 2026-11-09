@@ -1,11 +1,11 @@
 # Industrial Garment Washing ERP (RMG)
 
 <p align="center">
-  <img src="public/banner.jpg" width="100%" alt="INCTL Wash ERP Banner" style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.3);" />
+  <img src="public/banner.jpg" width="100%" alt="Industrial Garment Washing ERP (RMG) Banner" style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.3);" />
 </p>
 
 <p align="center">
-  <img src="public/logo.png" width="130" height="130" alt="INCTL Wash ERP Logo" style="border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);" />
+  <img src="public/logo.png" width="130" height="130" alt="Industrial Garment Washing ERP (RMG) Logo" style="border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);" />
 </p>
 
 <p align="center">
@@ -19,9 +19,9 @@
 
 ---
 
-## 📦 INCTL Wash ERP Modules
+## 📦 Industrial Garment Washing ERP (RMG) Modules
 ```text
-INCTL Wash ERP Modules:
+Industrial Garment Washing ERP (RMG) Modules:
 ├── 🗂️ Order Management (NEXT ERP Plan - Duplicate Prevention & Auto-Mapping)
 ├── 🧵 Fabrics Tracking CPL (Receive / Delivery / Sub-Factory / WIP in Kg & Pcs)
 ├── 🧺 Garments Tracking (Wash Floor-wise / Sub-Factory & Batch-Load Tracking)
@@ -324,7 +324,7 @@ TURSO_DATABASE_URL=libsql://your-db-name.turso.io
 TURSO_AUTH_TOKEN=your-token-here
 
 # JWT Auth Secret
-JWT_SECRET=inctl-internal-security-secret-key-2024
+JWT_SECRET=internal-security-secret-key-2026
 ```
 
 ---
@@ -351,7 +351,7 @@ JWT_SECRET=inctl-internal-security-secret-key-2024
 ## ⚖️ আইনগত সতর্কবার্তা ও কপিরাইট অধিকার (Legal Notice)
 
 > **Developer & Owner:** **Tanzir Ahmed**  
-> **Official ERP Software:** INCTL Wash ERP System  
+> **Official ERP Software:** Industrial Garment Washing ERP (RMG)  
 > **Copyright:** © 2026 Tanzir Ahmed. All Rights Reserved.
 
 ### ⚠️ পাইরেসি ও অননুমোদিত নকল সংক্রান্ত সতর্কবার্তা:

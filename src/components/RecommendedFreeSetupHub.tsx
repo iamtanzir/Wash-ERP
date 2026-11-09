@@ -51,7 +51,7 @@ export default function RecommendedFreeSetupHub() {
   // Generate scripts dynamically
   const windowsBatScript = `@echo off
 :: ========================================================
-:: INCTL Wash ERP - Windows Hourly Auto Backup to Google Drive
+:: Industrial Garment Washing ERP (RMG) - Windows Hourly Auto Backup to Google Drive
 :: Runs via Windows Task Scheduler every 1 hour (0 Taka / Free)
 :: ========================================================
 
@@ -74,7 +74,7 @@ echo Backup completed successfully at %DATE%
 
   const linuxShellScript = `#!/bin/bash
 # ========================================================
-# INCTL Wash ERP - Oracle Cloud Hourly Backup to Google Drive
+# Industrial Garment Washing ERP (RMG) - Oracle Cloud Hourly Backup to Google Drive
 # Crontab: 0 * * * * /usr/local/bin/erp_backup.sh
 # ========================================================
 
