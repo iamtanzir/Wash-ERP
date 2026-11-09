@@ -1,7 +1,7 @@
 # Industrial Garment Washing ERP (RMG)
 
 <p align="center">
-  <img src="public/banner.jpg" width="100%" alt="Industrial Garment Washing ERP (RMG) Banner" style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.3);" />
+  <img src="public/banner.png" width="100%" alt="Industrial Garment Washing ERP (RMG) Banner" style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.15);" />
 </p>
 
 <p align="center">
