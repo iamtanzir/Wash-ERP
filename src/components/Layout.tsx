@@ -129,28 +129,21 @@ export default function Layout() {
         "bg-slate-900 flex flex-col shadow-2xl shrink-0 h-screen overflow-hidden transition-all duration-300 ease-in-out z-50",
         isSidebarOpen ? "w-64" : "w-0 md:w-0"
       )}>
-        <div className="p-6 flex items-center justify-between overflow-hidden">
-          <div className="flex items-center gap-3 min-w-max">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-900/40 shrink-0 overflow-hidden border border-blue-400/30">
-              <img 
-                src="/logo.png" 
-                alt="Industrial Garment Washing ERP (RMG)" 
-                className="w-full h-full object-cover" 
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }} 
-              />
+        <div className="p-5 flex items-center justify-between overflow-hidden border-b border-slate-800/60">
+          <Link to="/" className="flex items-center gap-3 group" title="Industrial Garment Washing ERP (RMG)">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-blue-500 to-indigo-500 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.4)] shrink-0 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.6)] transition-all">
+              <WashingMachine size={22} className="text-white" strokeWidth={2.2} />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-white font-black text-xl tracking-tighter leading-none ">RMG</h1>
-              <span className="text-blue-400 font-bold text-[10px] tracking-[0.2em] leading-none mt-1">WASH ERP</span>
+              <h1 className="text-white font-black text-xl tracking-tight leading-none group-hover:text-blue-100 transition-colors">WASH</h1>
+              <span className="text-[#4da2ff] font-bold text-[10px] tracking-[0.2em] leading-none mt-1">ERP SYSTEM</span>
             </div>
-          </div>
+          </Link>
           <button 
-            className="md:hidden text-slate-400 hover:text-white"
+            className="md:hidden text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
             onClick={() => setIsSidebarOpen(false)}
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
         

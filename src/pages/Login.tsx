@@ -59,23 +59,24 @@ export default function Login() {
     <div className="fixed inset-0 bg-[#0A0F1D] overflow-y-auto flex items-center justify-center p-4 selection:bg-blue-500 selection:text-white">
       <div className="w-full max-w-[380px] flex flex-col items-center my-auto py-8">
         
-        {/* Top Logo Icon */}
+        {/* Top Logo Brand */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className="w-14 h-14 bg-gradient-to-b from-[#3B82F6] to-[#1D4ED8] rounded-2xl flex items-center justify-center text-white shadow-[0_8px_25px_rgba(29,78,216,0.4)] mb-4"
+          className="mb-4 flex flex-col items-center"
         >
-          <WashingMachine size={28} strokeWidth={2.2} className="text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-blue-500 to-indigo-500 flex items-center justify-center shadow-[0_0_25px_rgba(59,130,246,0.45)] mb-3">
+            <WashingMachine size={30} className="text-white" strokeWidth={2.2} />
+          </div>
+          <div className="flex flex-col items-center">
+            <h1 className="text-2xl font-black text-white tracking-tight leading-none">WASH</h1>
+            <span className="text-[#4da2ff] font-bold text-[10px] tracking-[0.25em] leading-none mt-1.5">ERP SYSTEM</span>
+          </div>
         </motion.div>
 
-        {/* Title */}
-        <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-1">
-          WASH<span className="text-[#3B82F6]">ERP</span>
-        </h1>
-
         {/* Divider / Subtitle */}
-        <div className="flex items-center justify-center gap-3 w-48 mt-1.5 mb-6">
+        <div className="flex items-center justify-center gap-3 w-48 mt-1 mb-6">
           <div className="h-[1px] bg-slate-700/70 flex-1" />
           <span className="text-[9px] font-bold tracking-[0.25em] text-slate-400 uppercase">
             INTERNAL DATA HUB
