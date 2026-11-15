@@ -55,6 +55,7 @@ import SiaBackupManager from "../components/SiaBackupManager";
 import OfficeCLICommandCenter from "../components/OfficeCLICommandCenter";
 import AionSuperAdminControl from "../components/AionSuperAdminControl";
 import RecommendedFreeSetupHub from "../components/RecommendedFreeSetupHub";
+import ParquetStoragePanel from "../components/ParquetStoragePanel";
 
 export default function Admin() {
   const { user: currentUser, isAdmin } = useAuth();
@@ -2246,6 +2247,13 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
             </div>
           </div>
 
+          {/* Apache Parquet Columnar Compressed Storage Vault */}
+          <ParquetStoragePanel
+            activeDbMode={selectedDbMode}
+            onSwitchToParquet={() => handleSwitchDbMode("parquet", "./data/parquet")}
+            switchingDbMode={savingDbMode}
+          />
+
           {/* Backup History Table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
@@ -2322,11 +2330,11 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
             <div>
               <h2 className="text-xl font-bold text-slate-900 tracking-tight">Active Database Engine Selection</h2>
               <p className="text-xs text-slate-500 mt-1">
-                Choose how INCTL Wash ERP stores data. Switch between Local SQLite (PC/RPi), Google Drive Sync Folder, or Turso Cloud.
+                Choose how Industrial Garment Washing ERP stores data: Local SQLite, Google Drive Sync, Turso Cloud, or Apache Parquet Columnar (.parquet).
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Local SQLite */}
               <button
                 type="button"
@@ -2404,8 +2412,44 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
                   Remote distributed database instance via libsql:// protocol for multi-region clustering.
                 </p>
               </button>
+
+              {/* Apache Parquet Columnar Storage */}
+              <button
+                type="button"
+                onClick={() => handleSwitchDbMode("parquet", "./data/parquet")}
+                disabled={savingDbMode}
+                className={cn(
+                  "p-5 rounded-2xl border-2 text-left transition-all relative",
+                  selectedDbMode === "parquet"
+                    ? "border-amber-600 bg-amber-50/40 shadow-sm"
+                    : "border-slate-200 hover:border-slate-300 bg-white"
+                )}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-2xl">⚡</span>
+                  {selectedDbMode === "parquet" ? (
+                    <span className="bg-amber-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
+                      ACTIVE
+                    </span>
+                  ) : (
+                    <span className="bg-slate-100 text-slate-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
+                      COLUMNAR
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-bold text-slate-900 text-sm">Apache Parquet (.parquet)</h3>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Columnar compressed <code className="font-mono text-amber-800 font-bold">./data/parquet/*.parquet</code> storage — 10x smaller & faster analytics.
+                </p>
+              </button>
             </div>
           </div>
+
+          <ParquetStoragePanel
+            activeDbMode={selectedDbMode}
+            onSwitchToParquet={() => handleSwitchDbMode("parquet", "./data/parquet")}
+            switchingDbMode={savingDbMode}
+          />
 
           {/* Turso Cloud Config Form (If Turso is selected or Super Admin override) */}
           {isSuperAdmin && (

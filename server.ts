@@ -14,6 +14,13 @@ import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { getDatabase } from "./src/server/db/index.js";
 import { generateProactivePlan, simulatePlanningScenario } from "./src/server/aiPlanner.js";
+import {
+    buildParquetBuffer,
+    writeParquetFileAtomic,
+    readParquetBuffer,
+    benchmarkParquetVsCsv,
+    type ParquetCodec
+} from "./src/server/db/parquetEngine.js";
 
 let db = getDatabase();
 const app = express();
@@ -153,6 +160,10 @@ const ensureDb = async (req: any, res: any, next: any) => {
         if (req.cookies?.local_db_path && req.cookies.local_db_path !== process.env.LOCAL_DB_PATH) {
             process.env.LOCAL_DB_PATH = req.cookies.local_db_path;
             process.env.SQLITE_PATH = req.cookies.local_db_path;
+            changed = true;
+        }
+        if (req.cookies?.parquet_dir && req.cookies.parquet_dir !== process.env.PARQUET_DIR) {
+            process.env.PARQUET_DIR = req.cookies.parquet_dir;
             changed = true;
         }
         if (changed) {
@@ -426,6 +437,24 @@ app.get("/api/system/host-info", authenticate, requireSuperAdmin, async (req, re
             } catch (e) {}
         }
 
+        const parquetDir = path.resolve(process.env.PARQUET_DIR || "./data/parquet");
+        let parquetFiles: { filename: string; table: string; sizeBytes: number; updatedAt: string }[] = [];
+        let parquetTotalBytes = 0;
+        try {
+            if (fs.existsSync(parquetDir)) {
+                for (const file of fs.readdirSync(parquetDir).filter(f => f.endsWith(".parquet"))) {
+                    const stats = fs.statSync(path.join(parquetDir, file));
+                    parquetTotalBytes += stats.size;
+                    parquetFiles.push({
+                        filename: file,
+                        table: file.replace(/\.parquet$/, ""),
+                        sizeBytes: stats.size,
+                        updatedAt: stats.mtime.toISOString()
+                    });
+                }
+            }
+        } catch (e) {}
+
         res.json({
             hostname: os.hostname(),
             platform: os.platform(),
@@ -436,6 +465,9 @@ app.get("/api/system/host-info", authenticate, requireSuperAdmin, async (req, re
             port: PORT,
             dbMode: process.env.DATABASE_MODE || "local",
             localDbPath,
+            parquetDir,
+            parquetFiles,
+            parquetTotalBytes,
             dbFileExists,
             dbFileSize,
             backupCount,
@@ -490,16 +522,35 @@ app.get("/api/system/check-online", authenticate, async (req, res) => {
     }
 });
 
-// Database Mode Switcher (Local SQLite, Google Drive Sync, Turso, Memory - Super Admin Only)
+// Database Mode Switcher (Local SQLite, Google Drive Sync, Turso, Apache Parquet, Memory - Super Admin Only)
 app.post("/api/admin/config/db-mode", authenticate, requireSuperAdmin, async (req, res) => {
-    const { mode, localPath } = req.body;
+    const { mode, localPath, parquetDir } = req.body;
     if (!mode) return res.status(400).json({ error: "Database mode is required" });
 
     try {
+        // When switching into Apache Parquet mode, automatically sync current data into .parquet files if target is empty
+        if (mode.toLowerCase() === "parquet") {
+            const targetParquetDir = path.resolve(parquetDir || (localPath && !localPath.endsWith(".sqlite") ? localPath : "") || process.env.PARQUET_DIR || "./data/parquet");
+            fs.mkdirSync(targetParquetDir, { recursive: true });
+            process.env.PARQUET_DIR = targetParquetDir;
+            res.cookie("parquet_dir", targetParquetDir, { httpOnly: true, secure: IS_PRODUCTION, sameSite: IS_PRODUCTION ? "none" : "lax", path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
+
+            const existingFiles = fs.existsSync(targetParquetDir) ? fs.readdirSync(targetParquetDir).filter(f => f.endsWith(".parquet")) : [];
+            if (existingFiles.length === 0) {
+                const cols = ["users", "erp_orders", "daily_logs", "buyer_data_bank", "audit_logs", "wash_mc_load_plans"];
+                for (const col of cols) {
+                    const docs = await db.getDocs(col).catch(() => []);
+                    if (docs.length > 0 || col === "users") {
+                        await writeParquetFileAtomic(path.join(targetParquetDir, `${col}.parquet`), docs, { codec: "SNAPPY", tableName: col });
+                    }
+                }
+            }
+        }
+
         process.env.DATABASE_MODE = mode;
         res.cookie("db_mode", mode, { httpOnly: true, secure: IS_PRODUCTION, sameSite: IS_PRODUCTION ? "none" : "lax", path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
 
-        if (localPath) {
+        if (localPath && mode.toLowerCase() !== "parquet") {
             process.env.LOCAL_DB_PATH = localPath;
             process.env.SQLITE_PATH = localPath;
             process.env.GDRIVE_DB_PATH = localPath;
@@ -514,7 +565,8 @@ app.post("/api/admin/config/db-mode", authenticate, requireSuperAdmin, async (re
             success: true, 
             message: `Database switched to ${mode.toUpperCase()} mode successfully.`,
             mode,
-            localPath: process.env.LOCAL_DB_PATH || "./data/erp_database.sqlite"
+            localPath: process.env.LOCAL_DB_PATH || "./data/erp_database.sqlite",
+            parquetDir: process.env.PARQUET_DIR || "./data/parquet"
         });
     } catch (e: any) {
         res.status(500).json({ error: "Failed to switch database mode", details: e.message });
@@ -890,6 +942,177 @@ app.get("/api/backup/list", authenticate, async (req, res) => {
         res.json({ backups });
     } catch (error: any) {
         res.status(500).json({ error: "Failed to list backups" });
+    }
+});
+
+// Apache Parquet Columnar Storage & Live CSV vs Parquet Benchmark Stats
+const PARQUET_TABLES = ["erp_orders", "daily_logs", "buyer_data_bank", "users", "wash_mc_load_plans", "audit_logs"] as const;
+
+app.get("/api/backup/parquet/stats", authenticate, async (req: any, res) => {
+    try {
+        const parquetDir = path.resolve(process.env.PARQUET_DIR || "./data/parquet");
+        const tableStats = await Promise.all(
+            PARQUET_TABLES.map(async (table) => {
+                const rows = await db.getDocs(table).catch(() => []);
+                const stats = await benchmarkParquetVsCsv(table, rows);
+                const diskPath = path.join(parquetDir, `${table}.parquet`);
+                const savedOnDisk = fs.existsSync(diskPath);
+                const diskBytes = savedOnDisk ? fs.statSync(diskPath).size : 0;
+                const diskUpdatedAt = savedOnDisk ? fs.statSync(diskPath).mtime.toISOString() : null;
+                return {
+                    ...stats,
+                    savedOnDisk,
+                    diskBytes,
+                    diskUpdatedAt
+                };
+            })
+        );
+
+        const totals = tableStats.reduce(
+            (acc, s) => {
+                acc.totalRows += s.rowCount;
+                acc.csvBytes += s.csvBytes;
+                acc.jsonBytes += s.jsonBytes;
+                acc.parquetSnappyBytes += s.parquetSnappyBytes;
+                acc.parquetGzipBytes += s.parquetGzipBytes;
+                acc.diskBytes += s.diskBytes;
+                acc.csvParseMs += s.csvParseMs;
+                acc.parquetReadMs += s.parquetReadMs;
+                return acc;
+            },
+            { totalRows: 0, csvBytes: 0, jsonBytes: 0, parquetSnappyBytes: 0, parquetGzipBytes: 0, diskBytes: 0, csvParseMs: 0, parquetReadMs: 0 }
+        );
+
+        const bestParquetTotal = Math.min(totals.parquetSnappyBytes, totals.parquetGzipBytes) || totals.parquetSnappyBytes;
+        const overallCompressionVsCsv = totals.csvBytes > 0 && bestParquetTotal > 0 ? Number((totals.csvBytes / bestParquetTotal).toFixed(2)) : 1;
+        const overallSpaceSavedPercent = totals.csvBytes > 0 ? Number(Math.max(0, ((totals.csvBytes - bestParquetTotal) / totals.csvBytes) * 100).toFixed(1)) : 0;
+        const overallSpeedup = totals.parquetReadMs > 0 ? Number(Math.max(1, totals.csvParseMs / totals.parquetReadMs).toFixed(1)) : 1;
+
+        res.json({
+            parquetDir,
+            tables: tableStats,
+            summary: {
+                ...totals,
+                overallCompressionVsCsv,
+                overallSpaceSavedPercent,
+                overallSpeedup: Number(overallSpeedup)
+            }
+        });
+    } catch (error: any) {
+        console.error("[PARQUET] Stats error:", error);
+        res.status(500).json({ error: "Failed to compute Parquet storage stats", details: error.message });
+    }
+});
+
+// Sync All ERP Tables into Compressed .parquet Columnar Vault
+app.post("/api/backup/parquet/sync", authenticate, async (req: any, res) => {
+    try {
+        const codecInput = String(req.body?.codec || "GZIP").toUpperCase();
+        const codec: ParquetCodec = codecInput === "SNAPPY" || codecInput === "UNCOMPRESSED" ? codecInput : "GZIP";
+        const customFolder = req.body?.targetFolder ? path.resolve(String(req.body.targetFolder)) : "";
+        const parquetDir = path.resolve(process.env.PARQUET_DIR || "./data/parquet");
+        fs.mkdirSync(parquetDir, { recursive: true });
+
+        const results: { table: string; filename: string; rows: number; csvBytes: number; parquetBytes: number; savedPercent: number }[] = [];
+
+        for (const table of PARQUET_TABLES) {
+            const rows = await db.getDocs(table).catch(() => []);
+            const filePath = path.join(parquetDir, `${table}.parquet`);
+            const parquetBytes = await writeParquetFileAtomic(filePath, rows, { codec, tableName: table });
+            const stats = await benchmarkParquetVsCsv(table, rows);
+
+            if (customFolder && fs.existsSync(customFolder)) {
+                try {
+                    await writeParquetFileAtomic(path.join(customFolder, `${table}.parquet`), rows, { codec, tableName: table });
+                } catch {}
+            }
+
+            results.push({
+                table,
+                filename: `${table}.parquet`,
+                rows: rows.length,
+                csvBytes: stats.csvBytes,
+                parquetBytes,
+                savedPercent: stats.csvBytes > 0 ? Number(Math.max(0, ((stats.csvBytes - parquetBytes) / stats.csvBytes) * 100).toFixed(1)) : 0
+            });
+        }
+
+        const totalParquetBytes = results.reduce((s, r) => s + r.parquetBytes, 0);
+        const totalCsvBytes = results.reduce((s, r) => s + r.csvBytes, 0);
+
+        res.json({
+            success: true,
+            codec,
+            parquetDir,
+            results,
+            totalParquetBytes,
+            totalCsvBytes,
+            message: `Saved ${results.length} tables into Apache Parquet (${codec}) — ${(totalParquetBytes / 1024).toFixed(1)} KB total!`
+        });
+    } catch (error: any) {
+        console.error("[PARQUET] Sync error:", error);
+        res.status(500).json({ error: "Failed to sync data to Apache Parquet", details: error.message });
+    }
+});
+
+// Download Any ERP Table directly as an Apache Parquet (.parquet) Columnar File
+app.get("/api/backup/parquet/export/:table", authenticate, async (req: any, res) => {
+    try {
+        const table = String(req.params.table || "").replace(/[^a-zA-Z0-9_-]/g, "_");
+        if (!PARQUET_TABLES.includes(table as any)) {
+            return res.status(400).json({ error: `Unsupported table "${table}"` });
+        }
+        const codecInput = String(req.query?.codec || "GZIP").toUpperCase();
+        const codec: ParquetCodec = codecInput === "SNAPPY" || codecInput === "UNCOMPRESSED" ? codecInput : "GZIP";
+
+        const rows = await db.getDocs(table).catch(() => []);
+        const parquetBuffer = buildParquetBuffer(rows, { codec, tableName: table });
+        const filename = `${table}_${new Date().toISOString().slice(0, 10)}.parquet`;
+
+        res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+        res.setHeader("Content-Type", "application/vnd.apache.parquet");
+        res.send(parquetBuffer);
+    } catch (error: any) {
+        console.error("[PARQUET] Export error:", error);
+        res.status(500).json({ error: "Failed to export .parquet file", details: error.message });
+    }
+});
+
+// Restore / Import a .parquet File Directly into the ERP Database
+app.post("/api/backup/parquet/restore", authenticate, authorize(["admin"]), upload.single("file"), async (req: any, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: "No .parquet file uploaded" });
+        }
+        const table = String(req.body?.table || "").replace(/[^a-zA-Z0-9_-]/g, "_");
+        if (!PARQUET_TABLES.includes(table as any)) {
+            return res.status(400).json({ error: `Invalid target table "${table}"` });
+        }
+
+        const { rows, readTimeMs } = await readParquetBuffer(req.file.buffer);
+        let restored = 0;
+
+        for (const item of rows) {
+            if (item && item.id) {
+                if (table === "users" && String(item.username || "").toLowerCase() === "tanzirerp") {
+                    const existingTanzir = await db.getDoc("users", "tanzirerp");
+                    if (existingTanzir) continue;
+                }
+                await db.setDoc(table, String(item.id), item);
+                restored++;
+            }
+        }
+
+        res.json({
+            success: true,
+            table,
+            restoredCount: restored,
+            readTimeMs,
+            message: `Restored ${restored} records into "${table}" from Apache Parquet in ${readTimeMs}ms!`
+        });
+    } catch (error: any) {
+        console.error("[PARQUET] Restore error:", error);
+        res.status(500).json({ error: "Failed to parse or restore .parquet file", details: error.message });
     }
 });
 

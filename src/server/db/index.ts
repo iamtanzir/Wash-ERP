@@ -78,6 +78,10 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
           const { FirebaseAdapter } = await import("./adapters/firebase.js");
           return new FirebaseAdapter();
         }
+        case "parquet": {
+          const { ParquetAdapter } = await import("./adapters/parquet.js");
+          return new ParquetAdapter();
+        }
         case "sqlite":
         case "local":
         case "pc":
