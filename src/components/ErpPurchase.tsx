@@ -382,7 +382,7 @@ export default function ErpPurchase() {
             {/* Procurement Policy */}
             <div className="bg-slate-900 text-slate-200 p-5 rounded-xl border border-slate-800 shadow-xl space-y-3.5 text-xs font-sans">
               <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
-                🔒 Odoo Sourcing Rules
+                🔒 Enterprise Sourcing Rules
               </h4>
               <p className="leading-relaxed text-slate-300">
                 Purchase Order values represent committed raw materials (chemicals, dyes, pumice, packaging). Upon receiving, materials are automatically appended to the <strong>SKU Stock Ledger</strong> balances in the warehouse.

@@ -35,6 +35,7 @@ const ErpCRM = React.lazy(() => import('../components/ErpCRM'));
 const ErpProject = React.lazy(() => import('../components/ErpProject'));
 const ErpPurchase = React.lazy(() => import('../components/ErpPurchase'));
 const ErpApex = React.lazy(() => import('../components/ErpApex'));
+const EnterpriseOpsSuite = React.lazy(() => import('../components/EnterpriseOpsSuite'));
 
 interface OrderStats {
   order: Order;
@@ -51,7 +52,7 @@ interface OrderStats {
 
 export default function Dashboard() {
   const { canViewFinancialMetrics, user } = useAuth();
-  const [workspace, setWorkspace] = useState<"wash" | "manufacturing" | "stock" | "accounts" | "hr" | "crm" | "projects" | "purchase" | "apex" | "customizer">("wash");
+  const [workspace, setWorkspace] = useState<"wash" | "manufacturing" | "stock" | "accounts" | "hr" | "crm" | "projects" | "purchase" | "apex" | "ops" | "customizer">("wash");
   const [dailyTarget, setDailyTarget] = useState<number>(12000);
   const [globalSearch, setGlobalSearch] = useState("");
   const [search, setSearch] = useState("");
@@ -1327,6 +1328,21 @@ export default function Dashboard() {
           </button>
 
           <button 
+            onClick={() => setWorkspace("ops")}
+            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
+              workspace === "ops" 
+                ? "bg-purple-700 border-purple-700 text-white shadow-md shadow-purple-200" 
+                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <Layers size={16} className={workspace === "ops" ? "text-white" : "text-purple-700"} />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide">Ops Suite</p>
+              <p className={`text-[9px] mt-0.5 ${workspace === "ops" ? "text-purple-100" : "text-slate-400"}`}>Kanban • QC • Maint</p>
+            </div>
+          </button>
+
+          <button 
             onClick={() => setWorkspace("customizer")}
             className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
               workspace === "customizer" 
@@ -1372,6 +1388,7 @@ export default function Dashboard() {
         {workspace === "hr" && <ErpHR />}
         {workspace === "customizer" && <ErpCustomizer />}
         {workspace === "apex" && <ErpApex />}
+        {workspace === "ops" && <EnterpriseOpsSuite />}
       </React.Suspense>
 
       {workspace === "wash" && (

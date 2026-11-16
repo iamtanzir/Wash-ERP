@@ -21,6 +21,13 @@ import {
     benchmarkParquetVsCsv,
     type ParquetCodec
 } from "./src/server/db/parquetEngine.js";
+import {
+    authenticateRpcServer,
+    pushBuyersToRpc,
+    pullRpcRecords,
+    generateErpDockerCompose,
+    type RpcConnectionConfig
+} from "./src/server/erpRpcConnector.js";
 
 let db = getDatabase();
 const app = express();
@@ -1114,6 +1121,172 @@ app.post("/api/backup/parquet/restore", authenticate, authorize(["admin"]), uplo
         console.error("[PARQUET] Restore error:", error);
         res.status(500).json({ error: "Failed to parse or restore .parquet file", details: error.message });
     }
+});
+
+// ============================================================================
+// Enterprise JSON-RPC 2.0 External ERP Bridge & Self-Hosted Integration
+// ============================================================================
+app.get("/api/rpc-bridge/config", authenticate, async (req, res) => {
+    try {
+        const saved = await db.getDoc("erp_integrations", "rpc_bridge").catch(() => null);
+        res.json({
+            configured: Boolean(saved?.url && saved?.db && saved?.username),
+            url: saved?.url || "http://localhost:8069",
+            db: saved?.db || "rmg_wash_erp",
+            username: saved?.username || "admin",
+            hasPassword: Boolean(saved?.password),
+            serverVersion: saved?.serverVersion || null,
+            installedModules: saved?.installedModules || [],
+            lastSyncAt: saved?.lastSyncAt || null,
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: "Failed to load RPC configuration", details: error.message });
+    }
+});
+
+app.post("/api/rpc-bridge/config", authenticate, authorize(["admin"]), async (req, res) => {
+    try {
+        const { url, db: rpcDbName, username, password } = req.body;
+        if (!url || !rpcDbName || !username || !password) {
+            return res.status(400).json({ error: "URL, Database name, Username, and Password/API Key are required." });
+        }
+
+        const config: RpcConnectionConfig = {
+            url: String(url).trim(),
+            db: String(rpcDbName).trim(),
+            username: String(username).trim(),
+            password: String(password),
+        };
+
+        const authResult = await authenticateRpcServer(config);
+
+        await db.setDoc("erp_integrations", "rpc_bridge", {
+            id: "rpc_bridge",
+            ...config,
+            uid: authResult.uid,
+            serverVersion: authResult.serverVersion,
+            installedModules: authResult.modules.slice(0, 30),
+            lastSyncAt: new Date().toISOString(),
+        });
+
+        res.json({
+            success: true,
+            uid: authResult.uid,
+            serverVersion: authResult.serverVersion,
+            installedModules: authResult.modules,
+            message: `Connected (${authResult.serverVersion}) via JSON-RPC!`,
+        });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message || "Could not connect to JSON-RPC server" });
+    }
+});
+
+app.post("/api/rpc-bridge/sync/push", authenticate, authorize(["admin"]), async (req, res) => {
+    try {
+        const saved = await db.getDoc("erp_integrations", "rpc_bridge");
+        if (!saved?.url || !saved?.db || !saved?.username || !saved?.password) {
+            return res.status(400).json({ error: "Connect your JSON-RPC server first." });
+        }
+
+        const config: RpcConnectionConfig = {
+            url: saved.url,
+            db: saved.db,
+            username: saved.username,
+            password: saved.password,
+        };
+        const { uid } = await authenticateRpcServer(config);
+
+        const orders = await db.getDocs("erp_orders").catch(() => []);
+        const buyerNames = orders.map((o: any) => o.buyer).filter(Boolean);
+        const partnerStats = await pushBuyersToRpc(config, uid, buyerNames);
+
+        await db.setDoc("erp_integrations", "rpc_bridge", {
+            ...saved,
+            lastSyncAt: new Date().toISOString(),
+        });
+
+        res.json({
+            success: true,
+            partnerStats,
+            message: `Pushed buyers to res.partner (${partnerStats.created} created, ${partnerStats.existing} already existed).`,
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "RPC push sync failed" });
+    }
+});
+
+app.post("/api/rpc-bridge/sync/pull", authenticate, authorize(["admin"]), async (req, res) => {
+    try {
+        const model = String(req.body?.model || "res.partner") as any;
+        const allowed = ["res.partner", "mrp.production", "purchase.order", "hr.employee", "maintenance.equipment"];
+        if (!allowed.includes(model)) {
+            return res.status(400).json({ error: `Unsupported RPC model "${model}"` });
+        }
+
+        const saved = await db.getDoc("erp_integrations", "rpc_bridge");
+        if (!saved?.url || !saved?.db || !saved?.username || !saved?.password) {
+            return res.status(400).json({ error: "Connect your JSON-RPC server first." });
+        }
+
+        const config: RpcConnectionConfig = {
+            url: saved.url,
+            db: saved.db,
+            username: saved.username,
+            password: saved.password,
+        };
+        const { uid } = await authenticateRpcServer(config);
+        const records = await pullRpcRecords(config, uid, model, 100);
+
+        let imported = 0;
+        const targetMap: Record<string, string> = {
+            "res.partner": "erp_crm_leads",
+            "mrp.production": "erp_work_orders",
+            "purchase.order": "erp_rfqs",
+            "hr.employee": "erp_employees",
+            "maintenance.equipment": "erp_maintenance",
+        };
+        const targetCol = targetMap[model];
+
+        for (const rec of records) {
+            const docId = `rpc_${model.replace(/\./g, "_")}_${rec.id}`;
+            await db.setDoc(targetCol, docId, {
+                id: docId,
+                external_id: rec.id,
+                external_model: model,
+                name: rec.name,
+                title: rec.name,
+                customer_name: rec.name,
+                bom_name: rec.name,
+                qty_to_produce: rec.product_qty || 0,
+                status: rec.state || "Active",
+                email: rec.email || rec.work_email || "",
+                job_title: rec.job_title || "",
+                synced_from_rpc: true,
+                synced_at: new Date().toISOString(),
+            });
+            imported++;
+        }
+
+        res.json({
+            success: true,
+            model,
+            targetCollection: targetCol,
+            importedCount: imported,
+            records,
+            message: `Pulled ${imported} records (${model}) into ${targetCol}.`,
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "RPC pull sync failed" });
+    }
+});
+
+app.get("/api/rpc-bridge/docker-compose", authenticate, (req, res) => {
+    const port = Number(req.query?.port) || 3000;
+    const pgPass = String(req.query?.pgPass || "rmg_wash_pg_secret");
+    const yaml = generateErpDockerCompose({ httpPort: port, pgPass });
+    res.setHeader("Content-Disposition", 'attachment; filename="docker-compose.rmg-erp.yml"');
+    res.setHeader("Content-Type", "text/yaml");
+    res.send(yaml);
 });
 
 app.get("/api/admin/users", authenticate, authorize(["admin"]), async (req, res) => {

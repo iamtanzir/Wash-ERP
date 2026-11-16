@@ -56,13 +56,14 @@ import OfficeCLICommandCenter from "../components/OfficeCLICommandCenter";
 import AionSuperAdminControl from "../components/AionSuperAdminControl";
 import RecommendedFreeSetupHub from "../components/RecommendedFreeSetupHub";
 import ParquetStoragePanel from "../components/ParquetStoragePanel";
+import EnterpriseOpsSuite from "../components/EnterpriseOpsSuite";
 
 export default function Admin() {
   const { user: currentUser, isAdmin } = useAuth();
   const isSuperAdmin = currentUser?.username?.toLowerCase() === "tanzirerp";
   
-  // Navigation Tabs: 'setup' | 'online' | 'users' | 'hosting' | 'gdrive' | 'database' | 'sia' | 'cli' | 'aion'
-  const [activeTab, setActiveTab] = useState<"setup" | "online" | "users" | "hosting" | "gdrive" | "database" | "sia" | "cli" | "aion">("setup");
+  // Navigation Tabs: 'setup' | 'online' | 'users' | 'hosting' | 'gdrive' | 'database' | 'sia' | 'cli' | 'aion' | 'ops'
+  const [activeTab, setActiveTab] = useState<"setup" | "online" | "users" | "hosting" | "gdrive" | "database" | "sia" | "cli" | "aion" | "ops">("setup");
 
   // Users State
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -685,6 +686,19 @@ export default function Admin() {
         >
           <Globe size={16} />
           🌐 AionUI Global Omni Control
+        </button>
+
+        <button
+          onClick={() => setActiveTab("ops")}
+          className={cn(
+            "flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all",
+            activeTab === "ops" 
+              ? "bg-purple-700 text-white shadow-md shadow-purple-200" 
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+          )}
+        >
+          <Layers size={16} />
+          🟣 Ops Suite (Free Source)
         </button>
       </div>
 
@@ -2532,6 +2546,13 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
       {/* ========================================================================= */}
       {activeTab === "aion" && (
         <AionSuperAdminControl />
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 8: ENTERPRISE OPS SUITE (FREE OPEN SOURCE + JSON-RPC CONNECTOR)       */}
+      {/* ========================================================================= */}
+      {activeTab === "ops" && (
+        <EnterpriseOpsSuite defaultTab="connector" />
       )}
 
       {/* Whitelist User Modal */}

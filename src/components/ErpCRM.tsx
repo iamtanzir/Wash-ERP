@@ -40,7 +40,7 @@ export default function ErpCRM() {
       if (!res.ok) return [];
       const data = await res.json();
       
-      // If DB is empty, provide high-quality default Odoo-like open-source seed data
+      // If DB is empty, provide high-quality default open-source ERP seed data
       if (data.length === 0) {
         const seedLeads: Lead[] = [
           { title: "H&M Denim Spring Batch Wash Contract", customer: "H&M Bangladesh", expected_revenue: 125000, probability: 70, stage: "Qualified", email: "procure@hm.com", phone: "+8801711223344", created_at: new Date().toISOString() },
@@ -73,7 +73,7 @@ export default function ErpCRM() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["erpCRMLeads"] });
-      toast.success("Odoo CRM Lead Opportunity posted successfully.");
+      toast.success("CRM Lead Opportunity posted successfully.");
       setTitle("");
       setCustomer("");
       setExpRevenue(5000);
@@ -428,11 +428,11 @@ export default function ErpCRM() {
           {/* Guidelines / Tips Column */}
           <div className="lg:col-span-2 bg-slate-900 text-slate-100 p-6 rounded-xl space-y-4 border border-slate-800 shadow-xl">
             <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
-              👑 Open Source Odoo CRM Standards
+              👑 Open Source ERP CRM Standards
             </h3>
             <div className="space-y-3.5 text-xs text-slate-300 leading-relaxed">
               <p>
-                In standard Odoo ERP, CRM leads are treated as dynamic entities that flow down a structured sales funnel:
+                In standard open-source ERP workflows, CRM leads are treated as dynamic entities that flow down a structured sales funnel:
               </p>
               <ul className="list-disc pl-5 space-y-2">
                 <li>

@@ -46,13 +46,13 @@ export default function ErpProject() {
       if (!res.ok) return [];
       const data = await res.json();
       
-      // If empty, seed with high-quality Odoo-style project management records
+      // If empty, seed with high-quality open-source project management records
       if (data.length === 0) {
         const seedTasks: Task[] = [
           { title: "Formulate Acetic Acid Ratio for Softener Bath", project: "Chemical R&D Lab", assigned_to: "Farhan Ahmed (Lab Specialist)", deadline: new Date(Date.now() + 2 * 86400000).toISOString().split("T")[0], allocated_hours: 8, logged_hours: 5, priority: "High", status: "In Progress", description: "Optimize acid formulation to neutralize alkaline residue from enzyme washes without damaging fiber elasticity.", created_at: new Date().toISOString() },
           { title: "Test Denim Shrinkage on 300L Belly Washer", project: "Wash Quality Control", assigned_to: "Sharif Khan (Senior Dyer)", deadline: new Date(Date.now() + 5 * 86400000).toISOString().split("T")[0], allocated_hours: 16, logged_hours: 12, priority: "High", status: "Review", description: "Run test loads with pumice stone to evaluate overall shrinkage factor and warp slippage.", created_at: new Date().toISOString() },
           { title: "Audit Bleaching Recipes for H&M Spring Styles", project: "Brand Compliance", assigned_to: "Tanzir Hossain", deadline: new Date(Date.now() + 8 * 86400000).toISOString().split("T")[0], allocated_hours: 24, logged_hours: 0, priority: "Medium", status: "To Do", description: "Verify compliance of optical brightener agent (OBA) quantities against ZDHC MRSL guidelines.", created_at: new Date().toISOString() },
-          { title: "Configure High Contrast Dashboard Columns", project: "IT Systems Integration", assigned_to: "Rezaul Karim (Dev)", deadline: new Date(Date.now() - 1 * 86400000).toISOString().split("T")[0], allocated_hours: 6, logged_hours: 6, priority: "Low", status: "Completed", description: "Inject Odoo-inspired open source modules into workspace sub-tabs for easier data queries.", created_at: new Date().toISOString() },
+          { title: "Configure High Contrast Dashboard Columns", project: "IT Systems Integration", assigned_to: "Rezaul Karim (Dev)", deadline: new Date(Date.now() - 1 * 86400000).toISOString().split("T")[0], allocated_hours: 6, logged_hours: 6, priority: "Low", status: "Completed", description: "Inject modular open-source ERP components into workspace sub-tabs for easier data queries.", created_at: new Date().toISOString() },
         ];
         
         await fetch("/api/db/batch/erp_project_tasks", {
@@ -78,7 +78,7 @@ export default function ErpProject() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["erpProjectTasks"] });
-      toast.success("Odoo Project task scheduled successfully.");
+      toast.success("Project task scheduled successfully.");
       setTitle("");
       setDescription("");
       setAllocatedHours(12);
@@ -218,7 +218,7 @@ export default function ErpProject() {
                 : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            Post Odoo Timesheet
+            Post Project Timesheet
           </button>
         </div>
 
