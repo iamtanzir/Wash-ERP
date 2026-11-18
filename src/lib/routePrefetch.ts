@@ -7,6 +7,8 @@ const routeImporters: Record<string, () => Promise<unknown>> = {
   "/new-plan": () => import("../pages/NewERPPlan"),
   "/daily-update": () => import("../pages/DailyUpdate"),
   "/wash-mc-plan": () => import("../pages/WashMcLoadPlan"),
+  "/shift-production": () => import("../pages/ShiftProductionReport"),
+  "/wash-rejection": () => import("../pages/WashRejectionReport"),
   "/cpl-report": () => import("../pages/CPLReport"),
   "/hm-tod": () => import("../pages/HMTOD"),
   "/proactive-plan": () => import("../pages/ProactivePlan"),

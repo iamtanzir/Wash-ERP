@@ -18,13 +18,15 @@ import {
   Search,
   Sparkles,
   Activity,
-  Tv
+  Tv,
+  AlertTriangle
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 import { useRealTimeClock, formatDhakaTime } from "../hooks/useRealTime";
 import { prefetchRoute } from "../lib/routePrefetch";
+import ErpAiChatWidget from "./ErpAiChatWidget";
 
 interface NavItem {
   name: string;
@@ -40,6 +42,8 @@ const navItems: NavItem[] = [
   { name: "NEXT ERP PLAN", href: "/new-plan", icon: PlusCircle, desc: "Import and add new ERP plans" },
   { name: "GARMENTS R&D LOG", href: "/daily-update", icon: ClipboardCheck, desc: "Log daily received and delivered quantities" },
   { name: "WASH M/C LOAD PLAN", href: "/wash-mc-plan", icon: WashingMachine, desc: "Wet process garments washing machine load plan & recipes" },
+  { name: "SHIFT REPORT (A/B/C)", href: "/shift-production", icon: ClipboardCheck, desc: "3-Shift (A, B, C) machine-wise washing production report & downtime log" },
+  { name: "WASH REJECTION", href: "/wash-rejection", icon: AlertTriangle, desc: "All buyers Before & After wash rejection size list, % DB, and ERP Recv master" },
   { name: "CPL FABRIC REPORT", href: "/cpl-report", icon: FileText, desc: "Fabrics status and CPL calculations" },
   { name: "WORKING MATRIX (TOD)", href: "/hm-tod", icon: ClipboardCheck, desc: "Garment Wash Risk Analysis & TOD working matrix" },
   { name: "PROACTIVE PLAN", href: "/proactive-plan", icon: Sparkles, desc: "AI Powered Cloud-Based Apparel Planning Solution (MPS & T&A)" },
@@ -110,9 +114,11 @@ export default function Layout() {
       case '/cpl-report': return 'CPL Report (Fabrics)';
       case '/daily-update': return 'Daily Update';
       case '/wash-mc-plan': return 'Garments Wash M/C Load Plan (Wet Process)';
+      case '/shift-production': return 'Daily Production Report — 3 Shift (A, B, C)';
+      case '/wash-rejection': return 'All Buyers Wash Rejection Report';
       case '/hm-tod': return 'Working Matrix & Risk Analysis';
-      case '/proactive-plan': return 'ProactivePlan (AI Apparel Planning Solution)';
-      case '/iot-tracking': return 'IoT Nidle Smart Tracking';
+      case '/proactive-plan': return 'ProactivePlan (Zero-Setup FLM Free AI)';
+      case '/iot-tracking': return 'OpenRemote IoT Smart Tracking';
       case '/close-order': return 'Close ERP Orders';
       case '/data-bank': return 'All Buyer Data';
       case '/admin': return 'Host & Cloud Database (PC, RPi, Google Drive)';
@@ -333,6 +339,8 @@ export default function Layout() {
           </span>
           <span className="text-slate-400 font-mono text-[10px]">WASH ERP</span>
         </footer>
+        {/* Zero-Setup Built-In FLM Free AI Chat */}
+        <ErpAiChatWidget />
       </main>
     </div>
   );

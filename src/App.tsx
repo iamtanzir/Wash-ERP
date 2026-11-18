@@ -24,6 +24,8 @@ const HMTOD = lazy(() => import('./pages/HMTOD'));
 const ProactivePlan = lazy(() => import('./pages/ProactivePlan'));
 const IoTTracking = lazy(() => import('./pages/IoTTracking'));
 const WashMcLoadPlan = lazy(() => import('./pages/WashMcLoadPlan'));
+const ShiftProductionReport = lazy(() => import('./pages/ShiftProductionReport'));
+const WashRejectionReport = lazy(() => import('./pages/WashRejectionReport'));
 const WashFloorLive = lazy(() => import('./pages/WashFloorLive'));
 const Admin = lazy(() => import('./pages/Admin'));
 
@@ -58,6 +60,8 @@ export default function App() {
                   <Route path="proactive-plan" element={<ProactivePlan />} />
                   <Route path="iot-tracking" element={<IoTTracking />} />
                   <Route path="wash-mc-plan" element={<WashMcLoadPlan />} />
+                  <Route path="shift-production" element={<ShiftProductionReport />} />
+                  <Route path="wash-rejection" element={<WashRejectionReport />} />
                   <Route path="close-order" element={<CloseOrder />} />
                   <Route path="data-bank" element={<DataBank />} />
                   

@@ -550,10 +550,10 @@ export default function WashMcLoadPlan() {
               onChange={(e) => setSelectedShift(e.target.value)}
               className="w-full text-xs border border-slate-300 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="All">All Shifts</option>
-              <option value="Morning">Morning (06:00 - 14:00)</option>
-              <option value="Evening">Evening (14:00 - 22:00)</option>
-              <option value="Night">Night (22:00 - 06:00)</option>
+              <option value="All">All Shifts (A, B, C)</option>
+              <option value="Morning">Shift A — Day (6:00 AM - 02:00 PM)</option>
+              <option value="Evening">Shift B — Evening (2:00 PM - 10:00 PM)</option>
+              <option value="Night">Shift C — Night (10:00 PM - 6:00 AM)</option>
             </select>
           </div>
 
@@ -922,9 +922,9 @@ export default function WashMcLoadPlan() {
                     onChange={(e) => setShift(e.target.value as any)}
                     className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
-                    <option value="Morning">Morning Shift</option>
-                    <option value="Evening">Evening Shift</option>
-                    <option value="Night">Night Shift</option>
+                    <option value="Morning">Shift A — Day (6:00 AM - 02:00 PM)</option>
+                    <option value="Evening">Shift B — Evening (2:00 PM - 10:00 PM)</option>
+                    <option value="Night">Shift C — Night (10:00 PM - 6:00 AM)</option>
                   </select>
                 </div>
 

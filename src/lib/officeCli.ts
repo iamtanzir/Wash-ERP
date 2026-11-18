@@ -301,7 +301,7 @@ Chief Wash Technologist Signature: ____________________
 
   // 5. AI DAILY BRIEFING
   if (cmdLower.includes('ai:briefing') || cmdLower.includes('briefing') || cmdLower.includes('executive')) {
-    logs.push(`[Gemini AI] Querying live factory KPIs and washing machine load schedules...`);
+    logs.push(`[FLM Free AI] Querying live factory KPIs and washing machine load schedules...`);
     logs.push(`[AI Model] Formulating MD Executive Briefing summary...`);
 
     const briefingText = `

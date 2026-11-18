@@ -15,16 +15,14 @@ import {
   RefreshCw,
   Send,
   Download,
-  ExternalLink,
   ShieldAlert,
   WashingMachine,
   Layers,
-  Settings,
-  TrendingUp,
-  X
+  TrendingUp
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { queryPuterServerlessAi } from '../lib/puter';
+import ErpAiChatWidget from '../components/ErpAiChatWidget';
 
 interface MpsItem {
   order_id: string;
@@ -128,12 +126,8 @@ export default function ProactivePlan() {
   const [selectedRiskFilter, setSelectedRiskFilter] = useState<string>('all');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // AI Provider Configuration (FreeModel.com, Gemini, Puter Serverless)
-  const [selectedProvider, setSelectedProvider] = useState<'auto' | 'freemodel' | 'gemini' | 'puter'>('auto');
-  const [freemodelApiKey, setFreemodelApiKey] = useState<string>(() => localStorage.getItem('inctl_freemodel_key') || '');
-  const [freemodelEndpoint, setFreemodelEndpoint] = useState<string>(() => localStorage.getItem('inctl_freemodel_endpoint') || 'https://api.freemodel.app/v1');
-  const [freemodelModel, setFreemodelModel] = useState<string>(() => localStorage.getItem('inctl_freemodel_model') || 'free');
-  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  // Zero-Setup Keyless AI Provider Selection (FLM Free, OmniRoute, Puter Serverless)
+  const [selectedProvider, setSelectedProvider] = useState<'auto' | 'flm' | 'omniroute' | 'puter'>('auto');
 
   // Plan Data State
   const [planData, setPlanData] = useState<PlanData | null>(null);
@@ -167,14 +161,6 @@ export default function ProactivePlan() {
     return () => { isMounted = false; };
   }, [pendingOrders.length]);
 
-  const saveAiSettings = () => {
-    localStorage.setItem('inctl_freemodel_key', freemodelApiKey);
-    localStorage.setItem('inctl_freemodel_endpoint', freemodelEndpoint);
-    localStorage.setItem('inctl_freemodel_model', freemodelModel);
-    setIsConfigModalOpen(false);
-    toast.success("Free AI Configuration Saved");
-  };
-
   const handleGeneratePlan = async (notify = true) => {
     if (pendingOrders.length === 0) {
       toast.info("No active orders found to schedule.");
@@ -191,10 +177,7 @@ export default function ProactivePlan() {
         // Call backend CPM for structured schedule
         const plan = await api.generateProactivePlan({
           orders: pendingOrders,
-          provider: 'auto',
-          freemodelApiKey,
-          freemodelEndpoint,
-          freemodelModel
+          provider: 'auto'
         });
         plan.provider_used = 'Puter Serverless Free AI';
         plan.summary.executive_overview = aiSummary;
@@ -202,10 +185,7 @@ export default function ProactivePlan() {
       } else {
         const plan = await api.generateProactivePlan({
           orders: pendingOrders,
-          provider: selectedProvider,
-          freemodelApiKey,
-          freemodelEndpoint,
-          freemodelModel
+          provider: selectedProvider
         });
         setPlanData(plan);
       }
@@ -233,10 +213,7 @@ export default function ProactivePlan() {
         prompt: textToRun,
         orders: pendingOrders,
         currentPlan: planData,
-        provider: selectedProvider === 'puter' ? 'auto' : selectedProvider,
-        freemodelApiKey,
-        freemodelEndpoint,
-        freemodelModel
+        provider: selectedProvider === 'puter' ? 'auto' : selectedProvider
       });
       setSimulationResult(result);
       toast.success("Simulation Complete");
@@ -307,19 +284,12 @@ export default function ProactivePlan() {
                 AI Powered
               </span>
             </h1>
-            <a 
-              href="https://www.free-model.com/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold hover:bg-emerald-100 transition-colors"
-              title="Powered by Free AI / FreeModel Gateway"
-            >
-              <span>🌐 free-model.com</span>
-              <ExternalLink size={11} />
-            </a>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+              <span>⚡ Zero-Setup • FLM Free (No Key, No Signup)</span>
+            </span>
           </div>
           <p className="text-sm font-medium text-slate-600">
-            Cloud-Based AI Apparel Planning Solution • Master Production Schedule (MPS), T&A Milestones & Machine Allocation
+            Zero-Setup Free AI Apparel Planning &amp; Live ERP Intelligence • Master Production Schedule (MPS), T&amp;A Milestones &amp; Machine Allocation
           </p>
         </div>
 
@@ -334,31 +304,31 @@ export default function ProactivePlan() {
                   ? 'bg-white text-indigo-700 shadow-sm border border-slate-200' 
                   : 'text-slate-600 hover:text-slate-900'
               }`}
-              title="Automatically uses best available Free AI engine"
+              title="Automatically uses FLM Free with OmniRoute failover (no key, no signup)"
             >
               ⚡ Auto AI
             </button>
             <button
-              onClick={() => setSelectedProvider('freemodel')}
+              onClick={() => setSelectedProvider('flm')}
               className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
-                selectedProvider === 'freemodel' 
+                selectedProvider === 'flm' 
                   ? 'bg-white text-emerald-700 shadow-sm border border-slate-200' 
                   : 'text-slate-600 hover:text-slate-900'
               }`}
-              title="FreeModel.com Gateway (OpenAI & Frontier Models)"
+              title="FLM Free Keyless Gateway (No Key, No Signup)"
             >
-              <span>🌐 FreeModel</span>
+              <span>🆓 FLM Free</span>
             </button>
             <button
-              onClick={() => setSelectedProvider('gemini')}
+              onClick={() => setSelectedProvider('omniroute')}
               className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
-                selectedProvider === 'gemini' 
+                selectedProvider === 'omniroute' 
                   ? 'bg-white text-blue-700 shadow-sm border border-slate-200' 
                   : 'text-slate-600 hover:text-slate-900'
               }`}
-              title="Google Gemini 3.8 Flash Free Tier"
+              title="OmniRoute Free Keyless Gateway"
             >
-              <span>🧠 Gemini</span>
+              <span>🔀 OmniRoute</span>
             </button>
             <button
               onClick={() => setSelectedProvider('puter')}
@@ -369,18 +339,9 @@ export default function ProactivePlan() {
               }`}
               title="Puter Serverless Free AI (Zero config in browser)"
             >
-              <span>⚡ Puter AI</span>
+              <span>☁️ Puter AI</span>
             </button>
           </div>
-
-          {/* AI Settings Button */}
-          <button
-            onClick={() => setIsConfigModalOpen(true)}
-            className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
-            title="Configure FreeModel.com API Key & AI Settings"
-          >
-            <Settings size={18} />
-          </button>
 
           {/* Export CSV */}
           <button
@@ -463,10 +424,10 @@ export default function ProactivePlan() {
           </div>
           <div>
             <p className="text-sm font-black truncate text-white">
-              {planData?.provider_used || 'FreeModel / Gemini AI'}
+              {planData?.provider_used || 'FLM Free AI (auto)'}
             </p>
             <p className="text-[10px] text-slate-400 mt-0.5">
-              Latency: {planData?.latency_ms || 120}ms • {planData?.model_name || 'free-tier'}
+              Latency: {planData?.latency_ms || 120}ms • {planData?.model_name || 'auto (no key)'}
             </p>
           </div>
         </div>
@@ -897,7 +858,7 @@ export default function ProactivePlan() {
                     <Sparkles className="text-amber-400" size={20} />
                     <h3 className="text-lg font-black tracking-tight">AI Executive Production Directive</h3>
                     <span className="text-[10px] font-bold bg-white/10 px-2.5 py-0.5 rounded-full border border-white/20 text-indigo-200">
-                      {planData?.provider_used || 'FreeModel / Gemini AI'}
+                      {planData?.provider_used || 'FLM Free AI (auto)'}
                     </span>
                   </div>
                   <p className="text-sm text-slate-300 leading-relaxed max-w-4xl">
@@ -1062,108 +1023,11 @@ export default function ProactivePlan() {
                   </div>
                 )}
               </div>
+
+              {/* Embedded Zero-Setup FLM Free Live ERP Database Chat */}
+              <ErpAiChatWidget embedded />
             </div>
           )}
-        </div>
-      )}
-
-      {/* Free AI Configuration Modal (FreeModel.com / Gemini / Puter) */}
-      {isConfigModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <Sparkles size={18} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900">Free AI Engine Configuration</h3>
-                  <p className="text-xs text-slate-500">Configure FreeModel.com & Cloud AI for ProactivePlan</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setIsConfigModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl text-emerald-900">
-                <p className="font-bold flex items-center gap-1.5 mb-1">
-                  <span>🌐 FreeModel Integration (free-model.com)</span>
-                </p>
-                <p className="text-[11px] leading-relaxed text-emerald-800">
-                  FreeModel provides a free, unified AI gateway supporting frontier models. Get your free API key at{' '}
-                  <a href="https://www.free-model.com/" target="_blank" rel="noopener noreferrer" className="underline font-bold text-emerald-900 hover:text-emerald-700">
-                    www.free-model.com
-                  </a>.
-                </p>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  FreeModel API Key
-                </label>
-                <input
-                  type="password"
-                  value={freemodelApiKey}
-                  onChange={(e) => setFreemodelApiKey(e.target.value)}
-                  placeholder="fm-... or your free-model.com key"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-mono text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Stored securely in your browser's localStorage. Leave empty to use pre-configured free tier or Google Gemini.
-                </p>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  FreeModel Endpoint Base URL
-                </label>
-                <input
-                  type="text"
-                  value={freemodelEndpoint}
-                  onChange={(e) => setFreemodelEndpoint(e.target.value)}
-                  placeholder="https://api.freemodel.app/v1"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-mono text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Default AI Model
-                </label>
-                <select
-                  value={freemodelModel}
-                  onChange={(e) => setFreemodelModel(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-bold text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                >
-                  <option value="free">free (Auto Free Tier Route)</option>
-                  <option value="auto">auto (Best Available Free Frontier Model)</option>
-                  <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-                  <option value="gpt-4o-mini">gpt-4o-mini</option>
-                  <option value="deepseek-v3">deepseek-v3</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end gap-2">
-              <button
-                onClick={() => setIsConfigModalOpen(false)}
-                className="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-bold text-xs"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveAiSettings}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs shadow-xs"
-              >
-                Save Settings
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

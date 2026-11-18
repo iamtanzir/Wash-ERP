@@ -14,7 +14,8 @@ import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { getDatabase } from "./src/server/db/index.js";
-import { generateProactivePlan, simulatePlanningScenario } from "./src/server/aiPlanner.js";
+import { generateProactivePlan, simulatePlanningScenario, chatWithErpAi } from "./src/server/aiPlanner.js";
+import { DEFAULT_SUPPORT_KNOWLEDGE } from "./src/server/excelSkillEngine.js";
 import {
     buildParquetBuffer,
     writeParquetFileAtomic,
@@ -29,6 +30,13 @@ import {
     generateErpDockerCompose,
     type RpcConnectionConfig
 } from "./src/server/erpRpcConnector.js";
+import {
+    ensureOpenRemoteSeeded,
+    simulateTelemetryPulse,
+    writeAssetAttribute,
+    createOpenRemoteAsset,
+    syncExternalOpenRemoteManager
+} from "./src/server/openRemoteIot.js";
 
 let db = getDatabase();
 const app = express();
@@ -1539,10 +1547,10 @@ app.post("/api/erp/upload", authenticate, authorize(["admin", "editor"]), upload
   }
 });
 
-// ProactivePlan: Cloud-Based AI Apparel Planning Solution (FreeModel / Gemini / CPM)
+// ProactivePlan & Built-in Zero-Setup Free AI (FLM Free + OmniRoute + CPM)
 app.post("/api/ai/proactive-plan", authenticate, async (req, res) => {
     try {
-        const { orders, provider, freemodelApiKey, freemodelEndpoint, freemodelModel, options } = req.body;
+        const { orders, provider, options } = req.body || {};
         let ordersToPlan = orders;
         if (!ordersToPlan || !Array.isArray(ordersToPlan) || ordersToPlan.length === 0) {
             ordersToPlan = await db.getDocs("erp_orders");
@@ -1550,13 +1558,9 @@ app.post("/api/ai/proactive-plan", authenticate, async (req, res) => {
         const plan = await generateProactivePlan({
             orders: ordersToPlan,
             provider,
-            freemodelApiKey,
-            freemodelEndpoint,
-            freemodelModel,
             options
         });
-        
-        // Cache plan as latest in DB
+
         await db.setDoc("proactive_plans", "latest", plan).catch(() => {});
         res.json(plan);
     } catch (error: any) {
@@ -1577,7 +1581,7 @@ app.get("/api/ai/proactive-plan/latest", authenticate, async (req, res) => {
 
 app.post("/api/ai/scenario-simulate", authenticate, async (req, res) => {
     try {
-        const { prompt, orders, currentPlan, provider, freemodelApiKey, freemodelEndpoint, freemodelModel } = req.body;
+        const { prompt, orders, currentPlan, provider } = req.body || {};
         if (!prompt) return res.status(400).json({ error: "Scenario prompt is required" });
         let ordersList = orders;
         if (!ordersList || !Array.isArray(ordersList)) {
@@ -1587,15 +1591,462 @@ app.post("/api/ai/scenario-simulate", authenticate, async (req, res) => {
             prompt,
             orders: ordersList,
             currentPlan,
-            provider,
-            freemodelApiKey,
-            freemodelEndpoint,
-            freemodelModel
+            provider
         });
         res.json(result);
     } catch (error: any) {
         console.error("[AI] Error simulating scenario:", error);
         res.status(500).json({ error: error.message || "Failed to simulate scenario" });
+    }
+});
+
+// Zero-Setup FLM Free AI Chat with Full Live ERP Database Read Support
+app.post("/api/ai/chat", authenticate, async (req: any, res) => {
+    try {
+        const { messages, provider, browserCacheContext } = req.body || {};
+        if (!Array.isArray(messages) || messages.length === 0) {
+            return res.status(400).json({ error: "Messages array is required" });
+        }
+
+        const [orders, logs, archivedOrders, mcPlans, iotAssets, iotEvents, shiftReports, customKnowledge, fiveYearMemories, washRejections] = await Promise.all([
+            db.getDocs("erp_orders").catch(() => []),
+            db.getDocs("daily_logs").catch(() => []),
+            db.getDocs("buyer_data_bank").catch(() => []),
+            db.getDocs("wash_mc_load_plans").catch(() => []),
+            db.getDocs("iot_assets").catch(() => []),
+            db.getDocs("iot_events").catch(() => []),
+            db.getDocs("wash_shift_reports").catch(() => []),
+            db.getDocs("support_knowledge").catch(() => []),
+            db.getDocs("support_5yr_memory").catch(() => []),
+            db.getDocs("wash_rejections").catch(() => [])
+        ]);
+
+        const roleLower = String(req.user?.role || "").toLowerCase();
+        const canViewFinancials =
+            isSuperAdminUser(req.user) ||
+            roleLower === "wash_md" ||
+            roleLower === "wash_manager" ||
+            roleLower === "admin";
+
+        const knowledgeRules = [...DEFAULT_SUPPORT_KNOWLEDGE, ...(Array.isArray(customKnowledge) ? customKnowledge : [])];
+
+        const result = await chatWithErpAi({
+            messages,
+            orders,
+            logs,
+            archivedOrders,
+            mcPlans,
+            iotAssets,
+            iotEvents,
+            shiftReports,
+            washRejections,
+            knowledgeRules,
+            fiveYearMemories,
+            browserCacheContext,
+            provider,
+            canViewFinancials
+        });
+
+        // Auto-store Q&A fact into rolling 5-year Support memory (non-blocking)
+        const lastUserText = [...messages].reverse().find((m: any) => m?.role === "user")?.content || "";
+        if (lastUserText.trim().length >= 3 && result?.reply) {
+            const memId = `mem5y-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+            const dhakaDate = new Date(Date.now() + 6 * 3600 * 1000).toISOString().split("T")[0];
+            db.setDoc("support_5yr_memory", memId, {
+                id: memId,
+                date: dhakaDate,
+                username: String(req.user?.username || "operator"),
+                domain: result.intentDomain || "general",
+                query: String(lastUserText).slice(0, 220),
+                summary: String(result.reply).replace(/\s+/g, " ").slice(0, 320),
+                createdAt: new Date().toISOString()
+            }).catch(() => {});
+        }
+
+        res.json(result);
+    } catch (error: any) {
+        console.error("[AI CHAT] Error:", error);
+        res.status(500).json({ error: error.message || "Support request failed" });
+    }
+});
+
+// ============================================================================
+// PERMANENT SUPPORT MEMORY, 5-YEAR HISTORY, 100MB CACHE SYNC & SKILLS
+// ============================================================================
+app.get("/api/support/cache-snapshot", authenticate, async (req, res) => {
+    try {
+        const cutoffYear = (new Date(Date.now() + 6 * 3600 * 1000).getUTCFullYear() - 5);
+        const minDateIso = `${cutoffYear}-01-01`;
+        const [orders, logs, archivedOrders, shiftReports, skills, memories, washRejections] = await Promise.all([
+            db.getDocs("erp_orders").catch(() => []),
+            db.getDocs("daily_logs").catch(() => []),
+            db.getDocs("buyer_data_bank").catch(() => []),
+            db.getDocs("wash_shift_reports").catch(() => []),
+            db.getDocs("support_knowledge").catch(() => []),
+            db.getDocs("support_5yr_memory").catch(() => []),
+            db.getDocs("wash_rejections").catch(() => [])
+        ]);
+
+        const logs5y = logs.filter((l: any) => !l.log_date || String(l.log_date) >= minDateIso);
+        const shift5y = shiftReports.filter((s: any) => !s.date || String(s.date) >= minDateIso);
+        const mem5y = memories.filter((m: any) => !m.date || String(m.date) >= minDateIso);
+
+        res.json({
+            syncedAt: new Date().toISOString(),
+            retentionWindowStart: minDateIso,
+            maxBrowserCacheMb: 100,
+            orders,
+            logs: logs5y,
+            archivedOrders,
+            shiftReports: shift5y,
+            washRejections,
+            skills,
+            memories: mem5y
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to build cache snapshot" });
+    }
+});
+
+app.get("/api/support/memory-5yr", authenticate, async (req, res) => {
+    try {
+        const cutoffYear = (new Date(Date.now() + 6 * 3600 * 1000).getUTCFullYear() - 5);
+        const minDateIso = `${cutoffYear}-01-01`;
+        const items = await db.getDocs("support_5yr_memory").catch(() => []);
+        const filtered = items
+            .filter((m: any) => !m.date || String(m.date) >= minDateIso)
+            .sort((a: any, b: any) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+        res.json({ count: filtered.length, retentionStart: minDateIso, memories: filtered.slice(0, 100) });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to load 5-year memory" });
+    }
+});
+
+app.get("/api/support/history", authenticate, async (req: any, res) => {
+    try {
+        const key = String(req.user?.username || "default").toLowerCase();
+        const doc = await db.getDoc("support_history", `thread_${key}`).catch(() => null);
+        res.json({ messages: Array.isArray(doc?.messages) ? doc.messages : [] });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to load support history" });
+    }
+});
+
+app.post("/api/support/history", authenticate, async (req: any, res) => {
+    try {
+        const key = String(req.user?.username || "default").toLowerCase();
+        const { messages } = req.body || {};
+        if (!Array.isArray(messages)) {
+            return res.status(400).json({ error: "messages array required" });
+        }
+        const trimmed = messages.slice(-60);
+        await db.setDoc("support_history", `thread_${key}`, {
+            id: `thread_${key}`,
+            username: key,
+            messages: trimmed,
+            updatedAt: new Date().toISOString()
+        });
+        res.json({ success: true, count: trimmed.length });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to save support history" });
+    }
+});
+
+app.delete("/api/support/history", authenticate, async (req: any, res) => {
+    try {
+        const key = String(req.user?.username || "default").toLowerCase();
+        await db.deleteDoc("support_history", `thread_${key}`).catch(() => {});
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get("/api/support/skills", authenticate, async (req, res) => {
+    try {
+        const [customRules, feedbackList] = await Promise.all([
+            db.getDocs("support_knowledge").catch(() => []),
+            db.getDocs("support_feedback").catch(() => [])
+        ]);
+        const upvotes = feedbackList.filter((f: any) => f.rating === "up").length;
+        const downvotes = feedbackList.filter((f: any) => f.rating === "down").length;
+        res.json({
+            builtInRules: DEFAULT_SUPPORT_KNOWLEDGE,
+            learnedRules: customRules,
+            stats: {
+                upvotes,
+                downvotes,
+                learnedCount: customRules.length
+            }
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to load skills" });
+    }
+});
+
+app.post("/api/support/skills", authenticate, async (req: any, res) => {
+    try {
+        const { trigger, ruleText, category } = req.body || {};
+        if (!ruleText || !String(ruleText).trim()) {
+            return res.status(400).json({ error: "ruleText is required" });
+        }
+        const id = `skill-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        const ruleDoc = {
+            id,
+            trigger: String(trigger || "general").trim(),
+            ruleText: String(ruleText).trim(),
+            category: category || "buyer_rule",
+            confidenceScore: 95,
+            usageCount: 0,
+            createdBy: req.user?.username || "operator",
+            createdAt: new Date().toISOString()
+        };
+        await db.setDoc("support_knowledge", id, ruleDoc);
+        res.status(201).json(ruleDoc);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to save skill" });
+    }
+});
+
+app.delete("/api/support/skills/:id", authenticate, async (req, res) => {
+    try {
+        await db.deleteDoc("support_knowledge", req.params.id);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post("/api/support/feedback", authenticate, async (req: any, res) => {
+    try {
+        const { messageId, query, reply, rating, correctionNote } = req.body || {};
+        const fbId = `fb-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        await db.setDoc("support_feedback", fbId, {
+            id: fbId,
+            messageId: messageId || "",
+            query: query || "",
+            reply: reply || "",
+            rating: rating === "down" ? "down" : "up",
+            correctionNote: correctionNote || "",
+            username: req.user?.username || "operator",
+            createdAt: new Date().toISOString()
+        });
+
+        let learnedRule = null;
+        if (correctionNote && String(correctionNote).trim()) {
+            const ruleId = `skill-${Date.now()}`;
+            const keywords = String(query || "")
+                .toLowerCase()
+                .replace(/[^\w\s-]/g, " ")
+                .split(/\s+/)
+                .filter(w => w.length >= 3)
+                .slice(0, 4)
+                .join(", ");
+            learnedRule = {
+                id: ruleId,
+                trigger: keywords || "general",
+                ruleText: String(correctionNote).trim(),
+                category: "correction",
+                confidenceScore: 100,
+                usageCount: 1,
+                createdBy: req.user?.username || "operator",
+                createdAt: new Date().toISOString()
+            };
+            await db.setDoc("support_knowledge", ruleId, learnedRule);
+        }
+
+        res.json({ success: true, learnedRule });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Feedback failed" });
+    }
+});
+
+// ============================================================================
+// OPENREMOTE CORE IoT SMART TRACKING ENGINE (/api/iot/openremote/*)
+// ============================================================================
+app.get("/api/iot/openremote/state", authenticate, async (req, res) => {
+    try {
+        const state = await ensureOpenRemoteSeeded(db);
+        const sortedEvents = [...state.events]
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+            .slice(0, 35);
+        res.json({
+            assets: state.assets,
+            rules: state.rules,
+            events: sortedEvents,
+            config: state.config
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to load OpenRemote state" });
+    }
+});
+
+app.post("/api/iot/openremote/pulse", authenticate, async (req, res) => {
+    try {
+        const { assets, triggeredEvents } = await simulateTelemetryPulse(db);
+        const state = await ensureOpenRemoteSeeded(db);
+        const sortedEvents = [...state.events]
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+            .slice(0, 35);
+        res.json({
+            assets,
+            triggeredEvents,
+            rules: state.rules,
+            events: sortedEvents
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to pulse telemetry" });
+    }
+});
+
+app.post("/api/iot/openremote/asset", authenticate, async (req, res) => {
+    try {
+        const { name, type, protocol, zone, parentId, linkedOrderRef, linkedBuyer, initialAttributeName, initialAttributeValue, initialAttributeUnit } = req.body || {};
+        if (!name || !String(name).trim()) {
+            return res.status(400).json({ error: "Asset name is required" });
+        }
+        const asset = await createOpenRemoteAsset(db, {
+            name: String(name),
+            type: type || "WashMachineAsset",
+            protocol: protocol || "MQTT",
+            zone: zone || "Wash Floor",
+            parentId,
+            linkedOrderRef,
+            linkedBuyer,
+            initialAttributeName,
+            initialAttributeValue,
+            initialAttributeUnit
+        });
+        res.status(201).json(asset);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to create OpenRemote asset" });
+    }
+});
+
+app.delete("/api/iot/openremote/asset/:id", authenticate, async (req, res) => {
+    try {
+        if (req.params.id === "or-asset-plant-root") {
+            return res.status(400).json({ error: "Root factory asset cannot be deleted" });
+        }
+        await db.deleteDoc("iot_assets", req.params.id);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.patch("/api/iot/openremote/asset/:id/attribute", authenticate, async (req, res) => {
+    try {
+        const { attributeName, value, source, linkedOrderRef } = req.body || {};
+        if (!attributeName) {
+            return res.status(400).json({ error: "attributeName is required" });
+        }
+        const result = await writeAssetAttribute(db, {
+            assetId: req.params.id,
+            attributeName,
+            value,
+            source: source || "OpenRemote UI",
+            linkedOrderRef
+        });
+        res.json(result);
+    } catch (error: any) {
+        res.status(400).json({ error: error.message || "Failed to write attribute" });
+    }
+});
+
+app.post("/api/iot/openremote/ingest", authenticate, async (req, res) => {
+    try {
+        const { assetId, attributeName, value, source, linkedOrderRef, autoLogBundlePcs } = req.body || {};
+        if (!assetId || !attributeName) {
+            return res.status(400).json({ error: "assetId and attributeName are required" });
+        }
+        const result = await writeAssetAttribute(db, {
+            assetId,
+            attributeName,
+            value,
+            source: source || "HTTP-Agent Ingest",
+            linkedOrderRef
+        });
+
+        let loggedOrder: string | null = null;
+        if (autoLogBundlePcs && Number(autoLogBundlePcs) > 0 && (linkedOrderRef || result.asset.linkedOrderRef)) {
+            const targetRef = String(linkedOrderRef || result.asset.linkedOrderRef);
+            const orders = await db.getDocs("erp_orders").catch(() => []);
+            const matchedOrder = orders.find((o: any) =>
+                String(o.file_no || "").toLowerCase() === targetRef.toLowerCase() ||
+                String(o.id || "") === targetRef
+            );
+            if (matchedOrder) {
+                const dhakaDate = new Intl.DateTimeFormat("en-CA", {
+                    timeZone: "Asia/Dhaka",
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit"
+                }).format(new Date());
+                await db.addDoc("daily_logs", {
+                    erp_order: matchedOrder.id,
+                    log_date: dhakaDate,
+                    received_qty: Number(autoLogBundlePcs),
+                    delivered_qty: 0,
+                    unit: "Pcs",
+                    remarks: `Auto-logged by OpenRemote IoT Sensor (${result.asset.name})`,
+                    created_by: (req as any).user?.username || "openremote-edge"
+                });
+                loggedOrder = matchedOrder.file_no || matchedOrder.id;
+            }
+        }
+
+        res.json({ ...result, loggedOrder });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message || "Telemetry ingest failed" });
+    }
+});
+
+app.post("/api/iot/openremote/rule", authenticate, async (req, res) => {
+    try {
+        const { id, name, enabled, assetId, assetName, attributeName, operator, threshold, thenAction, severity } = req.body || {};
+        if (!name || !assetId || !attributeName) {
+            return res.status(400).json({ error: "Rule name, assetId and attributeName are required" });
+        }
+        const ruleId = id || `or-rule-${Date.now()}`;
+        const existing = id ? await db.getDoc("iot_rules", id).catch(() => null) : null;
+        const ruleDoc = {
+            ...(existing || {}),
+            id: ruleId,
+            name,
+            realm: "wash-factory",
+            enabled: typeof enabled === "boolean" ? enabled : true,
+            assetId,
+            assetName: assetName || assetId,
+            attributeName,
+            operator: operator || ">",
+            threshold,
+            thenAction: thenAction || "Send Supervisor Alert",
+            severity: severity || "warning",
+            triggerCount: existing?.triggerCount || 0
+        };
+        await db.setDoc("iot_rules", ruleId, ruleDoc);
+        res.json(ruleDoc);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete("/api/iot/openremote/rule/:id", authenticate, async (req, res) => {
+    try {
+        await db.deleteDoc("iot_rules", req.params.id);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post("/api/iot/openremote/bridge/sync", authenticate, async (req, res) => {
+    try {
+        const result = await syncExternalOpenRemoteManager(db, req.body || {});
+        res.json(result);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "OpenRemote sync failed" });
     }
 });
 
@@ -1606,6 +2057,132 @@ app.get("/api/orders", authenticate, async (req, res) => {
         res.json(data);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================================================
+// MULTI-BUYER WASH REJECTION REPORT ROUTES (/api/wash-rejections/*)
+// ============================================================================
+app.get("/api/wash-rejections", authenticate, async (req, res) => {
+    try {
+        const [entries, configDocs] = await Promise.all([
+            db.getDocs("wash_rejections").catch(() => []),
+            db.getDocs("wash_rejection_config").catch(() => [])
+        ]);
+        const config = configDocs.find((d: any) => d.id === "master_config") || null;
+        res.json({
+            entries,
+            config: config || {
+                id: "master_config",
+                sizeColumns: ["XS", "S", "M", "L", "XL", "XXL", "No Size"],
+                sizeRatios: { XS: 5, S: 10, M: 20, L: 25, XL: 25, XXL: 15, "No Size": 0 },
+                recvOverrides: {}
+            }
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to load wash rejections" });
+    }
+});
+
+app.post("/api/wash-rejections", authenticate, authorize(["admin", "editor"]), async (req: any, res) => {
+    try {
+        const body = req.body || {};
+        const id = body.id || `rej-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        const xs = Number(body.xs) || 0;
+        const s = Number(body.s) || 0;
+        const m = Number(body.m) || 0;
+        const l = Number(body.l) || 0;
+        const xl = Number(body.xl) || 0;
+        const xxl = Number(body.xxl) || 0;
+        const noSize = Number(body.noSize) || 0;
+        const ttl = xs + s + m + l + xl + xxl + noSize;
+
+        const doc = {
+            id,
+            buyer: String(body.buyer || "Unknown").trim(),
+            erpNo: String(body.erpNo || "").trim(),
+            colour: String(body.colour || "").trim(),
+            country: String(body.country || "").trim(),
+            rDate: String(body.rDate || new Date(Date.now() + 6 * 3600 * 1000).toISOString().split("T")[0]).trim(),
+            xs, s, m, l, xl, xxl, noSize,
+            ttl,
+            rejectionType: String(body.rejectionType || "Before Wash Rejections").trim(),
+            remarks: String(body.remarks || "").trim(),
+            updatedBy: req.user?.username || "operator",
+            updatedAt: new Date().toISOString()
+        };
+        await db.setDoc("wash_rejections", id, doc);
+        res.status(201).json(doc);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to save wash rejection" });
+    }
+});
+
+app.post("/api/wash-rejections/batch", authenticate, authorize(["admin", "editor"]), async (req: any, res) => {
+    try {
+        const { entries } = req.body || {};
+        if (!Array.isArray(entries)) {
+            return res.status(400).json({ error: "entries array is required" });
+        }
+        const saved: any[] = [];
+        for (const item of entries) {
+            const id = item.id || `rej-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+            const xs = Number(item.xs) || 0;
+            const s = Number(item.s) || 0;
+            const m = Number(item.m) || 0;
+            const l = Number(item.l) || 0;
+            const xl = Number(item.xl) || 0;
+            const xxl = Number(item.xxl) || 0;
+            const noSize = Number(item.noSize) || 0;
+            const doc = {
+                id,
+                buyer: String(item.buyer || "Unknown").trim(),
+                erpNo: String(item.erpNo || "").trim(),
+                colour: String(item.colour || "").trim(),
+                country: String(item.country || "").trim(),
+                rDate: String(item.rDate || new Date(Date.now() + 6 * 3600 * 1000).toISOString().split("T")[0]).trim(),
+                xs, s, m, l, xl, xxl, noSize,
+                ttl: xs + s + m + l + xl + xxl + noSize,
+                rejectionType: String(item.rejectionType || "Before Wash Rejections").trim(),
+                remarks: String(item.remarks || "").trim(),
+                updatedBy: req.user?.username || "operator",
+                updatedAt: new Date().toISOString()
+            };
+            await db.setDoc("wash_rejections", id, doc);
+            saved.push(doc);
+        }
+        res.status(201).json({ count: saved.length, entries: saved });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Batch import failed" });
+    }
+});
+
+app.post("/api/wash-rejections/config", authenticate, authorize(["admin", "editor"]), async (req: any, res) => {
+    try {
+        const body = req.body || {};
+        const existing = await db.getDoc("wash_rejection_config", "master_config").catch(() => null);
+        const doc = {
+            id: "master_config",
+            sizeColumns: Array.isArray(body.sizeColumns) ? body.sizeColumns : (existing?.sizeColumns || ["XS", "S", "M", "L", "XL", "XXL", "No Size"]),
+            sizeRatios: body.sizeRatios || existing?.sizeRatios || { XS: 5, S: 10, M: 20, L: 25, XL: 25, XXL: 15, "No Size": 0 },
+            recvOverrides: body.recvOverrides || existing?.recvOverrides || {},
+            customErpMasters: Array.isArray(body.customErpMasters) ? body.customErpMasters : (existing?.customErpMasters || []),
+            updatedBy: req.user?.username || "operator",
+            updatedAt: new Date().toISOString()
+        };
+        await db.setDoc("wash_rejection_config", "master_config", doc);
+        res.json(doc);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to save rejection config" });
+    }
+});
+
+app.delete("/api/wash-rejections/:id", authenticate, authorize(["admin", "editor"]), async (req, res) => {
+    try {
+        await db.deleteDoc("wash_rejections", req.params.id);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Delete failed" });
     }
 });
 

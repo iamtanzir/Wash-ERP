@@ -98,6 +98,10 @@ export const api = {
     return logs.filter((l: DailyLog) => l.erp_order === orderId);
   },
 
+  async getAllDailyLogs(): Promise<DailyLog[]> {
+    return fetchJSON("/api/db/daily_logs");
+  },
+
   async submitDailyLog(data: Partial<DailyLog>): Promise<{ id: string }> {
     const log = await fetchJSON("/api/db/daily_logs", {
         method: "POST",
@@ -209,10 +213,7 @@ export const api = {
 
   async generateProactivePlan(payload: {
     orders?: any[];
-    provider?: 'gemini' | 'freemodel' | 'auto';
-    freemodelApiKey?: string;
-    freemodelEndpoint?: string;
-    freemodelModel?: string;
+    provider?: 'auto' | 'flm' | 'omniroute';
     options?: Record<string, any>;
   }): Promise<any> {
     return fetchJSON("/api/ai/proactive-plan", {
@@ -233,14 +234,183 @@ export const api = {
     prompt: string;
     orders?: any[];
     currentPlan?: any;
-    provider?: 'gemini' | 'freemodel' | 'auto';
-    freemodelApiKey?: string;
-    freemodelEndpoint?: string;
-    freemodelModel?: string;
+    provider?: 'auto' | 'flm' | 'omniroute';
   }): Promise<any> {
     return fetchJSON("/api/ai/scenario-simulate", {
       method: "POST",
       body: JSON.stringify(payload)
     });
+  },
+
+  async chatWithErpAi(payload: {
+    messages: { role: 'user' | 'assistant'; content: string }[];
+    provider?: 'auto' | 'flm' | 'omniroute';
+    browserCacheContext?: { cachedBytes?: number; hits?: any[] };
+  }): Promise<{
+    reply: string;
+    engineUsed: string;
+    model: string;
+    matchedOrdersCount: number;
+    latencyMs: number;
+    excelSheet?: {
+      sheetName: string;
+      fileName: string;
+      columns: string[];
+      rows: (string | number)[][];
+      summaryRow?: (string | number)[];
+      formulaSummary: string[];
+    };
+    formulaResult?: { expression: string; value: number | string; steps: string };
+    appliedRulesCount?: number;
+    intentDomain?: string;
+    fiveYearHitsCount?: number;
+  }> {
+    return fetchJSON("/api/ai/chat", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async getSupportCacheSnapshot(): Promise<any> {
+    return fetchJSON("/api/support/cache-snapshot");
+  },
+
+  async getSupport5YrMemory(): Promise<{ count: number; retentionStart: string; memories: any[] }> {
+    return fetchJSON("/api/support/memory-5yr");
+  },
+
+  async getSupportHistory(): Promise<{ messages: any[] }> {
+    return fetchJSON("/api/support/history");
+  },
+
+  async saveSupportHistory(messages: any[]): Promise<any> {
+    return fetchJSON("/api/support/history", {
+      method: "POST",
+      body: JSON.stringify({ messages })
+    });
+  },
+
+  async clearSupportHistory(): Promise<any> {
+    return fetchJSON("/api/support/history", { method: "DELETE" });
+  },
+
+  async getSupportSkills(): Promise<any> {
+    return fetchJSON("/api/support/skills");
+  },
+
+  async teachSupportSkill(payload: { trigger: string; ruleText: string; category?: string }): Promise<any> {
+    return fetchJSON("/api/support/skills", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async deleteSupportSkill(id: string): Promise<any> {
+    return fetchJSON(`/api/support/skills/${id}`, { method: "DELETE" });
+  },
+
+  async submitSupportFeedback(payload: {
+    messageId?: string;
+    query: string;
+    reply: string;
+    rating: 'up' | 'down';
+    correctionNote?: string;
+  }): Promise<any> {
+    return fetchJSON("/api/support/feedback", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async getOpenRemoteState(): Promise<any> {
+    return fetchJSON("/api/iot/openremote/state");
+  },
+
+  async pulseOpenRemoteTelemetry(): Promise<any> {
+    return fetchJSON("/api/iot/openremote/pulse", { method: "POST" });
+  },
+
+  async createOpenRemoteAsset(payload: any): Promise<any> {
+    return fetchJSON("/api/iot/openremote/asset", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async deleteOpenRemoteAsset(id: string): Promise<any> {
+    return fetchJSON(`/api/iot/openremote/asset/${id}`, { method: "DELETE" });
+  },
+
+  async writeOpenRemoteAttribute(assetId: string, payload: {
+    attributeName: string;
+    value: number | string | boolean;
+    source?: string;
+    linkedOrderRef?: string;
+  }): Promise<any> {
+    return fetchJSON(`/api/iot/openremote/asset/${assetId}/attribute`, {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async ingestOpenRemoteTelemetry(payload: {
+    assetId: string;
+    attributeName: string;
+    value: number | string | boolean;
+    source?: string;
+    linkedOrderRef?: string;
+    autoLogBundlePcs?: number;
+  }): Promise<any> {
+    return fetchJSON("/api/iot/openremote/ingest", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async saveOpenRemoteRule(payload: any): Promise<any> {
+    return fetchJSON("/api/iot/openremote/rule", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async deleteOpenRemoteRule(id: string): Promise<any> {
+    return fetchJSON(`/api/iot/openremote/rule/${id}`, { method: "DELETE" });
+  },
+
+  async syncOpenRemoteBridge(payload: any): Promise<any> {
+    return fetchJSON("/api/iot/openremote/bridge/sync", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async getWashRejections(): Promise<{ entries: any[]; config: any }> {
+    return fetchJSON("/api/wash-rejections");
+  },
+
+  async saveWashRejection(payload: any): Promise<any> {
+    return fetchJSON("/api/wash-rejections", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async saveWashRejectionBatch(entries: any[]): Promise<any> {
+    return fetchJSON("/api/wash-rejections/batch", {
+      method: "POST",
+      body: JSON.stringify({ entries })
+    });
+  },
+
+  async saveWashRejectionConfig(payload: any): Promise<any> {
+    return fetchJSON("/api/wash-rejections/config", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async deleteWashRejection(id: string): Promise<any> {
+    return fetchJSON(`/api/wash-rejections/${id}`, { method: "DELETE" });
   }
 };
