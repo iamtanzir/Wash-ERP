@@ -5,7 +5,7 @@ import { formatNumber, formatDate } from '../lib/utils';
 import { useState, useMemo } from 'react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Filter, PlusCircle, Database, RefreshCw, Cpu, Package, Receipt, Users, Settings, WashingMachine, Target, TrendingUp, TrendingDown, Award, Search, X, Download, FileSpreadsheet, FolderKanban, ShoppingCart, Layers } from 'lucide-react';
+import { Filter, PlusCircle, Database, RefreshCw, Cpu, Package, Receipt, Users, Settings, WashingMachine, Target, TrendingUp, TrendingDown, Award, Search, X, Download, FileSpreadsheet, FolderKanban, ShoppingCart, Layers, Tv } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   ResponsiveContainer,
@@ -53,7 +53,15 @@ interface OrderStats {
 export default function Dashboard() {
   const { canViewFinancialMetrics, user } = useAuth();
   const [workspace, setWorkspace] = useState<"wash" | "manufacturing" | "stock" | "accounts" | "hr" | "crm" | "projects" | "purchase" | "apex" | "ops" | "customizer">("wash");
-  const [dailyTarget, setDailyTarget] = useState<number>(12000);
+  const [dailyTarget, setDailyTarget] = useState<number>(() => {
+    const saved = Number(typeof window !== "undefined" ? localStorage.getItem("wash_daily_target") : 0);
+    return Number.isFinite(saved) && saved > 0 ? saved : 12000;
+  });
+  React.useEffect(() => {
+    if (dailyTarget > 0) {
+      localStorage.setItem("wash_daily_target", String(dailyTarget));
+    }
+  }, [dailyTarget]);
   const [globalSearch, setGlobalSearch] = useState("");
   const [search, setSearch] = useState("");
 
@@ -752,6 +760,14 @@ export default function Dashboard() {
               Last updated: {getRealTime(dataUpdatedAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit', hour12: true })}
             </span>
           )}
+          <Link
+            to="/wash-floor-live"
+            className="flex items-center gap-1.5 px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition-colors shadow-sm"
+            title="Open Full-Screen Factory TV Monitor"
+          >
+            <Tv size={13} className="text-sky-400" />
+            <span>Wash Floor Live</span>
+          </Link>
           <button
             onClick={handleManualRefresh}
             disabled={isRefreshing}

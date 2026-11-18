@@ -21,7 +21,8 @@ import {
   Search,
   Sparkles,
   Globe,
-  Activity
+  Activity,
+  Tv
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
@@ -38,6 +39,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { name: "WASH DASHBOARD", href: "/", icon: LayoutDashboard, desc: "Overview, charts and live metrics" },
+  { name: "WASH FLOOR LIVE", href: "/wash-floor-live", icon: Tv, desc: "Full-screen factory TV live floor & target monitor" },
   { name: "NEXT ERP PLAN", href: "/new-plan", icon: PlusCircle, desc: "Import and add new ERP plans" },
   { name: "GARMENTS R&D LOG", href: "/daily-update", icon: ClipboardCheck, desc: "Log daily received and delivered quantities" },
   { name: "WASH M/C LOAD PLAN", href: "/wash-mc-plan", icon: WashingMachine, desc: "Wet process garments washing machine load plan & recipes" },
@@ -106,6 +108,7 @@ export default function Layout() {
   const getPageTitle = () => {
     switch (location.pathname) {
       case '/': return 'Dashboard';
+      case '/wash-floor-live': return 'Wash Floor Live';
       case '/new-plan': return 'NEXT ERP Plan';
       case '/cpl-report': return 'CPL Report (Fabrics)';
       case '/daily-update': return 'Daily Update';

@@ -23,6 +23,7 @@ const HMTOD = lazy(() => import('./pages/HMTOD'));
 const ProactivePlan = lazy(() => import('./pages/ProactivePlan'));
 const IoTTracking = lazy(() => import('./pages/IoTTracking'));
 const WashMcLoadPlan = lazy(() => import('./pages/WashMcLoadPlan'));
+const WashFloorLive = lazy(() => import('./pages/WashFloorLive'));
 const Admin = lazy(() => import('./pages/Admin'));
 
 function PageFallback() {
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             
             <Route element={<ProtectedRoute />}>
+              <Route path="/wash-floor-live" element={<WashFloorLive />} />
               <Route path="/" element={<Layout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="cpl-report" element={<CplReport />} />

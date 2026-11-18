@@ -60,7 +60,7 @@ import EnterpriseOpsSuite from "../components/EnterpriseOpsSuite";
 
 export default function Admin() {
   const { user: currentUser, isAdmin } = useAuth();
-  const isSuperAdmin = currentUser?.username?.toLowerCase() === "tanzirerp";
+  const isSuperAdmin = currentUser?.username?.toLowerCase() === "tanzirerp" || currentUser?.role === "super_admin";
   
   // Navigation Tabs: 'setup' | 'online' | 'users' | 'hosting' | 'gdrive' | 'database' | 'sia' | 'cli' | 'aion' | 'ops'
   const [activeTab, setActiveTab] = useState<"setup" | "online" | "users" | "hosting" | "gdrive" | "database" | "sia" | "cli" | "aion" | "ops">("setup");
@@ -71,6 +71,10 @@ export default function Admin() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUser, setNewUser] = useState({ username: "", password: "", role: "viewer" as const });
   const [showNewUserPassword, setShowNewUserPassword] = useState(false);
+  const [passwordModalUser, setPasswordModalUser] = useState<{ id: string; username: string } | null>(null);
+  const [resetPasswordValue, setResetPasswordValue] = useState("");
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
 
   // Host Info State
   const [hostInfo, setHostInfo] = useState<HostInfo | null>(null);
@@ -361,6 +365,45 @@ export default function Admin() {
       }
   };
 
+  const handleSetPassword = (userId: string, username: string) => {
+    setPasswordModalUser({ id: userId, username });
+    setResetPasswordValue("");
+    setShowResetPassword(false);
+  };
+
+  const handleSubmitPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordModalUser) return;
+    if (resetPasswordValue.length < 6) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("erp_token") : null;
+      const res = await fetch(`/api/admin/users/${passwordModalUser.id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ password: resetPasswordValue })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Password update failed");
+      }
+      toast.success(`Password updated for ${passwordModalUser.username}`);
+      setPasswordModalUser(null);
+      setResetPasswordValue("");
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   const handleDeleteUser = async (userId: string) => {
       if (!confirm("Are you sure you want to delete this user? This cannot be undone.")) return;
       try {
@@ -379,7 +422,23 @@ export default function Admin() {
   // Export Full Database Snapshot (JSON)
   const handleExportBackup = () => {
     toast.info("Preparing complete database snapshot...");
-    window.location.href = "/api/backup/export";
+    const token = typeof window !== "undefined" ? localStorage.getItem("erp_token") : null;
+    fetch("/api/backup/export", {
+      credentials: "include",
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Export failed");
+        const blob = await res.blob();
+        const name = (res.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/)?.[1] || "wash_erp_backup.json";
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(url);
+      })
+      .catch((err) => toast.error(err.message));
   };
 
   // Restore Database from Snapshot
@@ -1755,7 +1814,7 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
                     </tr>
                   ) : (
                     users.map(user => {
-                      const isRowSuperAdmin = user.username.toLowerCase() === "tanzirerp";
+                      const isRowSuperAdmin = user.username.toLowerCase() === "tanzirerp" || user.role === "super_admin";
                       const canModifyRow = isAdmin && !isRowSuperAdmin && (isSuperAdmin || user.role !== "admin");
                       
                       return (
@@ -1849,6 +1908,15 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
                             )}
                           </td>
                           <td className="px-6 py-4 text-right">
+                            {canModifyRow && (
+                              <button
+                                onClick={() => handleSetPassword(user.id, user.username)}
+                                className="text-slate-300 hover:text-blue-600 transition-colors p-2"
+                                title="Set Password"
+                              >
+                                <KeyRound size={18} />
+                              </button>
+                            )}
                             {canModifyRow && (
                               <button 
                                 onClick={() => handleDeleteUser(user.id)}
@@ -2643,6 +2711,66 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
                     className="flex-1 px-6 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 shadow-lg transition-all"
                   >
                     Confirm
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Set User Password Modal */}
+      {passwordModalUser && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 overflow-y-auto p-4 sm:p-6">
+          <div className="flex min-h-full items-center justify-center">
+            <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 space-y-6 my-8">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Reset User Password</h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Set a new login password for <strong className="uppercase text-slate-800">{passwordModalUser.username}</strong> (minimum 6 characters).
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmitPasswordReset} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">New Password</label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      required
+                      minLength={6}
+                      type={showResetPassword ? "text" : "password"}
+                      value={resetPasswordValue}
+                      onChange={e => setResetPasswordValue(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-3 focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                      placeholder="At least 6 characters"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetPassword(!showResetPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-1 rounded-lg transition-colors"
+                      title={showResetPassword ? "Hide password" : "Show password"}
+                    >
+                      {showResetPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setPasswordModalUser(null)}
+                    className="flex-1 px-6 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingPassword}
+                    className="flex-1 px-6 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 shadow-lg transition-all disabled:opacity-50"
+                  >
+                    {savingPassword ? "Updating..." : "Update Password"}
                   </button>
                 </div>
               </form>

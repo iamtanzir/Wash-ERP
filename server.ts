@@ -1336,7 +1336,7 @@ app.post("/api/admin/users", authenticate, authorize(["admin"]), async (req, res
 
 app.patch("/api/admin/users/:id", authenticate, authorize(["admin"]), async (req, res) => {
     const { id } = req.params;
-    const { role, status } = req.body;
+    const { role, status, password } = req.body;
     
     const currentUser = (req as any).user;
     const isSuperAdmin = currentUser.username.toLowerCase() === "tanzirerp";
@@ -1345,6 +1345,10 @@ app.patch("/api/admin/users/:id", authenticate, authorize(["admin"]), async (req
     // 1. Strictly forbid blocking, modifying, or overriding the Super Admin profile
     if (targetUserId === "tanzirerp") {
         return res.status(403).json({ error: "No user is allowed to block, modify or override Super Admin (tanzirerp)." });
+    }
+
+    if (password !== undefined && String(password).length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters." });
     }
 
     try {
@@ -1363,9 +1367,13 @@ app.patch("/api/admin/users/:id", authenticate, authorize(["admin"]), async (req
             return res.status(403).json({ error: "Only Super Admin (tanzirerp) can promote users to Admin." });
         }
 
+        const passwordHash = password ? await bcrypt.hash(String(password), 10) : undefined;
+
         await db.updateDoc("users", targetUserId, {
             ...(role && { role }),
-            ...(status && { status })
+            ...(status && { status }),
+            ...(passwordHash && { password_hash: passwordHash }),
+            updated_at: new Date().toISOString()
         });
         res.json({ success: true });
     } catch (error) {
