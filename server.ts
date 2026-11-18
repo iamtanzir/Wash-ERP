@@ -33,106 +33,41 @@ import {
 let db = getDatabase();
 const app = express();
 app.set("trust proxy", 1);
+const RUNTIME_DATA_ROOT = process.env.VERCEL ? path.join("/tmp", "wash-erp-data") : path.resolve("./data");
 
 let dbSeedPromise: Promise<void> | null = null;
 
+function isSuperAdminUser(user: any): boolean {
+    if (!user) return false;
+    const role = String(user.role || "").trim().toLowerCase();
+    const username = String(user.username || "").trim().toLowerCase();
+    return role === "super_admin" || username === "tanzirerp";
+}
+
 async function seedDatabase() {
-    console.log("[SEED] Checking database connection and seeding...");
-    const adminUser = await db.getDoc("users", "admin");
-    if (!adminUser) {
-        console.log("[SEED] Admin missing, creating default...");
-        const hashedPassword = await bcrypt.hash("admin", 10);
-        await db.setDoc("users", "admin", {
-            id: "admin",
-            username: "admin",
-            password_hash: hashedPassword,
-            role: "admin",
-            status: "active",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        });
+    console.log("[SEED] Checking database initialization status...");
+    const existingUsers = await db.getDocs("users").catch(() => []);
+    if (existingUsers.length === 0) {
+        const envUsername = String(process.env.SUPER_ADMIN_USERNAME || "").trim().toLowerCase();
+        const envPassword = String(process.env.SUPER_ADMIN_PASSWORD || "");
+        if (envUsername && envPassword && envPassword.length >= 6) {
+            console.log(`[SEED] Provisioning initial Super User (${envUsername}) from environment variables...`);
+            const hashedPassword = await bcrypt.hash(envPassword, 10);
+            const now = new Date().toISOString();
+            await db.setDoc("users", envUsername, {
+                id: envUsername,
+                username: envUsername,
+                password_hash: hashedPassword,
+                role: "super_admin",
+                status: "active",
+                created_at: now,
+                updated_at: now
+            });
+        } else {
+            console.log("[SEED] Database has 0 users. First-time Super User setup is required via /login.");
+        }
     }
-    
-    const tanzirUser = await db.getDoc("users", "tanzirerp");
-    if (!tanzirUser) {
-        console.log("[SEED] Super Admin tanzirerp missing, creating default...");
-        const hashedPassword = await bcrypt.hash("tanziradmin", 10);
-        await db.setDoc("users", "tanzirerp", {
-            id: "tanzirerp",
-            username: "tanzirerp",
-            password_hash: hashedPassword,
-            role: "admin",
-            status: "active",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        });
-    }
-
-    // Default Wash MD (Full Financial Access)
-    const mdUser = await db.getDoc("users", "washmd");
-    if (!mdUser) {
-        console.log("[SEED] Wash MD missing, creating default...");
-        const hashedPassword = await bcrypt.hash("washmd123", 10);
-        await db.setDoc("users", "washmd", {
-            id: "washmd",
-            username: "washmd",
-            password_hash: hashedPassword,
-            role: "wash_md",
-            status: "active",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        });
-    }
-
-    // Default Wash Manager (Operations & Financial Access)
-    const managerUser = await db.getDoc("users", "washmanager");
-    if (!managerUser) {
-        console.log("[SEED] Wash Manager missing, creating default...");
-        const hashedPassword = await bcrypt.hash("manager123", 10);
-        await db.setDoc("users", "washmanager", {
-            id: "washmanager",
-            username: "washmanager",
-            password_hash: hashedPassword,
-            role: "wash_manager",
-            status: "active",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        });
-    }
-
-    // Default Data Entry Operator (No Financial Access)
-    const operatorUser = await db.getDoc("users", "operator");
-    if (!operatorUser) {
-        console.log("[SEED] Operator missing, creating default...");
-        const hashedPassword = await bcrypt.hash("operator123", 10);
-        await db.setDoc("users", "operator", {
-            id: "operator",
-            username: "operator",
-            password_hash: hashedPassword,
-            role: "operator",
-            status: "active",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        });
-    }
-
-    // Default Viewer (Normal User - No Financial Access)
-    const viewerUser = await db.getDoc("users", "viewer");
-    if (!viewerUser) {
-        console.log("[SEED] Viewer missing, creating default...");
-        const hashedPassword = await bcrypt.hash("viewer123", 10);
-        await db.setDoc("users", "viewer", {
-            id: "viewer",
-            username: "viewer",
-            password_hash: hashedPassword,
-            role: "viewer",
-            status: "active",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        });
-    }
-
-    console.log("[SEED] Database seeding check completed.");
+    console.log("[SEED] Database check completed.");
 }
 
 function getSeedPromise() {
@@ -189,7 +124,7 @@ const ensureDb = async (req: any, res: any, next: any) => {
     }
 };
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const upload = multer({ storage: multer.memoryStorage() });
 
 const JWT_SECRET_KEY = process.env.JWT_SECRET || "inctl-internal-security-secret-key-2024";
@@ -236,6 +171,9 @@ const authorize = (roles: string[]) => {
         if (!req.user) {
             return res.status(403).json({ error: "Forbidden: Insufficient permissions" });
         }
+        if (isSuperAdminUser(req.user)) {
+            return next();
+        }
         const userRole = (req.user.role || "").toLowerCase();
         const hasAccess = 
             roles.includes(userRole) || 
@@ -250,11 +188,113 @@ const authorize = (roles: string[]) => {
 };
 
 const requireSuperAdmin = (req: any, res: any, next: any) => {
-    if (!req.user || req.user.username?.toLowerCase() !== "tanzirerp") {
-        return res.status(403).json({ error: "Forbidden: Host & Cloud Admin access is restricted to Super Admin (tanzirerp)" });
+    if (!isSuperAdminUser(req.user)) {
+        return res.status(403).json({ error: "Forbidden: Host & Cloud Admin access is restricted to Super User (super_admin)." });
     }
     next();
 };
+
+const setAuthCookie = (req: any, res: any, token: string) => {
+    const isHttps = IS_PRODUCTION || Boolean(req.secure) || req.headers["x-forwarded-proto"] === "https";
+    res.cookie("auth_token", token, {
+        httpOnly: true,
+        secure: isHttps,
+        sameSite: isHttps ? "none" : "lax",
+        path: "/",
+        maxAge: 24 * 60 * 60 * 1000 // 24h
+    });
+};
+
+// API: Check if initial Super User setup is required (database has 0 users)
+app.get(["/api/auth/setup-status", "/api/setup-status"], async (req, res) => {
+    try {
+        const users = await db.getDocs("users").catch(() => []);
+        const needsSetup = !Array.isArray(users) || users.length === 0;
+        const hasSuperUser = Array.isArray(users) && users.some((u: any) => isSuperAdminUser(u));
+        res.json({ needsSetup, hasSuperUser });
+    } catch (error: any) {
+        res.status(500).json({ error: "Failed to check setup status", details: error.message });
+    }
+});
+
+// API: First-Time Super User Setup (permanently locked once any user exists in the database)
+app.post(["/api/auth/setup-super-user", "/api/setup-super-user"], async (req: any, res: any) => {
+    try {
+        const existingUsers = await db.getDocs("users").catch(() => []);
+        if (Array.isArray(existingUsers) && existingUsers.length > 0) {
+            return res.status(403).json({
+                error: "Super User setup is already completed and locked in the database. Please log in."
+            });
+        }
+
+        const rawUsername = String(req.body?.username || "").trim().toLowerCase();
+        const password = String(req.body?.password || "");
+
+        if (!rawUsername || !/^[a-z0-9._-]{3,32}$/.test(rawUsername)) {
+            return res.status(400).json({
+                error: "Super User ID must be 3-32 characters using only letters, numbers, dots, underscores, or hyphens."
+            });
+        }
+
+        if (!password || password.length < 6) {
+            return res.status(400).json({
+                error: "Password must be at least 6 characters long."
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const now = new Date().toISOString();
+
+        const superUserRecord = {
+            id: rawUsername,
+            username: rawUsername,
+            password_hash: hashedPassword,
+            role: "super_admin",
+            status: "active",
+            created_at: now,
+            updated_at: now
+        };
+
+        await db.setDoc("users", rawUsername, superUserRecord);
+
+        const token = await new SignJWT({
+            id: superUserRecord.id,
+            username: superUserRecord.username,
+            role: superUserRecord.role
+        })
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime("24h")
+        .sign(JWT_SECRET);
+
+        setAuthCookie(req, res, token);
+
+        try {
+            await Promise.race([
+                db.addDoc("audit_logs", {
+                    action: "setup_super_user",
+                    userId: superUserRecord.id,
+                    role: "super_admin",
+                    ip: req.ip
+                }),
+                new Promise((resolve) => setTimeout(resolve, 1200))
+            ]);
+        } catch {}
+
+        res.status(201).json({
+            success: true,
+            token,
+            user: {
+                id: superUserRecord.id,
+                username: superUserRecord.username,
+                role: superUserRecord.role
+            }
+        });
+    } catch (error: any) {
+        console.error("[AUTH] First-time Super User setup error:", error);
+        res.status(500).json({ error: "Failed to initialize Super User", details: error.message });
+    }
+});
 
 // API: Login
 const handleLogin = async (req: any, res: any) => {
@@ -303,13 +343,7 @@ const handleLogin = async (req: any, res: any) => {
         .setExpirationTime("24h")
         .sign(JWT_SECRET);
 
-        res.cookie("auth_token", token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "none",
-            path: "/",
-            maxAge: 24 * 60 * 60 * 1000 // 24h
-        });
+        setAuthCookie(req, res, token);
 
         try {
             await Promise.race([
@@ -357,10 +391,11 @@ const handleLogin = async (req: any, res: any) => {
 app.post(["/api/login", "/api/auth/login"], handleLogin);
 
 const handleLogout = (req: any, res: any) => {
+    const isHttps = IS_PRODUCTION || Boolean(req.secure) || req.headers["x-forwarded-proto"] === "https";
     res.clearCookie("auth_token", {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: isHttps,
+        sameSite: isHttps ? "none" : "lax",
         path: "/"
     });
     res.json({ success: true });
@@ -420,7 +455,7 @@ app.get("/api/system/host-info", authenticate, requireSuperAdmin, async (req, re
             fs.existsSync("/etc/rpi-issue") || 
             fs.existsSync("/proc/device-tree/model");
 
-        const localDbPath = path.resolve(process.env.LOCAL_DB_PATH || process.env.SQLITE_PATH || "./data/erp_database.sqlite");
+        const localDbPath = path.resolve(process.env.LOCAL_DB_PATH || process.env.SQLITE_PATH || path.join(RUNTIME_DATA_ROOT, "erp_database.sqlite"));
         let dbFileExists = false;
         let dbFileSize = 0;
         try {
@@ -431,7 +466,7 @@ app.get("/api/system/host-info", authenticate, requireSuperAdmin, async (req, re
             }
         } catch (e) {}
 
-        const backupDir = path.resolve("./data/gdrive_backups");
+        const backupDir = path.join(RUNTIME_DATA_ROOT, "gdrive_backups");
         let backupCount = 0;
         try {
             if (fs.existsSync(backupDir)) {
@@ -440,7 +475,7 @@ app.get("/api/system/host-info", authenticate, requireSuperAdmin, async (req, re
         } catch (e) {}
 
         let publicOnlineUrl = process.env.PUBLIC_ONLINE_URL || process.env.CLOUDFLARE_TUNNEL_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
-        const onlineConfigPath = path.resolve("./data/online_config.json");
+        const onlineConfigPath = path.join(RUNTIME_DATA_ROOT, "online_config.json");
         if (!publicOnlineUrl && fs.existsSync(onlineConfigPath)) {
             try {
                 const conf = JSON.parse(fs.readFileSync(onlineConfigPath, "utf-8"));
@@ -448,7 +483,7 @@ app.get("/api/system/host-info", authenticate, requireSuperAdmin, async (req, re
             } catch (e) {}
         }
 
-        const parquetDir = path.resolve(process.env.PARQUET_DIR || "./data/parquet");
+        const parquetDir = path.resolve(process.env.PARQUET_DIR || path.join(RUNTIME_DATA_ROOT, "parquet"));
         let parquetFiles: { filename: string; table: string; sizeBytes: number; updatedAt: string }[] = [];
         let parquetTotalBytes = 0;
         try {
@@ -494,7 +529,7 @@ app.get("/api/system/host-info", authenticate, requireSuperAdmin, async (req, re
 // Public Online URL Management (For Cloudflare Tunnel, Vercel, Custom Domains - Super Admin Only)
 app.get("/api/system/public-url", authenticate, requireSuperAdmin, (req, res) => {
     let publicOnlineUrl = process.env.PUBLIC_ONLINE_URL || process.env.CLOUDFLARE_TUNNEL_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
-    const onlineConfigPath = path.resolve("./data/online_config.json");
+    const onlineConfigPath = path.join(RUNTIME_DATA_ROOT, "online_config.json");
     if (!publicOnlineUrl && fs.existsSync(onlineConfigPath)) {
         try {
             const conf = JSON.parse(fs.readFileSync(onlineConfigPath, "utf-8"));
@@ -507,7 +542,7 @@ app.get("/api/system/public-url", authenticate, requireSuperAdmin, (req, res) =>
 app.post("/api/system/public-url", authenticate, requireSuperAdmin, (req, res) => {
     try {
         const { publicUrl } = req.body;
-        const onlineConfigPath = path.resolve("./data/online_config.json");
+        const onlineConfigPath = path.join(RUNTIME_DATA_ROOT, "online_config.json");
         fs.mkdirSync(path.dirname(onlineConfigPath), { recursive: true });
         const cleanUrl = (publicUrl || "").trim();
         fs.writeFileSync(onlineConfigPath, JSON.stringify({ publicUrl: cleanUrl, updatedAt: new Date().toISOString() }, null, 2), "utf-8");
@@ -541,7 +576,7 @@ app.post("/api/admin/config/db-mode", authenticate, requireSuperAdmin, async (re
     try {
         // When switching into Apache Parquet mode, automatically sync current data into .parquet files if target is empty
         if (mode.toLowerCase() === "parquet") {
-            const targetParquetDir = path.resolve(parquetDir || (localPath && !localPath.endsWith(".sqlite") ? localPath : "") || process.env.PARQUET_DIR || "./data/parquet");
+            const targetParquetDir = path.resolve(parquetDir || (localPath && !localPath.endsWith(".sqlite") ? localPath : "") || process.env.PARQUET_DIR || path.join(RUNTIME_DATA_ROOT, "parquet"));
             fs.mkdirSync(targetParquetDir, { recursive: true });
             process.env.PARQUET_DIR = targetParquetDir;
             res.cookie("parquet_dir", targetParquetDir, { httpOnly: true, secure: IS_PRODUCTION, sameSite: IS_PRODUCTION ? "none" : "lax", path: '/', maxAge: 1000 * 60 * 60 * 24 * 365 });
@@ -576,8 +611,8 @@ app.post("/api/admin/config/db-mode", authenticate, requireSuperAdmin, async (re
             success: true, 
             message: `Database switched to ${mode.toUpperCase()} mode successfully.`,
             mode,
-            localPath: process.env.LOCAL_DB_PATH || "./data/erp_database.sqlite",
-            parquetDir: process.env.PARQUET_DIR || "./data/parquet"
+            localPath: process.env.LOCAL_DB_PATH || path.join(RUNTIME_DATA_ROOT, "erp_database.sqlite"),
+            parquetDir: process.env.PARQUET_DIR || path.join(RUNTIME_DATA_ROOT, "parquet")
         });
     } catch (e: any) {
         res.status(500).json({ error: "Failed to switch database mode", details: e.message });
@@ -807,10 +842,10 @@ app.post("/api/backup/restore", authenticate, authorize(["admin"]), upload.singl
                 let colCount = 0;
                 for (const item of records) {
                     if (item && item.id) {
-                        // Protect super admin if already exists or preserve integrity
-                        if (col === "users" && item.username === "tanzirerp") {
-                            const existingTanzir = await db.getDoc("users", "tanzirerp");
-                            if (existingTanzir) {
+                        // Protect existing Super User accounts from accidental overwrite during restore
+                        if (col === "users") {
+                            const existingTarget = await db.getDoc("users", String(item.id).toLowerCase()).catch(() => null);
+                            if (existingTarget && isSuperAdminUser(existingTarget)) {
                                 continue;
                             }
                         }
@@ -847,7 +882,7 @@ app.post("/api/backup/restore", authenticate, authorize(["admin"]), upload.singl
 // Google Drive Cloud Sync Trigger & Auto Snapshot
 app.post("/api/backup/gdrive/sync", authenticate, async (req: any, res) => {
     try {
-        const backupDir = path.resolve("./data/gdrive_backups");
+        const backupDir = path.join(RUNTIME_DATA_ROOT, "gdrive_backups");
         if (!fs.existsSync(backupDir)) {
             fs.mkdirSync(backupDir, { recursive: true });
         }
@@ -929,7 +964,7 @@ app.post("/api/backup/gdrive/sync", authenticate, async (req: any, res) => {
 // List Historical Backups
 app.get("/api/backup/list", authenticate, async (req, res) => {
     try {
-        const backupDir = path.resolve("./data/gdrive_backups");
+        const backupDir = path.join(RUNTIME_DATA_ROOT, "gdrive_backups");
         const backups: any[] = [];
 
         if (fs.existsSync(backupDir)) {
@@ -961,7 +996,7 @@ const PARQUET_TABLES = ["erp_orders", "daily_logs", "buyer_data_bank", "users", 
 
 app.get("/api/backup/parquet/stats", authenticate, async (req: any, res) => {
     try {
-        const parquetDir = path.resolve(process.env.PARQUET_DIR || "./data/parquet");
+        const parquetDir = path.resolve(process.env.PARQUET_DIR || path.join(RUNTIME_DATA_ROOT, "parquet"));
         const tableStats = await Promise.all(
             PARQUET_TABLES.map(async (table) => {
                 const rows = await db.getDocs(table).catch(() => []);
@@ -1021,7 +1056,7 @@ app.post("/api/backup/parquet/sync", authenticate, async (req: any, res) => {
         const codecInput = String(req.body?.codec || "GZIP").toUpperCase();
         const codec: ParquetCodec = codecInput === "SNAPPY" || codecInput === "UNCOMPRESSED" ? codecInput : "GZIP";
         const customFolder = req.body?.targetFolder ? path.resolve(String(req.body.targetFolder)) : "";
-        const parquetDir = path.resolve(process.env.PARQUET_DIR || "./data/parquet");
+        const parquetDir = path.resolve(process.env.PARQUET_DIR || path.join(RUNTIME_DATA_ROOT, "parquet"));
         fs.mkdirSync(parquetDir, { recursive: true });
 
         const results: { table: string; filename: string; rows: number; csvBytes: number; parquetBytes: number; savedPercent: number }[] = [];
@@ -1105,9 +1140,9 @@ app.post("/api/backup/parquet/restore", authenticate, authorize(["admin"]), uplo
 
         for (const item of rows) {
             if (item && item.id) {
-                if (table === "users" && String(item.username || "").toLowerCase() === "tanzirerp") {
-                    const existingTanzir = await db.getDoc("users", "tanzirerp");
-                    if (existingTanzir) continue;
+                if (table === "users") {
+                    const existingTarget = await db.getDoc("users", String(item.id).toLowerCase()).catch(() => null);
+                    if (existingTarget && isSuperAdminUser(existingTarget)) continue;
                 }
                 await db.setDoc(table, String(item.id), item);
                 restored++;
@@ -1307,26 +1342,37 @@ app.get("/api/admin/users", authenticate, authorize(["admin"]), async (req, res)
 });
 
 app.post("/api/admin/users", authenticate, authorize(["admin"]), async (req, res) => {
-    const { username, password, role } = req.body;
-    if (!username || !password || !role) return res.status(400).json({ error: "Missing fields" });
+    const { username, password, role } = req.body || {};
+    const normalizedUsername = String(username || "").trim().toLowerCase();
+    const normalizedRole = String(role || "").trim().toLowerCase();
+    if (!normalizedUsername || !password || !normalizedRole) return res.status(400).json({ error: "Missing fields" });
+
+    if (String(password).length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters." });
+    }
 
     const currentUser = (req as any).user;
-    const isSuperAdmin = currentUser.username.toLowerCase() === "tanzirerp";
+    const isSuperAdmin = isSuperAdminUser(currentUser);
 
-    // Only Super Admin can create other admin accounts
-    if (role === "admin" && !isSuperAdmin) {
-        return res.status(403).json({ error: "Only Super Admin (tanzirerp) can create Admin accounts." });
+    if (normalizedRole === "super_admin") {
+        return res.status(403).json({ error: "Super User (super_admin) role is reserved strictly for first-time initial setup." });
+    }
+
+    // Only Super User can create other System Admin accounts
+    if (normalizedRole === "admin" && !isSuperAdmin) {
+        return res.status(403).json({ error: "Only the Super User (super_admin) can create Admin accounts." });
     }
 
     try {
-        const existingUser = await db.getDoc("users", username.toLowerCase());
+        const existingUser = await db.getDoc("users", normalizedUsername);
         if (existingUser) return res.status(400).json({ error: "User already exists" });
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await db.setDoc("users", username.toLowerCase(), {
-            username: username.toLowerCase(),
+        const hashedPassword = await bcrypt.hash(String(password), 10);
+        await db.setDoc("users", normalizedUsername, {
+            id: normalizedUsername,
+            username: normalizedUsername,
             password_hash: hashedPassword,
-            role,
+            role: normalizedRole,
             status: "active",
             created_by: currentUser.id,
             created_at: new Date().toISOString(),
@@ -1340,16 +1386,12 @@ app.post("/api/admin/users", authenticate, authorize(["admin"]), async (req, res
 
 app.patch("/api/admin/users/:id", authenticate, authorize(["admin"]), async (req, res) => {
     const { id } = req.params;
-    const { role, status, password } = req.body;
+    const { role, status, password } = req.body || {};
     
     const currentUser = (req as any).user;
-    const isSuperAdmin = currentUser.username.toLowerCase() === "tanzirerp";
+    const isSuperAdmin = isSuperAdminUser(currentUser);
     const targetUserId = id.toLowerCase();
-
-    // 1. Strictly forbid blocking, modifying, or overriding the Super Admin profile
-    if (targetUserId === "tanzirerp") {
-        return res.status(403).json({ error: "No user is allowed to block, modify or override Super Admin (tanzirerp)." });
-    }
+    const normalizedRole = role ? String(role).trim().toLowerCase() : undefined;
 
     if (password !== undefined && String(password).length < 6) {
         return res.status(400).json({ error: "Password must be at least 6 characters." });
@@ -1361,20 +1403,29 @@ app.patch("/api/admin/users/:id", authenticate, authorize(["admin"]), async (req
             return res.status(404).json({ error: "User not found" });
         }
 
-        // 2. Only Super Admin can modify other Admin accounts
-        if (targetUser.role === "admin" && !isSuperAdmin) {
-            return res.status(403).json({ error: "Only Super Admin (tanzirerp) can modify Admin accounts." });
+        // 1. Strictly forbid blocking, modifying, or overriding the Super User profile
+        if (isSuperAdminUser(targetUser)) {
+            return res.status(403).json({ error: "The Super User (super_admin) account is protected and cannot be modified or deactivated here." });
         }
 
-        // 3. Only Super Admin can promote someone to Admin
-        if (role === "admin" && !isSuperAdmin) {
-            return res.status(403).json({ error: "Only Super Admin (tanzirerp) can promote users to Admin." });
+        if (normalizedRole === "super_admin") {
+            return res.status(403).json({ error: "Cannot assign super_admin role to additional users." });
+        }
+
+        // 2. Only Super User can modify other Admin accounts
+        if (targetUser.role === "admin" && !isSuperAdmin) {
+            return res.status(403).json({ error: "Only the Super User (super_admin) can modify Admin accounts." });
+        }
+
+        // 3. Only Super User can promote someone to Admin
+        if (normalizedRole === "admin" && !isSuperAdmin) {
+            return res.status(403).json({ error: "Only the Super User (super_admin) can promote users to Admin." });
         }
 
         const passwordHash = password ? await bcrypt.hash(String(password), 10) : undefined;
 
         await db.updateDoc("users", targetUserId, {
-            ...(role && { role }),
+            ...(normalizedRole && { role: normalizedRole }),
             ...(status && { status }),
             ...(passwordHash && { password_hash: passwordHash }),
             updated_at: new Date().toISOString()
@@ -1389,13 +1440,8 @@ app.delete("/api/admin/users/:id", authenticate, authorize(["admin"]), async (re
     const { id } = req.params;
     
     const currentUser = (req as any).user;
-    const isSuperAdmin = currentUser.username.toLowerCase() === "tanzirerp";
+    const isSuperAdmin = isSuperAdminUser(currentUser);
     const targetUserId = id.toLowerCase();
-
-    // 1. Super Admin cannot be deleted
-    if (targetUserId === "tanzirerp") {
-        return res.status(403).json({ error: "Super Admin (tanzirerp) cannot be deleted." });
-    }
 
     try {
         const targetUser = await db.getDoc("users", targetUserId);
@@ -1403,9 +1449,14 @@ app.delete("/api/admin/users/:id", authenticate, authorize(["admin"]), async (re
             return res.status(404).json({ error: "User not found" });
         }
 
-        // 2. Only Super Admin can delete Admin accounts
+        // 1. Super User cannot be deleted
+        if (isSuperAdminUser(targetUser)) {
+            return res.status(403).json({ error: "Super User (super_admin) cannot be deleted." });
+        }
+
+        // 2. Only Super User can delete Admin accounts
         if (targetUser.role === "admin" && !isSuperAdmin) {
-            return res.status(403).json({ error: "Only Super Admin (tanzirerp) can delete Admin accounts." });
+            return res.status(403).json({ error: "Only the Super User (super_admin) can delete Admin accounts." });
         }
 
         await db.deleteDoc("users", targetUserId);
@@ -1638,10 +1689,11 @@ async function startServer() {
     });
 
     const isProd = process.env.NODE_ENV === "production";
+    const isCompiledStart = Boolean(process.argv[1]?.endsWith("server.cjs"));
     const distPath = path.join(process.cwd(), "dist");
     const distIndexExists = fs.existsSync(path.join(distPath, "index.html"));
 
-    if (isProd && distIndexExists) {
+    if ((isProd || isCompiledStart) && distIndexExists) {
         console.log("[SERVER] Mode: Production static bundle");
         app.use(express.static(distPath));
         app.get("*", (req, res) => {

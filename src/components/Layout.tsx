@@ -66,7 +66,7 @@ export default function Layout() {
     return document.documentElement.classList.contains("dark-mode");
   });
 
-  // HOST & CLOUD ADMIN is ONLY visible to Super Admin (tanzirerp), NOT for all admins
+  // HOST & CLOUD ADMIN is ONLY visible to Super User (super_admin), NOT for regular admins
   const visibleNavItems = navItems.filter(item => {
     if (item.superAdminOnly && !isSuperAdmin) {
       return false;

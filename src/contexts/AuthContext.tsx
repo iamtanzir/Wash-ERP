@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export type UserRole = "admin" | "wash_md" | "wash_manager" | "editor" | "viewer" | "operator";
+export type UserRole = "super_admin" | "admin" | "wash_md" | "wash_manager" | "editor" | "viewer" | "operator";
 
 export interface AuthUser {
   id: string;
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const usernameLower = user?.username?.trim().toLowerCase() || "";
   const roleLower = (user?.role || "").trim().toLowerCase();
-  const isSuperAdmin = usernameLower === "tanzirerp";
+  const isSuperAdmin = roleLower === "super_admin" || usernameLower === "tanzirerp";
 
   // Wash MD Role (Managing Director)
   const isWashMD = 
@@ -127,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isEditor = isAdmin || isWashManager || user?.role === "editor";
 
   const getRoleDisplayName = () => {
-    if (isSuperAdmin) return "Super Admin (Owner)";
+    if (isSuperAdmin) return "Super User (Owner)";
     if (roleLower === "wash_md" || usernameLower.includes("washmd") || usernameLower === "md") return "Wash MD (Managing Director)";
     if (roleLower === "wash_manager" || usernameLower.includes("manager")) return "Wash Manager";
     if (roleLower === "admin") return "System Admin";

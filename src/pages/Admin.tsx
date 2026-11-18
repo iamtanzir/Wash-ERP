@@ -67,7 +67,7 @@ export default function Admin() {
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newUser, setNewUser] = useState({ username: "", password: "", role: "viewer" as const });
+  const [newUser, setNewUser] = useState<{ username: string; password: string; role: string }>({ username: "", password: "", role: "viewer" });
   const [showNewUserPassword, setShowNewUserPassword] = useState(false);
   const [passwordModalUser, setPasswordModalUser] = useState<{ id: string; username: string } | null>(null);
   const [resetPasswordValue, setResetPasswordValue] = useState("");
@@ -172,10 +172,21 @@ export default function Admin() {
     setTimeout(() => setCopiedPuterDeploy(false), 2000);
   };
 
+  const getAuthHeaders = (extra?: Record<string, string>) => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("erp_token") : null;
+    return {
+      ...(extra || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+  };
+
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
-      const res = await fetch("/api/admin/users");
+      const res = await fetch("/api/admin/users", {
+        credentials: "include",
+        headers: getAuthHeaders()
+      });
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
       setUsers(data);
@@ -189,7 +200,10 @@ export default function Admin() {
   const fetchHostInfo = async () => {
     setLoadingHost(true);
     try {
-      const res = await fetch("/api/system/host-info");
+      const res = await fetch("/api/system/host-info", {
+        credentials: "include",
+        headers: getAuthHeaders()
+      });
       if (res.ok) {
         const data = await res.json();
         setHostInfo(data);
@@ -309,7 +323,8 @@ export default function Admin() {
     try {
       const res = await fetch("/api/admin/users", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          headers: getAuthHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(newUser)
       });
       const data = await res.json();
@@ -329,7 +344,8 @@ export default function Admin() {
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          headers: getAuthHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ role: newRole })
       });
       if (!res.ok) {
@@ -348,7 +364,8 @@ export default function Admin() {
       try {
           const res = await fetch(`/api/admin/users/${userId}`, {
               method: "PATCH",
-              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              headers: getAuthHeaders({ "Content-Type": "application/json" }),
               body: JSON.stringify({ status: newStatus })
           });
           if (!res.ok) {
@@ -404,7 +421,11 @@ export default function Admin() {
   const handleDeleteUser = async (userId: string) => {
       if (!confirm("Are you sure you want to delete this user? This cannot be undone.")) return;
       try {
-          const res = await fetch(`/api/admin/users/${userId}`, { method: "DELETE" });
+          const res = await fetch(`/api/admin/users/${userId}`, {
+              method: "DELETE",
+              credentials: "include",
+              headers: getAuthHeaders()
+          });
           if (!res.ok) {
               const data = await res.json();
               throw new Error(data.error || "Deletion failed");
@@ -554,9 +575,9 @@ export default function Admin() {
             <span className="inline-block px-3 py-1 bg-rose-100 text-rose-800 text-[11px] font-black uppercase tracking-wider rounded-full border border-rose-300">
               Restricted Access
             </span>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Super Admin Only</h2>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Super User Only</h2>
             <p className="text-sm text-slate-600 leading-relaxed">
-              <strong>HOST & CLOUD ADMIN</strong> (Local PC, Raspberry Pi hosting & Free Cloud Database control) is strictly reserved for the Super Admin (<strong>tanzirerp</strong>).
+              <strong>HOST &amp; CLOUD ADMIN</strong> (Local PC, Raspberry Pi hosting &amp; Free Cloud Database control) is strictly reserved for the <strong>Super User (super_admin)</strong> account.
             </p>
           </div>
 
@@ -570,8 +591,8 @@ export default function Admin() {
               <span className="font-bold text-rose-600 uppercase">{currentUser?.role || "viewer"}</span>
             </div>
             <div className="flex justify-between items-center text-slate-500 font-medium border-t border-slate-200 pt-2">
-              <span>Authorized Super Admin:</span>
-              <span className="font-mono font-bold text-emerald-600">tanzirerp</span>
+              <span>Authorized Role:</span>
+              <span className="font-mono font-bold text-emerald-600">super_admin</span>
             </div>
           </div>
 
@@ -1769,8 +1790,8 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
                 <Shield size={22} />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Admins</p>
-                <p className="text-2xl font-black text-slate-900">{users.filter(u => u.role === 'admin').length}</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Admins &amp; Super User</p>
+                <p className="text-2xl font-black text-slate-900">{users.filter(u => u.role === 'admin' || u.role === 'super_admin').length}</p>
               </div>
             </div>
 
@@ -1788,7 +1809,7 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
               <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Registered System Users</span>
-              <span className="text-xs text-slate-500 font-medium">Super Admin: <strong>tanzirerp</strong> (Protected)</span>
+              <span className="text-xs text-slate-500 font-medium">Super User: <strong className="uppercase">{currentUser?.username || 'super_admin'}</strong> (Protected)</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -2321,7 +2342,7 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
 
               <div className="bg-emerald-50 p-3 rounded-xl text-[11px] text-emerald-800 leading-relaxed flex items-center gap-2">
                 <CheckCircle2 size={15} className="shrink-0 text-emerald-600" />
-                <span>রিস্টোর করার সময় সুপার এডমিন (<strong>tanzirerp</strong>) অ্যাকাউন্ট স্বয়ংক্রিয়ভাবে সুরক্ষিত থাকে।</span>
+                <span>রিস্টোর করার সময় সুপার ইউজার (<strong>super_admin</strong>) অ্যাকাউন্ট স্বয়ংক্রিয়ভাবে সুরক্ষিত থাকে।</span>
               </div>
             </div>
           </div>
@@ -2543,7 +2564,7 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
                     <h2 className="text-xl font-bold text-white tracking-tight">Turso Cloud Credentials Injection</h2>
                   </div>
                   <p className="text-sm text-slate-400 leading-relaxed">
-                    As a Super Admin (<strong>tanzirerp</strong>), you can manually update Turso cloud credentials anytime. The credentials are encrypted and applied immediately.
+                    As the Super User (<strong>{currentUser?.username || 'super_admin'}</strong>), you can manually update Turso cloud credentials anytime. The credentials are encrypted and applied immediately.
                   </p>
                 </div>
                 
@@ -2682,7 +2703,7 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
                   </select>
                   {!isSuperAdmin && (
                     <p className="text-[10px] text-slate-400 mt-1">
-                      * Only the Super Admin (<strong>tanzirerp</strong>) can whitelist another Administrator.
+                      * Only the Super User (<strong>super_admin</strong>) can whitelist another Administrator.
                     </p>
                   )}
                 </div>

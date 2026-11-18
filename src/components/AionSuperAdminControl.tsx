@@ -33,8 +33,8 @@ export interface ActiveSession {
 }
 
 export default function AionSuperAdminControl() {
-  const { user } = useAuth();
-  const isSuperAdmin = user?.username?.toLowerCase() === 'tanzirerp';
+  const { user, isSuperAdmin } = useAuth();
+  const activeSuperUsername = user?.username || 'super_admin';
 
   // System States
   const [isSystemLocked, setIsSystemLocked] = useState(false);
@@ -48,7 +48,7 @@ export default function AionSuperAdminControl() {
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
     "[AionUI Agent Core] Initializing global super admin telemetry relay...",
     "[Tailscale Mesh] 5 node peers connected with zero trust microsegmentation.",
-    "[AionUI Security] Super admin credentials validated for user: tanzirerp.",
+    `[AionUI Security] Super User credentials validated for user: ${activeSuperUsername}.`,
     "[Ready] Listening for remote orchestration directives..."
   ]);
 
@@ -108,8 +108,8 @@ export default function AionSuperAdminControl() {
   const [sessions, setSessions] = useState<ActiveSession[]>([
     {
       sessionId: 'SESS-901',
-      username: 'tanzirerp',
-      role: 'Super Admin',
+      username: activeSuperUsername,
+      role: 'Super User',
       ip: '103.220.12.88 (Dhaka)',
       location: 'Dhaka HQ',
       device: 'Chrome / Windows 11',
@@ -161,8 +161,8 @@ export default function AionSuperAdminControl() {
   };
 
   const handleKillSession = (sessionId: string, username: string) => {
-    if (username === 'tanzirerp') {
-      toast.error("Cannot terminate Super Admin active session");
+    if (username.toLowerCase() === activeSuperUsername.toLowerCase()) {
+      toast.error("Cannot terminate Super User active session");
       return;
     }
     setSessions(prev => prev.filter(s => s.sessionId !== sessionId));
@@ -191,9 +191,9 @@ export default function AionSuperAdminControl() {
     return (
       <div className="p-8 bg-white border border-slate-200 rounded-3xl text-center space-y-4">
         <ShieldAlert size={48} className="text-rose-600 mx-auto" />
-        <h3 className="text-xl font-bold text-slate-900">Super Admin Access Only</h3>
+        <h3 className="text-xl font-bold text-slate-900">Super User Access Only</h3>
         <p className="text-sm text-slate-500">
-          AionUI Global Control is reserved for username <strong>tanzirerp</strong>.
+          AionUI Global Control is strictly reserved for the <strong>Super User (super_admin)</strong> account.
         </p>
       </div>
     );
@@ -408,8 +408,8 @@ export default function AionSuperAdminControl() {
                       {sess.device}
                     </td>
                     <td className="px-3 py-2.5 text-right">
-                      {sess.username === 'tanzirerp' ? (
-                        <span className="text-[10px] font-bold text-emerald-600">Active Admin</span>
+                      {sess.username.toLowerCase() === activeSuperUsername.toLowerCase() || sess.role === 'Super User' ? (
+                        <span className="text-[10px] font-bold text-emerald-600">Active Super User</span>
                       ) : (
                         <button
                           onClick={() => handleKillSession(sess.sessionId, sess.username)}

@@ -120,7 +120,7 @@ export default function OfficeCLICommandCenter() {
         <div className="mt-5 relative">
           <div className="flex items-center bg-slate-950 border border-slate-700 rounded-2xl focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all p-2">
             <div className="pl-3 pr-2 text-blue-400 font-mono font-bold text-sm flex items-center gap-1.5 shrink-0">
-              <span className="text-emerald-400">tanzirerp@wash-erp</span>
+              <span className="text-emerald-400">superadmin@wash-erp</span>
               <span className="text-slate-500">:</span>
               <span className="text-blue-400">~/office-cli$</span>
             </div>

@@ -279,7 +279,7 @@ Chief Wash Technologist Signature: ____________________
     logs.push(`[Update] Lot #201: Updated status to "${newStatus}"`);
     logs.push(`[Update] Lot #204: Updated status to "${newStatus}"`);
     logs.push(`[Update] Lot #209: Updated status to "${newStatus}"`);
-    logs.push(`[Audit Log] Saved batch operation by Super Admin (tanzirerp)`);
+    logs.push(`[Audit Log] Saved batch operation by Super User (super_admin)`);
 
     return {
       id,

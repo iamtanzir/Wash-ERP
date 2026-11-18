@@ -6,35 +6,6 @@ export class MemoryAdapter implements DatabaseAdapter {
 
   constructor() {
     console.log("[MEMORY DB] 🧠 In-Memory Database initialized.");
-    this.seedDefaults();
-  }
-
-  private seedDefaults() {
-    const users = this.getCollectionMap("users");
-    if (!users.has("admin")) {
-      users.set("admin", {
-        id: "admin",
-        username: "admin",
-        // Default hash for 'admin'
-        password_hash: "$2b$10$i4i9f6WVqBXp1r4etuh56OfjF/JLDqIBNt4dwleu1H4t7vgFXguFq",
-        role: "admin",
-        status: "active",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-    }
-    if (!users.has("tanzirerp")) {
-      users.set("tanzirerp", {
-        id: "tanzirerp",
-        username: "tanzirerp",
-        // Default hash for 'tanziradmin'
-        password_hash: "$2b$10$BXBCf2d0mmJ0UBd01KZsaufnW1huLoMoKqadELxNOBSDrMuHzcXg6",
-        role: "admin",
-        status: "active",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-    }
   }
 
   private getCollectionMap(collection: string): Map<string, any> {

@@ -1,0 +1,13 @@
+# Keep local workspace data, backups, docs, and chat attachments out of Vercel deployments
+data/
+docs/
+.aistudio/
+public/assets/aistudio/
+*.sqlite
+*.db
+*.parquet
+setup-rpi.sh
+start-local.sh
+start-local.bat
+start-online-tunnel.sh
+start-online-tunnel.bat

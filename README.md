@@ -293,7 +293,7 @@ schtasks /create /tn "ERP Hourly Backup" /tr "C:\ERP_Backup\backup.bat" /sc hour
 ## 🌐 AionUI Global Omni Control & OfficeCLI
 * **AionUI Global Control**:
   * [aionui.com](https://www.aionui.com/en/) অনুসরণে ডিজাইনকৃত সুপার অ্যাডমিন ড্যাশবোর্ড।
-  * সুপার অ্যাডমিন (`tanzirerp`) পৃথিবীর যেকোনো দেশ থেকে এক ক্লিকে সম্পূর্ণ সিস্টেম রিস্টার্ট, ক্যাশ ক্লিয়ারিং, ডেটাবেস ইঞ্জিন সুইচ এবং ব্যাকআপ মনিটর করতে পারেন।
+  * সুপার ইউজার (`super_admin`) পৃথিবীর যেকোনো দেশ থেকে এক ক্লিকে সম্পূর্ণ সিস্টেম রিস্টার্ট, ক্যাশ ক্লিয়ারিং, ডেটাবেস ইঞ্জিন সুইচ এবং ব্যাকআপ মনিটর করতে পারেন।
 * **OfficeCLI**:
   * [github.com/iOfficeAI/OfficeCLI](https://github.com/iOfficeAI/OfficeCLI) কমান্ড-লাইন আর্কিটেকচার অনুযায়ী ইন-অ্যাপ টার্মিনাল কমান্ড সেন্টার।
 
@@ -325,15 +325,27 @@ JWT_SECRET=internal-security-secret-key-2026
 
 ---
 
-## 🔐 ডিফল্ট সিস্টেম ইউজার ও ক্রেডেনশিয়ালস
-| Role | Username | Password | Permissions |
-| :--- | :--- | :--- | :--- |
-| **Super Admin** | `tanzirerp` | `tanziradmin` | Full Global Omni Access, Hosting & Cloud Control |
-| **System Admin** | `admin` | `admin` | All Modules, User Whitelist & Database Mode Switch |
-| **Wash MD** | `washmd` | `washmd123` | Full Production + Revenue P&L Financial Access |
-| **Wash Manager** | `washmanager` | `manager123` | Operations + Revenue P&L Financial Access |
-| **Operator** | `operator` | `operator123` | Data Entry (No Financial P&L Access) |
-| **Viewer** | `viewer` | `viewer123` | Read-only Reports (No Financial P&L Access) |
+## 🔐 First-Time Super User Setup & User Role Management
+নিরাপত্তার স্বার্থে সিস্টেমে **কোনো ডিফল্ট বা হার্ডকোডেড পাসওয়ার্ড রাখা হয়নি**।
+
+1. **First-Time Super User Setup (`/login`)**:
+   * প্রথমবার একটি নতুন/খালি ডাটাবেস (`Turso`, `Supabase`, `SQLite`, বা `Memory`) চালু করে `/login` পেজে ভিজিট করলে সিস্টেম স্বয়ংক্রিয়ভাবে **First-Time Super User Setup** স্ক্রিন দেখাবে।
+   * প্রথম ইউজার নিজের পছন্দের **Super User ID** ও **Master Password** দিয়ে সাইন-আপ করলে ডাটাবেস স্থায়ীভাবে সেই ইউজারকে **`super_admin`** রোল হিসেবে সংরক্ষণ করবে।
+   * প্রথম সুপার ইউজার তৈরি হয়ে যাওয়ার সাথে সাথে এই সেটআপ পেজটি স্থায়ীভাবে **লক (Locked)** হয়ে যাবে—পরবর্তীতে আর কেউ বাইরে থেকে সুপার ইউজার বা নতুন অ্যাকাউন্ট তৈরি করতে পারবে না।
+2. **Creating Many Team Users (সুপার ইউজারের মাধ্যমে ইউজার তৈরি)**:
+   * কেবলমাত্র **`super_admin`** রোলধারী সুপার ইউজার **Host & Cloud Admin → Users** প্যানেলে প্রবেশ করে ফ্যাক্টরি ও অফিসের জন্য অসংখ্য ইউজার (`System Admin`, `Wash MD`, `Wash Manager`, `Editor`, `Data Entry Operator`, `Viewer`) তৈরি, রোল পরিবর্তন ও পাসওয়ার্ড রিসেট করতে পারবেন।
+3. **Optional Headless Setup (Env Vars)**:
+   * ডকার বা অটোমেটেড ডিপ্লয়মেন্টের জন্য ডাটাবেস খালি থাকা অবস্থায় ঐচ্ছিকভাবে `.env`-এ `SUPER_ADMIN_USERNAME` ও `SUPER_ADMIN_PASSWORD` সেট করে প্রথম সুপার ইউজার অটো-প্রভিশন করা যাবে।
+
+| Role Key | Display Title | Permissions |
+| :--- | :--- | :--- |
+| **`super_admin`** | **Super User (Owner)** | Permanent DB-locked owner; creates/manages all users, Host/Cloud DB & global controls |
+| **`admin`** | **System Admin** | Operations & user management (cannot create, modify, or delete Super User or Admins) |
+| **`wash_md`** | **Wash MD** | Full Production + Revenue & P&L Financial Metrics Access |
+| **`wash_manager`** | **Wash Manager** | Daily Operations + Revenue & P&L Financial Metrics Access |
+| **`editor`** | **Editor** | Order & Daily Log Editing (No Financial P&L Access) |
+| **`operator`** | **Data Entry Operator** | Daily Floor & Dispatch Entry (No Financial P&L Access) |
+| **`viewer`** | **Viewer** | Read-only Reports & Status Dashboards (No Financial P&L Access) |
 
 ---
 
