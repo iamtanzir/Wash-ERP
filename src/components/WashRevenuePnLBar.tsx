@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  BarChart, 
   Bar, 
   XAxis, 
   YAxis, 
@@ -27,8 +26,7 @@ import {
   Calendar,
   Layers,
   RotateCcw,
-  ShieldCheck,
-  Lock
+  ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Order, DailyLog } from '../lib/api';
@@ -66,10 +64,10 @@ interface WashRevenuePnLBarProps {
 }
 
 export default function WashRevenuePnLBar({ orders = [], logs = [] }: WashRevenuePnLBarProps) {
-  const { canViewFinancialMetrics, isWashMD, isWashManager, user } = useAuth();
+  const { canViewFinancialMetrics, isWashMD, isWashManager } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState<string>('2026-10');
   const [currency, setCurrency] = useState<'USD' | 'BDT'>('USD');
-  const [bdtRate, setBdtRate] = useState<number>(121); // USD to BDT
+  const [bdtRate] = useState<number>(121); // USD to BDT
   const [activeTab, setActiveTab] = useState<'chart' | 'table' | 'breakdown'>('chart');
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [costingConfig, setCostingConfig] = useState<Record<string, WashCostingConfig>>(DEFAULT_WASH_COSTING);

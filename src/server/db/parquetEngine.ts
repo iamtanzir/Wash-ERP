@@ -112,7 +112,7 @@ export function buildParquetBuffer(
     codec,
     compressors: codec === "GZIP" ? writerCompressors : undefined,
     statistics: true,
-    createdBy: "Industrial Garment Washing ERP (RMG) Parquet Engine",
+    createdBy: "Industrial Garment ERP Parquet Engine",
     kvMetadata: [
       { key: "erp_table", value: options?.tableName || "erp_collection" },
       { key: "json_fields", value: JSON.stringify(jsonFields) },

@@ -10,17 +10,13 @@ import {
   LogOut, 
   ShieldCheck, 
   User as UserIcon,
-  History,
   ClipboardCheck,
-  Package,
   FileText,
   WashingMachine,
-  PhoneCall,
   Sun,
   Moon,
   Search,
   Sparkles,
-  Globe,
   Activity,
   Tv
 } from "lucide-react";
@@ -28,6 +24,7 @@ import { cn } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 import { useRealTimeClock, formatDhakaTime } from "../hooks/useRealTime";
+import { prefetchRoute } from "../lib/routePrefetch";
 
 interface NavItem {
   name: string;
@@ -61,7 +58,7 @@ const navItems: NavItem[] = [
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAdmin, isSuperAdmin, isEditor, isWashMD, isWashManager, canViewFinancialMetrics, getRoleDisplayName, logout } = useAuth();
+  const { user, isAdmin, isSuperAdmin, isWashMD, isWashManager, canViewFinancialMetrics, getRoleDisplayName, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSidebarFocused] = useState(false);
@@ -133,7 +130,7 @@ export default function Layout() {
         isSidebarOpen ? "w-64" : "w-0 md:w-0"
       )}>
         <div className="p-5 flex items-center justify-between overflow-hidden border-b border-slate-800/60">
-          <Link to="/" className="flex items-center gap-3 group" title="Industrial Garment Washing ERP (RMG)">
+          <Link to="/" className="flex items-center gap-3 group" title="Industrial Garment ERP">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-blue-500 to-indigo-500 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.4)] shrink-0 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.6)] transition-all">
               <WashingMachine size={22} className="text-white" strokeWidth={2.2} />
             </div>
@@ -157,18 +154,20 @@ export default function Layout() {
                   <Link
                     key={item.href}
                     to={item.href}
+                    onMouseEnter={() => prefetchRoute(item.href)}
+                    onFocus={() => prefetchRoute(item.href)}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200",
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 whitespace-nowrap cursor-pointer border",
                       isActive
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-900/50"
-                        : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 border-blue-400/60 text-white shadow-[0_4px_16px_rgba(37,99,235,0.45)] font-bold"
+                        : "border-transparent text-slate-300/85 hover:bg-slate-800/90 hover:border-slate-700/70 hover:text-white font-semibold"
                     )}
                   >
                     <item.icon
                       className={cn("flex-shrink-0 h-5 w-5", isActive ? "text-white" : "text-slate-400")}
                       aria-hidden="true"
                     />
-                    <span className="font-semibold text-sm tracking-wide">{item.name}</span>
+                    <span className="text-sm tracking-wide truncate">{item.name}</span>
                   </Link>
                 );
               })}
@@ -198,9 +197,9 @@ export default function Layout() {
                     {getRoleDisplayName()}
                   </p>
                   {canViewFinancialMetrics && (
-                    <span className="text-[8px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                      Financial Clearance (MD/Manager)
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-400 flex items-center gap-1 mt-0.5 truncate max-w-[165px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+                      <span className="truncate">Financial Clearance</span>
                     </span>
                   )}
                 </div>
@@ -209,10 +208,10 @@ export default function Layout() {
           </div>
           <button 
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-slate-800 hover:bg-red-900/20 rounded-md transition-all group"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold bg-rose-500/15 hover:bg-rose-600 text-rose-200 hover:text-white border border-rose-500/35 hover:border-rose-400 transition-all cursor-pointer group shadow-sm"
           >
-            <LogOut size={18} className="group-hover:translate-x-1 transition-transform" />
-            <span className="text-sm font-medium">Log out</span>
+            <LogOut size={18} className="group-hover:translate-x-1 transition-transform text-rose-300 group-hover:text-white" />
+            <span>Log out</span>
           </button>
         </div>
       </aside>
@@ -221,7 +220,7 @@ export default function Layout() {
       {!isSidebarOpen && (
         <button 
           onClick={() => setIsSidebarOpen(true)}
-          className="fixed bottom-6 right-6 md:hidden z-50 w-14 h-14 bg-blue-600 text-slate-800 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
+          className="fixed bottom-6 right-6 md:hidden z-50 w-14 h-14 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
         >
           <Menu size={28} />
         </button>
@@ -270,6 +269,8 @@ export default function Layout() {
                       <Link
                         key={item.href}
                         to={item.href}
+                        onMouseEnter={() => prefetchRoute(item.href)}
+                        onFocus={() => prefetchRoute(item.href)}
                         onClick={() => setSearchQuery("")}
                         className="flex items-center gap-3 px-3 py-2 hover:bg-slate-100 transition-colors group"
                       >
@@ -324,21 +325,13 @@ export default function Layout() {
           <Outlet />
         </div>
 
-        {/* Desktop Tooltip / Status Footer */}
-        <footer className="h-10 bg-slate-50 backdrop-blur-md px-4 md:px-6 flex items-center justify-between text-[10px] md:text-xs text-slate-400 shrink-0 border-t border-slate-200">
-          <div className="flex gap-2 md:gap-4 items-center">
-            <span className="font-bold text-slate-700">Industrial Garment Washing ERP (RMG)</span>
-            <span className="hidden sm:inline text-slate-300">|</span>
-            <span className="hidden sm:inline text-slate-600 font-medium">© 2026 Tanzir Ahmed • All Rights Reserved</span>
-            <span className="hidden sm:inline text-slate-300">|</span>
-            <span className="flex items-center gap-1 text-emerald-600 font-medium">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div> 
-              Cloud Sync Active
-            </span>
-          </div>
-          <div className="flex gap-2 md:gap-4 items-center text-[10px] md:text-xs">
-            <span className="text-slate-500 font-medium hidden md:inline">Protected by Cyber Security & Copyright Law</span>
-          </div>
+        {/* Clean Minimal Status Footer */}
+        <footer className="h-9 bg-slate-50 px-4 md:px-6 flex items-center justify-between text-[11px] text-slate-500 shrink-0 border-t border-slate-200">
+          <span className="flex items-center gap-1.5 text-emerald-600 font-semibold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            Cloud Sync Active
+          </span>
+          <span className="text-slate-400 font-mono text-[10px]">WASH ERP</span>
         </footer>
       </main>
     </div>

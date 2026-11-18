@@ -5,8 +5,9 @@ import { formatNumber, formatDate } from '../lib/utils';
 import { useState, useMemo } from 'react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Filter, PlusCircle, Database, RefreshCw, Cpu, Package, Receipt, Users, Settings, WashingMachine, Target, TrendingUp, TrendingDown, Award, Search, X, Download, FileSpreadsheet, FolderKanban, ShoppingCart, Layers, Tv } from 'lucide-react';
+import { Filter, PlusCircle, Database, RefreshCw, Cpu, Package, Receipt, Users, Settings, WashingMachine, Target, TrendingUp, Award, Search, X, FileSpreadsheet, FolderKanban, ShoppingCart, Layers, Tv } from 'lucide-react';
 import { toast } from 'sonner';
+import { prefetchRoute } from '../lib/routePrefetch';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -51,7 +52,7 @@ interface OrderStats {
 }
 
 export default function Dashboard() {
-  const { canViewFinancialMetrics, user } = useAuth();
+  const { canViewFinancialMetrics } = useAuth();
   const [workspace, setWorkspace] = useState<"wash" | "manufacturing" | "stock" | "accounts" | "hr" | "crm" | "projects" | "purchase" | "apex" | "ops" | "customizer">("wash");
   const [dailyTarget, setDailyTarget] = useState<number>(() => {
     const saved = Number(typeof window !== "undefined" ? localStorage.getItem("wash_daily_target") : 0);
@@ -762,19 +763,21 @@ export default function Dashboard() {
           )}
           <Link
             to="/wash-floor-live"
-            className="flex items-center gap-1.5 px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition-colors shadow-sm"
+            onMouseEnter={() => prefetchRoute("/wash-floor-live")}
+            onFocus={() => prefetchRoute("/wash-floor-live")}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white border border-cyan-400/70 shadow-[0_2px_12px_rgba(14,165,233,0.28)] hover:shadow-[0_0_16px_rgba(14,165,233,0.45)] text-xs font-bold transition-all whitespace-nowrap shrink-0 cursor-pointer"
             title="Open Full-Screen Factory TV Monitor"
           >
-            <Tv size={13} className="text-sky-400" />
+            <Tv size={14} className="text-cyan-400" />
             <span>Wash Floor Live</span>
           </Link>
           <button
             onClick={handleManualRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-medium rounded-lg transition-colors disabled:opacity-50"
+            className="btn-neon-glass btn-neon-glass--blue gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 disabled:opacity-50 cursor-pointer"
             title="Manual Sync Now"
           >
-            <RefreshCw size={13} className={isRefreshing ? "animate-spin text-blue-600" : ""} />
+            <RefreshCw size={13} className={isRefreshing ? "animate-spin" : ""} />
             <span>{isRefreshing ? "Syncing..." : "Sync Now"}</span>
           </button>
         </div>
@@ -1196,182 +1199,171 @@ export default function Dashboard() {
       {/* Anchor identifier for scrolling to active workspace */}
       <div id="workspace-anchor"></div>
 
-      {/* Universal ERP Workspace switcher cards (Frappe Desk style) */}
-      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
+      {/* Universal ERP Workspace switcher cards */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
-            Frappe Desk Workspace Explorer
+          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+            ERP Workspace Explorer
           </h2>
+          <span className="text-[11px] font-medium text-slate-400">
+            Click any module card to switch workspace
+          </span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3">
-          <button 
-            onClick={() => setWorkspace("wash")}
-            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
-              workspace === "wash" 
-                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
-                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-            }`}
-          >
-            <span className="text-lg">👕</span>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide">Garment Wash</p>
-              <p className={`text-[9px] mt-0.5 ${workspace === "wash" ? "text-blue-100" : "text-slate-400"}`}>Washing & WIP Status</p>
-            </div>
-          </button>
-
-          <button 
-            onClick={() => setWorkspace("crm")}
-            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
-              workspace === "crm" 
-                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
-                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-            }`}
-          >
-            <Target size={16} className={workspace === "crm" ? "text-slate-800" : "text-slate-400"} />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide">CRM & Sales</p>
-              <p className={`text-[9px] mt-0.5 ${workspace === "crm" ? "text-blue-100" : "text-slate-400"}`}>Leads & Pipeline</p>
-            </div>
-          </button>
-
-          <button 
-            onClick={() => setWorkspace("manufacturing")}
-            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
-              workspace === "manufacturing" 
-                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
-                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-            }`}
-          >
-            <Cpu size={16} className={workspace === "manufacturing" ? "text-slate-800" : "text-slate-400"} />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide">Manufacturing</p>
-              <p className={`text-[9px] mt-0.5 ${workspace === "manufacturing" ? "text-blue-100" : "text-slate-400"}`}>BOM & Work Orders</p>
-            </div>
-          </button>
-
-          <button 
-            onClick={() => setWorkspace("stock")}
-            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
-              workspace === "stock" 
-                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
-                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-            }`}
-          >
-            <Package size={16} className={workspace === "stock" ? "text-slate-800" : "text-slate-400"} />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide">Stock Room</p>
-              <p className={`text-[9px] mt-0.5 ${workspace === "stock" ? "text-blue-100" : "text-slate-400"}`}>SKU Item Ledgers</p>
-            </div>
-          </button>
-
-          <button 
-            onClick={() => setWorkspace("purchase")}
-            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
-              workspace === "purchase" 
-                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
-                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-            }`}
-          >
-            <ShoppingCart size={16} className={workspace === "purchase" ? "text-slate-800" : "text-slate-400"} />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide">Purchase</p>
-              <p className={`text-[9px] mt-0.5 ${workspace === "purchase" ? "text-blue-100" : "text-slate-400"}`}>RFQs & Sourcing</p>
-            </div>
-          </button>
-
-          <button 
-            onClick={() => setWorkspace("projects")}
-            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
-              workspace === "projects" 
-                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
-                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-            }`}
-          >
-            <FolderKanban size={16} className={workspace === "projects" ? "text-slate-800" : "text-slate-400"} />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide">Projects</p>
-              <p className={`text-[9px] mt-0.5 ${workspace === "projects" ? "text-blue-100" : "text-slate-400"}`}>Gantt & Timesheets</p>
-            </div>
-          </button>
-
-          {/* Financial Accounts - Only visible to Wash MD or Wash Manager */}
-          {canViewFinancialMetrics && (
-            <button 
-              onClick={() => setWorkspace("accounts")}
-              className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
-                workspace === "accounts" 
-                  ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
-                  : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              <Receipt size={16} className={workspace === "accounts" ? "text-slate-800" : "text-slate-400"} />
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide">Accounts</p>
-                <p className={`text-[9px] mt-0.5 ${workspace === "accounts" ? "text-blue-100" : "text-slate-400"}`}>Finance & Invoicing</p>
-              </div>
-            </button>
-          )}
-
-          <button 
-            onClick={() => setWorkspace("hr")}
-            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
-              workspace === "hr" 
-                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
-                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-            }`}
-          >
-            <Users size={16} className={workspace === "hr" ? "text-slate-800" : "text-slate-400"} />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide">HR & Payroll</p>
-              <p className={`text-[9px] mt-0.5 ${workspace === "hr" ? "text-blue-100" : "text-slate-400"}`}>Staff & Attendance</p>
-            </div>
-          </button>
-
-          <button 
-            onClick={() => setWorkspace("apex")}
-            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
-              workspace === "apex" 
-                ? "bg-amber-600 border-amber-600 text-slate-800 shadow-md shadow-amber-200" 
-                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-            }`}
-          >
-            <Layers size={16} className={workspace === "apex" ? "text-slate-800" : "text-amber-600"} />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide">Oracle APEX</p>
-              <p className={`text-[9px] mt-0.5 ${workspace === "apex" ? "text-amber-100" : "text-slate-400"}`}>Low-Code & SQL</p>
-            </div>
-          </button>
-
-          <button 
-            onClick={() => setWorkspace("ops")}
-            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
-              workspace === "ops" 
-                ? "bg-purple-700 border-purple-700 text-white shadow-md shadow-purple-200" 
-                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-            }`}
-          >
-            <Layers size={16} className={workspace === "ops" ? "text-white" : "text-purple-700"} />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide">Ops Suite</p>
-              <p className={`text-[9px] mt-0.5 ${workspace === "ops" ? "text-purple-100" : "text-slate-400"}`}>Kanban • QC • Maint</p>
-            </div>
-          </button>
-
-          <button 
-            onClick={() => setWorkspace("customizer")}
-            className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between h-24 cursor-pointer select-none ${
-              workspace === "customizer" 
-                ? "bg-blue-600 border-blue-600 text-slate-800 shadow-md shadow-blue-200" 
-                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-            }`}
-          >
-            <Settings size={16} className={workspace === "customizer" ? "text-slate-800" : "text-slate-400"} />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide">Customize Form</p>
-              <p className={`text-[9px] mt-0.5 ${workspace === "customizer" ? "text-blue-100" : "text-slate-400"}`}>Meta Custom Columns</p>
-            </div>
-          </button>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {[
+            {
+              id: "wash" as const,
+              title: "Garment Wash",
+              sub: "Washing & WIP Status",
+              icon: <WashingMachine size={16} />,
+              activeBg: "bg-gradient-to-br from-blue-600 to-cyan-600 border-blue-500 shadow-[0_6px_18px_rgba(37,99,235,0.32)]",
+              idleIcon: "bg-blue-50 text-blue-600 border-blue-200",
+              hoverBorder: "hover:border-blue-400 hover:bg-blue-50/40",
+            },
+            {
+              id: "crm" as const,
+              title: "CRM & Sales",
+              sub: "Leads & Pipeline",
+              icon: <Target size={16} />,
+              activeBg: "bg-gradient-to-br from-sky-600 to-blue-600 border-sky-500 shadow-[0_6px_18px_rgba(2,132,199,0.32)]",
+              idleIcon: "bg-sky-50 text-sky-600 border-sky-200",
+              hoverBorder: "hover:border-sky-400 hover:bg-sky-50/40",
+            },
+            {
+              id: "manufacturing" as const,
+              title: "Manufacturing",
+              sub: "BOM & Work Orders",
+              icon: <Cpu size={16} />,
+              activeBg: "bg-gradient-to-br from-indigo-600 to-violet-600 border-indigo-500 shadow-[0_6px_18px_rgba(79,70,229,0.32)]",
+              idleIcon: "bg-indigo-50 text-indigo-600 border-indigo-200",
+              hoverBorder: "hover:border-indigo-400 hover:bg-indigo-50/40",
+            },
+            {
+              id: "stock" as const,
+              title: "Stock Room",
+              sub: "SKU Item Ledgers",
+              icon: <Package size={16} />,
+              activeBg: "bg-gradient-to-br from-emerald-600 to-teal-600 border-emerald-500 shadow-[0_6px_18px_rgba(5,150,105,0.32)]",
+              idleIcon: "bg-emerald-50 text-emerald-600 border-emerald-200",
+              hoverBorder: "hover:border-emerald-400 hover:bg-emerald-50/40",
+            },
+            {
+              id: "purchase" as const,
+              title: "Purchase",
+              sub: "RFQs & Sourcing",
+              icon: <ShoppingCart size={16} />,
+              activeBg: "bg-gradient-to-br from-violet-600 to-purple-600 border-violet-500 shadow-[0_6px_18px_rgba(124,58,237,0.32)]",
+              idleIcon: "bg-violet-50 text-violet-600 border-violet-200",
+              hoverBorder: "hover:border-violet-400 hover:bg-violet-50/40",
+            },
+            {
+              id: "projects" as const,
+              title: "Projects",
+              sub: "Gantt & Timesheets",
+              icon: <FolderKanban size={16} />,
+              activeBg: "bg-gradient-to-br from-teal-600 to-emerald-600 border-teal-500 shadow-[0_6px_18px_rgba(13,148,136,0.32)]",
+              idleIcon: "bg-teal-50 text-teal-600 border-teal-200",
+              hoverBorder: "hover:border-teal-400 hover:bg-teal-50/40",
+            },
+            ...(canViewFinancialMetrics
+              ? [
+                  {
+                    id: "accounts" as const,
+                    title: "Accounts",
+                    sub: "Finance & Invoicing",
+                    icon: <Receipt size={16} />,
+                    activeBg: "bg-gradient-to-br from-amber-600 to-orange-600 border-amber-500 shadow-[0_6px_18px_rgba(217,119,6,0.32)]",
+                    idleIcon: "bg-amber-50 text-amber-600 border-amber-200",
+                    hoverBorder: "hover:border-amber-400 hover:bg-amber-50/40",
+                  },
+                ]
+              : []),
+            {
+              id: "hr" as const,
+              title: "HR & Payroll",
+              sub: "Staff & Attendance",
+              icon: <Users size={16} />,
+              activeBg: "bg-gradient-to-br from-rose-600 to-pink-600 border-rose-500 shadow-[0_6px_18px_rgba(225,29,72,0.32)]",
+              idleIcon: "bg-rose-50 text-rose-600 border-rose-200",
+              hoverBorder: "hover:border-rose-400 hover:bg-rose-50/40",
+            },
+            {
+              id: "apex" as const,
+              title: "Oracle APEX",
+              sub: "Low-Code & SQL",
+              icon: <Layers size={16} />,
+              activeBg: "bg-gradient-to-br from-orange-600 to-amber-600 border-orange-500 shadow-[0_6px_18px_rgba(234,88,12,0.32)]",
+              idleIcon: "bg-orange-50 text-orange-600 border-orange-200",
+              hoverBorder: "hover:border-orange-400 hover:bg-orange-50/40",
+            },
+            {
+              id: "ops" as const,
+              title: "Ops Suite",
+              sub: "Kanban · QC · Maint",
+              icon: <Layers size={16} />,
+              activeBg: "bg-gradient-to-br from-purple-600 to-indigo-600 border-purple-500 shadow-[0_6px_18px_rgba(147,51,234,0.32)]",
+              idleIcon: "bg-purple-50 text-purple-600 border-purple-200",
+              hoverBorder: "hover:border-purple-400 hover:bg-purple-50/40",
+            },
+            {
+              id: "customizer" as const,
+              title: "Customize Form",
+              sub: "Meta Custom Columns",
+              icon: <Settings size={16} />,
+              activeBg: "bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 shadow-[0_6px_18px_rgba(15,23,42,0.28)]",
+              idleIcon: "bg-slate-100 text-slate-600 border-slate-200",
+              hoverBorder: "hover:border-slate-400 hover:bg-slate-100/70",
+            },
+          ].map((tab) => {
+            const isActive = workspace === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setWorkspace(tab.id)}
+                className={`p-3 rounded-xl text-left border transition-all duration-150 flex flex-col justify-between min-h-[92px] min-w-0 cursor-pointer select-none ${
+                  isActive
+                    ? `${tab.activeBg} text-white ring-2 ring-offset-1 ring-blue-400/40`
+                    : `bg-slate-50/70 border-slate-200 text-slate-800 ${tab.hoverBorder} hover:shadow-sm hover:-translate-y-0.5`
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2 w-full">
+                  <span
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center border shrink-0 ${
+                      isActive
+                        ? "bg-white/20 border-white/30 text-white"
+                        : tab.idleIcon
+                    }`}
+                  >
+                    {tab.icon}
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+                      isActive ? "text-white/95" : "text-slate-400"
+                    }`}
+                  >
+                    {isActive ? "Active" : "Open"}
+                  </span>
+                </div>
+                <div className="mt-2 min-w-0 w-full">
+                  <p
+                    className={`text-xs font-extrabold uppercase tracking-wide truncate ${
+                      isActive ? "text-white" : "text-slate-900"
+                    }`}
+                  >
+                    {tab.title}
+                  </p>
+                  <p
+                    className={`text-[10px] mt-0.5 truncate ${
+                      isActive ? "text-white/85" : "text-slate-500"
+                    }`}
+                  >
+                    {tab.sub}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -1886,13 +1878,17 @@ export default function Dashboard() {
                 />
                 <button
                   onClick={handleExportToExcel}
-                  className="bg-[#107c41] hover:bg-[#0b592e] text-slate-800 px-3 py-1.5 rounded text-xs transition-colors flex items-center gap-1.5 font-bold cursor-pointer"
+                  className="btn-neon-glass btn-neon-glass--emerald px-3.5 py-1.5 rounded-lg text-xs font-bold gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
                   title="Export current filtered status report to Excel"
                 >
                   <FileSpreadsheet size={14} />
-                  Export to Excel
+                  <span>Export to Excel</span>
                 </button>
-                <Link to="/new-plan" className="bg-blue-600 text-slate-800 px-3 py-1.5 rounded text-xs hover:bg-blue-700 transition-colors flex items-center">
+                <Link
+                  to="/new-plan"
+                  onMouseEnter={() => prefetchRoute("/new-plan")}
+                  className="btn-neon-glass btn-neon-glass--blue px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0"
+                >
                   + New Plan
                 </Link>
               </div>

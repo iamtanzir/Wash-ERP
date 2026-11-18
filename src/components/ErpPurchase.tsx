@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, ShoppingCart, Truck, ClipboardList, TrendingUp, DollarSign, Star, FileText, CheckCircle } from "lucide-react";
+import { Plus, ShoppingCart, ClipboardList, TrendingUp, DollarSign, Star, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
-import { formatNumber, formatDate } from "../lib/utils";
+import { formatNumber } from "../lib/utils";
 
 interface RFQ {
   id?: string;

@@ -1,12 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
-  Ship, 
   AlertTriangle, 
-  CheckCircle2, 
   Search, 
-  Filter, 
   Download, 
-  ArrowRight, 
   Activity, 
   Upload, 
   Table2, 
@@ -19,13 +15,10 @@ import {
   Calendar,
   Layers,
   Clock,
-  Sparkles,
   Info,
   ChevronDown,
-  ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Check,
   X
 } from 'lucide-react';
 import { cn, formatNumber } from '../lib/utils';

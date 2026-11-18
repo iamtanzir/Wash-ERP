@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, Order, DailyLog as DBLog } from '../lib/api';
 import { formatNumber } from '../lib/utils';
 import { toast } from 'sonner';
-import { CheckCircle, Lock, AlertCircle } from 'lucide-react';
+import { Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function CloseOrder() {

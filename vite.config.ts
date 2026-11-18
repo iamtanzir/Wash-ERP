@@ -59,6 +59,14 @@ export default defineConfig(({mode}) => {
               if (id.includes('lucide-react')) {
                 return 'vendor-icons';
               }
+              // Core React Router
+              if (id.includes('react-router')) {
+                return 'vendor-router';
+              }
+              // Parquet & Optional Cloud SDKs
+              if (id.includes('hyparquet') || id.includes('firebase') || id.includes('@supabase') || id.includes('@libsql') || id.includes('pocketbase')) {
+                return 'vendor-storage';
+              }
               // Lightweight UI Utilities
               if (id.includes('clsx') || id.includes('tailwind-merge') || id.includes('sonner')) {
                 return 'vendor-ui';

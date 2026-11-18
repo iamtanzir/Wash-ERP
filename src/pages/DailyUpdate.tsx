@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { formatNumber, formatDate } from '../lib/utils';
 import { toast } from 'sonner';
-import { PlusCircle, History, Table2, Sheet, Download } from 'lucide-react';
+import { PlusCircle, History, Table2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function DailyUpdate() {

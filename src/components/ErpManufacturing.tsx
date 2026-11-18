@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, CheckCircle, Package, TrendingUp, Calendar, ShieldCheck, Tag, Cpu, FileText, WashingMachine } from "lucide-react";
+import { Plus, Calendar, Cpu, WashingMachine } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { formatNumber, formatDate } from "../lib/utils";

@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Play, Database, FileCode2, LayoutTemplate, Plus, Terminal, Search, Settings, HelpCircle, Layers, RefreshCw } from "lucide-react";
+import { Play, Database, FileCode2, LayoutTemplate, Plus, Terminal, Search, Layers } from "lucide-react";
 import { toast } from "sonner";
-import { formatNumber } from "../lib/utils";
 
 interface ApexApp {
   id?: string;

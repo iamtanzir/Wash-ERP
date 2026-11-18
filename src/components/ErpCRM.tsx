@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Target, TrendingUp, DollarSign, Award, ArrowRight, UserCheck, BarChart3, Search, FolderKanban } from "lucide-react";
+import { Plus, TrendingUp, DollarSign, Award, ArrowRight, UserCheck, BarChart3, Search, FolderKanban } from "lucide-react";
 import { toast } from "sonner";
 import { formatNumber } from "../lib/utils";
 

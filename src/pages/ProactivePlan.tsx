@@ -1,32 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api, Order } from '../lib/api';
+import { api } from '../lib/api';
 import { formatNumber, formatDate } from '../lib/utils';
 import { 
   Calendar, 
   Cpu, 
   Sparkles, 
-  Filter, 
   Clock, 
   CheckCircle2, 
   AlertCircle, 
   ArrowRight, 
-  CheckSquare, 
   Zap, 
   Activity, 
   RefreshCw,
-  Sliders,
   Send,
   Download,
   ExternalLink,
   ShieldAlert,
-  Info,
-  Server,
   WashingMachine,
   Layers,
-  ArrowUpRight,
   Settings,
-  HelpCircle,
   TrendingUp,
   X
 } from 'lucide-react';

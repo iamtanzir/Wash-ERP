@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import { Toaster } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { MotionConfig } from 'motion/react';
 
 // Code-splitting with Rollup dynamic imports
 const Login = lazy(() => import('./pages/Login'));
@@ -39,38 +40,40 @@ function PageFallback() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Toaster position="top-right" richColors />
-        <Suspense fallback={<PageFallback />}>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            
-            <Route element={<ProtectedRoute />}>
-              <Route path="/wash-floor-live" element={<WashFloorLive />} />
-              <Route path="/" element={<Layout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="cpl-report" element={<CplReport />} />
-                <Route path="daily-update" element={<DailyUpdate />} />
-                <Route path="hm-tod" element={<HMTOD />} />
-                <Route path="proactive-plan" element={<ProactivePlan />} />
-                <Route path="iot-tracking" element={<IoTTracking />} />
-                <Route path="wash-mc-plan" element={<WashMcLoadPlan />} />
-                <Route path="close-order" element={<CloseOrder />} />
-                <Route path="data-bank" element={<DataBank />} />
-                
-                {/* Open to all authenticated users, but read-only for viewers */}
-                <Route path="new-plan" element={<NewERPPlan />} />
-                
-                {/* Admin Only for management, but listing open to all */}
-                <Route path="admin" element={<Admin />} />
+    <MotionConfig reducedMotion="user">
+      <AuthProvider>
+        <BrowserRouter>
+          <Toaster position="top-right" richColors />
+          <Suspense fallback={<PageFallback />}>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              
+              <Route element={<ProtectedRoute />}>
+                <Route path="/wash-floor-live" element={<WashFloorLive />} />
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="cpl-report" element={<CplReport />} />
+                  <Route path="daily-update" element={<DailyUpdate />} />
+                  <Route path="hm-tod" element={<HMTOD />} />
+                  <Route path="proactive-plan" element={<ProactivePlan />} />
+                  <Route path="iot-tracking" element={<IoTTracking />} />
+                  <Route path="wash-mc-plan" element={<WashMcLoadPlan />} />
+                  <Route path="close-order" element={<CloseOrder />} />
+                  <Route path="data-bank" element={<DataBank />} />
+                  
+                  {/* Open to all authenticated users, but read-only for viewers */}
+                  <Route path="new-plan" element={<NewERPPlan />} />
+                  
+                  {/* Admin Only for management, but listing open to all */}
+                  <Route path="admin" element={<Admin />} />
+                </Route>
               </Route>
-            </Route>
-            
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </AuthProvider>
+              
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </AuthProvider>
+    </MotionConfig>
   );
 }

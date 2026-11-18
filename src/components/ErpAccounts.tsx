@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, DollarSign, Receipt, CreditCard, TrendingUp, ShieldCheck, Check, AlertCircle } from "lucide-react";
+import { Plus, Receipt, Check } from "lucide-react";
 import { toast } from "sonner";
 import { formatNumber, formatDate } from "../lib/utils";
 

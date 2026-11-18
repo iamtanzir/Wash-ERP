@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, CheckSquare, Clock, User, Calendar, BarChart2, Activity, Play, CheckCircle } from "lucide-react";
+import { Plus, CheckSquare, Clock, User, Calendar, BarChart2, Activity, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
-import { formatNumber, formatDate } from "../lib/utils";
+import { formatDate } from "../lib/utils";
 
 interface Task {
   id?: string;

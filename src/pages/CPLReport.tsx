@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { api, DailyLog, Order } from '../lib/api';
+import { api, Order } from '../lib/api';
 import { formatNumber, formatDate } from '../lib/utils';
 import { useState, useMemo } from 'react';
 import React from 'react';

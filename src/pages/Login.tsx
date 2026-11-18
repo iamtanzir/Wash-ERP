@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { WashingMachine, User, KeyRound, LogIn, ShieldAlert, PhoneCall, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
+import { SPRING_TACTILE } from '../components/SpringMotion';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -34,7 +35,7 @@ export default function Login() {
       if (contentType && contentType.includes("application/json")) {
         data = await res.json();
       } else if (!res.ok) {
-        const textError = await res.text();
+        await res.text();
         throw new Error(`Server Error (${res.status})`);
       }
 
@@ -61,9 +62,9 @@ export default function Login() {
         
         {/* Top Logo Brand */}
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={{ scale: 0.88, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.3 }}
+          transition={SPRING_TACTILE}
           className="mb-4 flex flex-col items-center"
         >
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-blue-500 to-indigo-500 flex items-center justify-center shadow-[0_0_25px_rgba(59,130,246,0.45)] mb-3">
@@ -134,7 +135,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 bg-[#1E62FF] hover:bg-blue-600 text-white font-black py-3.5 px-4 rounded-xl shadow-[0_4px_20px_rgba(30,98,255,0.4)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-2 btn-neon-glass btn-neon-glass--dark btn-neon-glass--blue font-black py-3.5 px-4 rounded-xl gap-2 text-sm uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -169,21 +170,21 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Support Developer Button with Exact Requested Neon Pink Style */}
+        {/* Support Developer Button with Glowing Neon Glassmorphism */}
         <div className="mt-5 flex justify-center w-full">
           <a
             href="https://www.supportkori.com/pay/tanzirahmed"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center border-2 border-[#E11D48] bg-[#170C1B] hover:bg-[#23102A] transition-all px-7 py-2 rounded-full shadow-[0_0_15px_rgba(225,29,72,0.35)] active:scale-95 group"
+            className="btn-neon-glass btn-neon-glass--dark btn-neon-glass--rose px-7 py-2 rounded-full group"
           >
-            <span className="text-[#FF2D78] font-black text-xs tracking-wider uppercase drop-shadow-[0_0_8px_rgba(255,45,120,0.6)]">
+            <span className="text-[#FF4D8D] font-black text-xs tracking-wider uppercase drop-shadow-[0_0_8px_rgba(255,45,120,0.65)]">
               SUPPORT
             </span>
             <span className="mx-1.5 text-sm drop-shadow-[0_0_6px_rgba(255,45,120,0.8)]">
               💖
             </span>
-            <span className="text-[#FF2D78] font-black text-xs tracking-wider uppercase drop-shadow-[0_0_8px_rgba(255,45,120,0.6)]">
+            <span className="text-[#FF4D8D] font-black text-xs tracking-wider uppercase drop-shadow-[0_0_8px_rgba(255,45,120,0.65)]">
               DEVELOPER
             </span>
           </a>
@@ -195,10 +196,7 @@ export default function Login() {
       <div className="fixed bottom-5 right-5 z-40">
         <a
           href="tel:01710110490"
-          className="flex items-center gap-2.5 px-5 py-2.5 rounded-full shadow-[0_4px_20px_rgba(30,100,255,0.45)] hover:shadow-[0_6px_25px_rgba(106,71,255,0.6)] hover:scale-105 active:scale-95 transition-all cursor-pointer border border-blue-300/30 backdrop-blur-sm"
-          style={{
-            background: 'linear-gradient(90deg, #1E62FF 0%, #3B5FF6 45%, #6A47FF 100%)',
-          }}
+          className="btn-neon-glass btn-neon-glass--dark btn-neon-glass--cyan gap-2.5 px-5 py-2.5 rounded-full cursor-pointer"
         >
           <PhoneCall size={17} className="text-[#FFDE21] stroke-[2.5] shrink-0 drop-shadow-[0_0_4px_rgba(255,222,33,0.5)]" />
           <div className="flex items-center gap-1.5 leading-none">

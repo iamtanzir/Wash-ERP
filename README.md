@@ -1,7 +1,7 @@
-# Industrial Garment Washing ERP (RMG)
+# Industrial Garment ERP
 
 <p align="center">
-  <img src="public/banner.png" width="100%" alt="Industrial Garment Washing ERP (RMG) Banner" style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.15);" />
+  <img src="public/banner.png" width="100%" alt="Industrial Garment ERP Banner" style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.15);" />
 </p>
 
 <p align="center">
@@ -15,9 +15,9 @@
 
 ---
 
-## 📦 Industrial Garment Washing ERP (RMG) Modules
+## 📦 Industrial Garment ERP Modules
 ```text
-Industrial Garment Washing ERP (RMG) Modules:
+Industrial Garment ERP Modules:
 ├── 🗂️ Order Management (NEXT ERP Plan - Duplicate Prevention & Auto-Mapping)
 ├── 🧵 Fabrics Tracking CPL (Receive / Delivery / Sub-Factory / WIP in Kg & Pcs)
 ├── 🧺 Garments Tracking (Wash Floor-wise / Sub-Factory & Batch-Load Tracking)
@@ -347,7 +347,7 @@ JWT_SECRET=internal-security-secret-key-2026
 ## ⚖️ আইনগত সতর্কবার্তা ও কপিরাইট অধিকার (Legal Notice)
 
 > **Developer & Owner:** **Tanzir Ahmed**  
-> **Official ERP Software:** Industrial Garment Washing ERP (RMG)  
+> **Official ERP Software:** Industrial Garment ERP  
 > **Copyright:** © 2026 Tanzir Ahmed. All Rights Reserved.
 
 ### ⚠️ পাইরেসি ও অননুমোদিত নকল সংক্রান্ত সতর্কবার্তা:

@@ -149,7 +149,7 @@ export async function pushBuyersToRpc(
           name,
           is_company: true,
           customer_rank: 1,
-          comment: "Synced from Industrial Garment Washing ERP (RMG)",
+          comment: "Synced from Industrial Garment ERP",
         },
       ]);
       created++;
@@ -192,7 +192,7 @@ export function generateErpDockerCompose(options?: {
   const port = options?.httpPort || 3000;
 
   return `# ============================================================================
-# Industrial Garment Washing ERP (RMG) - Self-Hosted Production Stack
+# Industrial Garment ERP - Self-Hosted Production Stack
 # Runs 100% Free on Oracle Cloud Always Free VM, Ubuntu PC, or Windows Docker
 # ============================================================================
 services:

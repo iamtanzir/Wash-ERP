@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../lib/api';
-import { Activity, Cpu, Wifi, AlertTriangle, CheckCircle2, Search, ArrowRight, Settings, Smartphone, Server, LayoutTemplate, MapPin, Kanban, Factory, Users, Scissors, ShieldCheck, BarChart, ArrowDown, Power, Clock, Plug, Lock, Laptop, Battery, Home, Lightbulb, Check } from 'lucide-react';
+import { Activity, Cpu, Wifi, AlertTriangle, CheckCircle2, Smartphone, Server, LayoutTemplate, BarChart } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
 const VALUE_CHAIN = [

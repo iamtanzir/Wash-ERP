@@ -4,16 +4,14 @@ import {
   Users, UserPlus, Shield, UserMinus, ShieldAlert, CheckCircle2, 
   KeyRound, User, Eye, EyeOff, Server, HardDrive, Cloud, Download, 
   Upload, RefreshCw, Cpu, Wifi, Folder, Database, Terminal, 
-  Copy, Check, Laptop, Radio, AlertCircle, Globe, Smartphone, 
-  QrCode, ExternalLink, Zap, BookOpen, Sparkles, Share2, Layers, 
-  Lock, ArrowRight, HelpCircle
+  Copy, Check, Laptop, AlertCircle, Globe, Smartphone, 
+  QrCode, ExternalLink, Zap, BookOpen, Sparkles, Layers, 
+  Lock, ArrowRight
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
 import { 
-  isPuterAvailable, 
-  loadPuterServerless, 
   syncKpisToPuterKv, 
   testPuterServerlessKV, 
   generatePuterDeploySnippet 
@@ -89,7 +87,7 @@ export default function Admin() {
   const [guideLang, setGuideLang] = useState<"bn" | "en">("bn");
   const [activeOnlineGuide, setActiveOnlineGuide] = useState<"tunnel" | "puter" | "turso" | "vercel" | "gdrive" | "mobile">("puter");
   const [checkingOnline, setCheckingOnline] = useState(false);
-  const [onlineStatus, setOnlineStatus] = useState<{ checked: boolean; isOnline: boolean; isTurso: boolean } | null>(null);
+  const [, setOnlineStatus] = useState<{ checked: boolean; isOnline: boolean; isTurso: boolean } | null>(null);
   const [copiedPublicUrl, setCopiedPublicUrl] = useState(false);
 
   // Puter.com Serverless Technology State
@@ -104,7 +102,6 @@ export default function Admin() {
   const [syncingGdrive, setSyncingGdrive] = useState(false);
   const [restoringFile, setRestoringFile] = useState(false);
   const [gdriveSyncFolder, setGdriveSyncFolder] = useState("");
-  const [savingGdriveFolder, setSavingGdriveFolder] = useState(false);
 
   // Database Mode Switcher State
   const [selectedDbMode, setSelectedDbMode] = useState<string>("local");
@@ -133,7 +130,7 @@ export default function Admin() {
     setPuterSyncingKv(true);
     try {
       const res = await syncKpisToPuterKv({
-        factory: "Industrial Garment Washing ERP (RMG)",
+        factory: "Industrial Garment ERP",
         orders: hostInfo?.totalOrders || 0,
         syncTime: new Date().toISOString(),
         status: "Active & Synced"
@@ -608,21 +605,21 @@ export default function Admin() {
         </div>
 
         {isAdmin && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <button 
               onClick={handleExportBackup}
-              className="flex items-center gap-2 bg-slate-100 text-slate-700 hover:bg-slate-200 px-4 py-2.5 rounded-xl text-xs font-bold transition-all border border-slate-300 active:scale-95"
+              className="btn-neon-glass btn-neon-glass--emerald gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0"
               title="Download entire ERP snapshot"
             >
               <Download size={16} />
-              Export Backup
+              <span>Export Backup</span>
             </button>
             <button 
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-md active:scale-95"
+              className="btn-neon-glass btn-neon-glass--blue gap-2 px-5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0"
             >
               <UserPlus size={16} />
-              Whitelist User
+              <span>Whitelist User</span>
             </button>
           </div>
         )}
@@ -2412,7 +2409,7 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
             <div>
               <h2 className="text-xl font-bold text-slate-900 tracking-tight">Active Database Engine Selection</h2>
               <p className="text-xs text-slate-500 mt-1">
-                Choose how Industrial Garment Washing ERP stores data: Local SQLite, Google Drive Sync, Turso Cloud, or Apache Parquet Columnar (.parquet).
+                Choose how Industrial Garment ERP stores data: Local SQLite, Google Drive Sync, Turso Cloud, or Apache Parquet Columnar (.parquet).
               </p>
             </div>
 

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Package, Layers, RefreshCw, BarChart2, ShieldCheck, Truck, ListCollapse } from "lucide-react";
+import { Plus, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { formatNumber, formatDate } from "../lib/utils";
 

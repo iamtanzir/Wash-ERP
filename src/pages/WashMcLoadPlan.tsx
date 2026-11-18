@@ -4,22 +4,12 @@ import {
   WashingMachine, 
   Plus, 
   Search, 
-  Filter, 
-  Calendar, 
   Clock, 
-  CheckCircle, 
   AlertTriangle, 
   Trash2, 
-  Edit3, 
   Printer, 
-  ChevronRight, 
-  Layers, 
-  Flame, 
   Droplets, 
-  Wind, 
-  User, 
   Cpu, 
-  RefreshCw,
   Sparkles,
   FileSpreadsheet
 } from 'lucide-react';
@@ -129,7 +119,7 @@ export default function WashMcLoadPlan() {
   });
 
   // Query Wash M/C Loads
-  const { data: mcLoads = [], isLoading: loadingLoads, refetch: refetchLoads } = useQuery<WashMcLoad[]>({
+  const { data: mcLoads = [], isLoading: loadingLoads } = useQuery<WashMcLoad[]>({
     queryKey: ['washMcLoads'],
     queryFn: async () => {
       const res = await fetch('/api/db/wash_mc_loads');

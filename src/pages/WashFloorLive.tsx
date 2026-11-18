@@ -13,6 +13,8 @@ import {
 import { api, DailyLog, Order } from "../lib/api";
 import { formatNumber } from "../lib/utils";
 import { useRealTimeClock, getRealTime } from "../hooks/useRealTime";
+import { SpringNumber } from "../components/SpringMotion";
+import { prefetchRoute } from "../lib/routePrefetch";
 import type { WashMcLoad } from "./WashMcLoadPlan";
 
 const DAILY_TARGET_KEY = "wash_daily_target";
@@ -298,7 +300,8 @@ export default function WashFloorLive() {
         <div className="flex items-center gap-4">
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0d1526] hover:bg-[#152038] border border-slate-700/70 text-slate-200 text-xs font-semibold transition-colors"
+            onMouseEnter={() => prefetchRoute("/")}
+            className="btn-neon-glass btn-neon-glass--dark btn-neon-glass--cyan gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0"
           >
             <ArrowLeft size={14} />
             <span>Dashboard</span>
@@ -334,9 +337,9 @@ export default function WashFloorLive() {
             disabled={isRefreshing}
             aria-label="Refresh now"
             title="Refresh live floor metrics"
-            className="w-10 h-10 rounded-lg bg-[#0d1526] hover:bg-[#152038] border border-slate-700/70 flex items-center justify-center text-slate-300 hover:text-white transition-colors disabled:opacity-50"
+            className="btn-neon-glass btn-neon-glass--dark btn-neon-glass--cyan w-10 h-10 rounded-lg disabled:opacity-50"
           >
-            <RefreshCw size={16} className={isRefreshing ? "animate-spin text-sky-400" : ""} />
+            <RefreshCw size={16} className={isRefreshing ? "animate-spin text-sky-300" : ""} />
           </button>
 
           <button
@@ -344,7 +347,7 @@ export default function WashFloorLive() {
             onClick={toggleFullscreen}
             aria-label="Full screen"
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen TV Mode"}
-            className="w-10 h-10 rounded-lg bg-[#0d1526] hover:bg-[#152038] border border-slate-700/70 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+            className="btn-neon-glass btn-neon-glass--dark btn-neon-glass--blue w-10 h-10 rounded-lg"
           >
             {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
@@ -362,7 +365,7 @@ export default function WashFloorLive() {
           </div>
           <div className="mt-4 flex items-baseline gap-1.5">
             <span className="text-4xl md:text-[42px] font-black font-mono text-emerald-400 tabular-nums leading-none">
-              {formatNumber(metrics.todayRcv)}
+              <SpringNumber value={metrics.todayRcv} formatter={formatNumber} />
             </span>
             <span className="text-sm font-semibold text-slate-400">pcs</span>
           </div>
@@ -377,7 +380,7 @@ export default function WashFloorLive() {
           </div>
           <div className="mt-4 flex items-baseline gap-1.5">
             <span className="text-4xl md:text-[42px] font-black font-mono text-sky-400 tabular-nums leading-none">
-              {formatNumber(metrics.todayDel)}
+              <SpringNumber value={metrics.todayDel} formatter={formatNumber} />
             </span>
             <span className="text-sm font-semibold text-slate-400">pcs</span>
           </div>
@@ -392,7 +395,7 @@ export default function WashFloorLive() {
           </div>
           <div className="mt-4 flex items-baseline gap-1.5">
             <span className="text-4xl md:text-[42px] font-black font-mono text-amber-400 tabular-nums leading-none">
-              {formatNumber(metrics.wipOnFloor)}
+              <SpringNumber value={metrics.wipOnFloor} formatter={formatNumber} />
             </span>
             <span className="text-sm font-semibold text-slate-400">pcs</span>
           </div>
@@ -407,7 +410,7 @@ export default function WashFloorLive() {
           </div>
           <div className="mt-4 flex items-baseline gap-1.5">
             <span className="text-4xl md:text-[42px] font-black font-mono text-white tabular-nums leading-none">
-              {formatNumber(metrics.activeOrdersCount)}
+              <SpringNumber value={metrics.activeOrdersCount} formatter={formatNumber} />
             </span>
           </div>
         </div>

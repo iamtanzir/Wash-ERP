@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api, DailyLog } from '../lib/api';
-import { Download, Filter, Search, History, X, Calendar, FileText, CheckCircle2, PlusCircle, Wrench, Clock, ShieldAlert, WashingMachine, Cpu, AlertTriangle, Database, FileSpreadsheet } from 'lucide-react';
+import { api } from '../lib/api';
+import { Search, History, X, Calendar, FileText, CheckCircle2, PlusCircle, Wrench, Cpu, AlertTriangle, Database, FileSpreadsheet } from 'lucide-react';
 import { formatNumber, formatDate } from '../lib/utils';
 import { BUYERS } from '../lib/constants';
 import { toast } from 'sonner';
@@ -90,7 +90,6 @@ export default function DataBank() {
       const initialHoursOffset = (m.code === 'MC-01' ? 74.5 : m.code === 'MC-02' ? 92.0 : m.code === 'MC-03' ? 24.0 : 45.0);
       const cumulativeHours = initialHoursOffset + totalHours;
       
-      const cyclesCompleted = Math.floor(cumulativeHours / thresholdHours);
       const currentCycleHours = cumulativeHours % thresholdHours;
       const remainingHours = Math.round((thresholdHours - currentCycleHours) * 10) / 10;
       const progressPct = Math.min(100, Math.round((currentCycleHours / thresholdHours) * 100));

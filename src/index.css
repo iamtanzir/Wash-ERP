@@ -7,11 +7,159 @@
   --font-mono: "JetBrains Mono", monospace;
 }
 
+/* ============================================================================
+   ModernCSS Foundation (moderncss.dev): Fluid defaults, focus, tabular nums
+   ============================================================================ */
+html {
+  scroll-behavior: smooth;
+  text-size-adjust: 100%;
+}
+
 body {
   font-family: var(--font-sans);
-  background-color: #fafafa; /* neutral off-white similar to minimal saas */
-  color: #18181b; /* zinc-900 */
+  background-color: #fafafa;
+  color: #18181b;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+h1, h2, h3, h4 {
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+/* Crisp thin scrollbars across data-dense ERP tables */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+}
+
+/* Content-visibility hint for offscreen sections */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 360px;
+}
+
+/* ============================================================================
+   Glowing Neon Glassmorphism Buttons (freefrontend.com + moderncss.dev)
+   Compositor-only spring transitions, accessible contrast, zero layout shift
+   ============================================================================ */
+.btn-neon-glass {
+  --neon-rgb: 59, 130, 246;
+  --neon-border: rgba(var(--neon-rgb), 0.6);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  isolation: isolate;
+  color: #ffffff;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--neon-rgb), 0.92) 0%,
+    rgba(var(--neon-rgb), 0.74) 100%
+  );
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--neon-border);
+  box-shadow:
+    0 4px 16px rgba(var(--neon-rgb), 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  transition:
+    transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 180ms ease,
+    background 180ms ease;
+  will-change: transform;
+}
+
+/* Glass specular sheen sweep on hover (compositor transform only) */
+.btn-neon-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.24) 48%,
+    transparent 76%
+  );
+  transform: translateX(-120%);
+  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.btn-neon-glass:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+  border-color: rgba(var(--neon-rgb), 0.95);
+  box-shadow:
+    0 0 16px rgba(var(--neon-rgb), 0.55),
+    0 0 32px rgba(var(--neon-rgb), 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+
+.btn-neon-glass:hover:not(:disabled)::before {
+  transform: translateX(120%);
+}
+
+.btn-neon-glass:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Dark-canvas frosted glass variant (Login, Wash Floor Live, Dark Sidebar) */
+.btn-neon-glass--dark {
+  background: rgba(15, 23, 42, 0.55);
+  color: #f8fafc;
+  border: 1px solid rgba(var(--neon-rgb), 0.48);
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.35),
+    0 0 12px rgba(var(--neon-rgb), 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 10px rgba(var(--neon-rgb), 0.12);
+}
+
+.btn-neon-glass--dark:hover:not(:disabled) {
+  background: rgba(var(--neon-rgb), 0.18);
+  color: #ffffff;
+  border-color: rgba(var(--neon-rgb), 0.92);
+  box-shadow:
+    0 0 18px rgba(var(--neon-rgb), 0.52),
+    0 0 36px rgba(var(--neon-rgb), 0.26),
+    inset 0 0 14px rgba(var(--neon-rgb), 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+/* Neon Color Tokens */
+.btn-neon-glass--blue {
+  --neon-rgb: 37, 99, 235;
+}
+
+.btn-neon-glass--cyan {
+  --neon-rgb: 14, 165, 233;
+}
+
+.btn-neon-glass--emerald {
+  --neon-rgb: 16, 185, 129;
+}
+
+.btn-neon-glass--rose {
+  --neon-rgb: 225, 29, 72;
+}
+
+.btn-neon-glass--amber {
+  --neon-rgb: 245, 158, 11;
+}
+
+.btn-neon-glass--indigo {
+  --neon-rgb: 99, 102, 241;
+}
+
+/* Dark Mode Toggle Filter */
 html.dark-mode {
   filter: invert(1) hue-rotate(180deg);
   background-color: #111;
@@ -25,4 +173,14 @@ html.dark-mode iframe {
 
 html.dark-mode .dark-mode-ignore {
   filter: invert(1) hue-rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .btn-neon-glass,
+  .btn-neon-glass::before {
+    transition: none;
+  }
 }
