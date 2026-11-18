@@ -23,7 +23,9 @@ export class SQLiteAdapter implements DatabaseAdapter {
     
     if (!dbFile) {
       const filename = process.env.SQLITE_FILENAME || "erp_database.sqlite";
-      const dataDir = path.resolve(process.cwd(), "data");
+      const dataDir = process.env.VERCEL
+        ? path.join("/tmp", "wash-erp-data")
+        : path.resolve(process.cwd(), "data");
       try {
         if (!fs.existsSync(dataDir)) {
           fs.mkdirSync(dataDir, { recursive: true });

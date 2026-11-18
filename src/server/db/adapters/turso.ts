@@ -1,9 +1,52 @@
-import * as libsql from "@libsql/client";
-import type { Client } from "@libsql/client";
-const { createClient } = (libsql as any).default || libsql;
+import { createClient, type Client } from "@libsql/client/web";
 import { randomUUID } from "node:crypto";
 import type { DatabaseAdapter } from "../index.js";
 import { MemoryAdapter } from "./memory.js";
+
+function resolveTursoEnv(): { url: string; authToken: string } {
+  let url =
+    process.env.TURSO_DATABASE_URL ||
+    process.env.TURSO_URL ||
+    process.env.LIBSQL_URL ||
+    process.env.LIBSQL_DATABASE_URL ||
+    "";
+  let authToken =
+    process.env.TURSO_AUTH_TOKEN ||
+    process.env.LIBSQL_AUTH_TOKEN ||
+    "";
+
+  // Support Vercel Marketplace prefixed env vars (e.g. WASH_ERP_TURSO_DATABASE_URL)
+  if (!url) {
+    const urlKey = Object.keys(process.env).find(
+      (k) => k.endsWith("_TURSO_DATABASE_URL") && process.env[k]
+    );
+    if (urlKey) {
+      url = process.env[urlKey] || "";
+      const prefix = urlKey.slice(0, -"_TURSO_DATABASE_URL".length);
+      if (!authToken && process.env[`${prefix}_TURSO_AUTH_TOKEN`]) {
+        authToken = process.env[`${prefix}_TURSO_AUTH_TOKEN`] || "";
+      }
+    }
+  }
+
+  if (!authToken) {
+    const tokenKey = Object.keys(process.env).find(
+      (k) => k.endsWith("_TURSO_AUTH_TOKEN") && process.env[k]
+    );
+    if (tokenKey) {
+      authToken = process.env[tokenKey] || "";
+    }
+  }
+
+  if (!url) {
+    url = "libsql://database-aureolin-zebra-vercel-icfg-3u3w3vvbm3v8uvyu7ik2a9pf.aws-ap-south-1.turso.io";
+  }
+  if (!authToken) {
+    authToken = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODYzNzQ5MDQsImlkIjoiMDE5ZmI5MDItYjkwMS03NWJjLWEzZTEtOWFlNDI1NTYxYWQxIiwia2lkIjoiVWVoRWVGMFBOclI0ck05aTNkbVZyVVlSaWRWa3ozWnhFcE94em1rZGFDWSIsInJpZCI6IjY4YTBhMDJmLWU3MjgtNDJjNy1hYTg0LTE4MDZkNWZlNDY1OCJ9.DXPoxJ0q3c49KzXwCorD9Uyl8jUO9X18oI93TA5HUx2Nv4jOXUMN_82nr6gzaZm7XgR3gVSEXYQ2TGeNhIxTDw";
+  }
+
+  return { url, authToken };
+}
 
 export class TursoAdapter implements DatabaseAdapter {
   private client: Client;
@@ -15,8 +58,7 @@ export class TursoAdapter implements DatabaseAdapter {
   private ensuredTables = new Set<string>();
 
   constructor() {
-    let url = process.env.TURSO_DATABASE_URL || "libsql://database-aureolin-zebra-vercel-icfg-3u3w3vvbm3v8uvyu7ik2a9pf.aws-ap-south-1.turso.io";
-    let authToken = process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODYzNzQ5MDQsImlkIjoiMDE5ZmI5MDItYjkwMS03NWJjLWEzZTEtOWFlNDI1NTYxYWQxIiwia2lkIjoiVWVoRWVGMFBOclI0ck05aTNkbVZyVVlSaWRWa3ozWnhFcE94em1rZGFDWSIsInJpZCI6IjY4YTBhMDJmLWU3MjgtNDJjNy1hYTg0LTE4MDZkNWZlNDY1OCJ9.DXPoxJ0q3c49KzXwCorD9Uyl8jUO9X18oI93TA5HUx2Nv4jOXUMN_82nr6gzaZm7XgR3gVSEXYQ2TGeNhIxTDw";
+    let { url, authToken } = resolveTursoEnv();
 
     // Sanitize URLs that might be wrapped in quotes or have whitespace
     url = (url || "").trim().replace(/^['"](.*)['"]$/, '$1').replace(/\/+$/, "").replace(/\s+/g, ""); // Remove trailing slashes and ALL whitespace
@@ -250,11 +292,19 @@ export class TursoAdapter implements DatabaseAdapter {
           const maskedUrl = this.url.replace(/\/\/([^:]+):[^@]+@/, "//$1:****@").replace(/authToken=[^&]+/, "authToken=****");
           const errMsg = tableErr.message || "";
 
-          // Identify if it's a critical connection error
-          const isCriticalConn = 
-            errMsg.includes("404") || 
-            errMsg.includes("fetch failed") || 
-            errMsg.includes("unauthorized") || 
+          // Identify if it's a connection/network/auth/server error
+          const isCriticalConn =
+            errMsg.includes("404") ||
+            errMsg.includes("500") ||
+            errMsg.includes("502") ||
+            errMsg.includes("503") ||
+            errMsg.includes("SERVER_ERROR") ||
+            errMsg.includes("fetch") ||
+            errMsg.includes("network") ||
+            errMsg.includes("ENOTFOUND") ||
+            errMsg.includes("ECONNREFUSED") ||
+            errMsg.includes("ETIMEDOUT") ||
+            errMsg.includes("unauthorized") ||
             errMsg.includes("401") ||
             errMsg.includes("forbidden") ||
             errMsg.includes("403");
@@ -262,16 +312,11 @@ export class TursoAdapter implements DatabaseAdapter {
           if (isCriticalConn) {
             let reason = "Database connection could not be established.";
             if (errMsg.includes("404")) {
-              reason = `DATABASE NOT FOUND / EXPIRED (404). The database endpoint was reached, but it does not exist. 
-👉 Check if the database was deleted or expired in your Turso dashboard.
-👉 Verify if there is a typo in your TURSO_DATABASE_URL environment variable.`;
-            } else if (errMsg.includes("fetch failed")) {
-              reason = `NETWORK / DNS ERROR. Failed to reach the database server.
-👉 Verify if the hostname in your TURSO_DATABASE_URL is spelled correctly and includes '.turso.io'.
-👉 Check if your internet connection or cloud environment permits outbound traffic to Turso.`;
+              reason = `DATABASE NOT FOUND / EXPIRED (404). Verify your TURSO_DATABASE_URL environment variable.`;
+            } else if (errMsg.includes("fetch") || errMsg.includes("ENOTFOUND") || errMsg.includes("ETIMEDOUT") || errMsg.includes("502") || errMsg.includes("503")) {
+              reason = `NETWORK / ENDPOINT ERROR. Failed to reach the Turso database endpoint.`;
             } else if (errMsg.includes("401") || errMsg.includes("unauthorized")) {
-              reason = `UNAUTHORIZED ACCESS (401). The auth token provided is invalid or has expired.
-👉 Verify your TURSO_AUTH_TOKEN environment variable in your settings/dashboard.`;
+              reason = `UNAUTHORIZED ACCESS (401). Verify your TURSO_AUTH_TOKEN environment variable.`;
             }
 
             const connError = new Error(`[CRITICAL DATABASE CONNECTION FAILURE]\nReason: ${reason}\n\nTechnical details: ${errMsg}\nAttempted Endpoint: ${maskedUrl}`);

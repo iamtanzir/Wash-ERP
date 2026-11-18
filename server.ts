@@ -1,8 +1,9 @@
 import dotenv from "dotenv";
-dotenv.config({ override: true });
+if (!process.env.VERCEL) {
+    dotenv.config();
+}
 import express from "express";
 import http from "http";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import os from "node:os";
 import fs from "node:fs";
@@ -188,7 +189,6 @@ const ensureDb = async (req: any, res: any, next: any) => {
     }
 };
 
-const httpServer = http.createServer(app);
 const PORT = 3000;
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -196,7 +196,8 @@ const JWT_SECRET_KEY = process.env.JWT_SECRET || "inctl-internal-security-secret
 const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_KEY);
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(JWT_SECRET_KEY));
 
 // Health check API endpoint (First API route for container/proxy health checks)
@@ -257,7 +258,7 @@ const requireSuperAdmin = (req: any, res: any, next: any) => {
 
 // API: Login
 const handleLogin = async (req: any, res: any) => {
-    const { username, password } = req.body;
+    const { username, password } = req.body || {};
     
     if (!username || !password) {
         return res.status(400).json({ error: "Username and password required" });
@@ -310,6 +311,19 @@ const handleLogin = async (req: any, res: any) => {
             maxAge: 24 * 60 * 60 * 1000 // 24h
         });
 
+        try {
+            await Promise.race([
+                db.addDoc("audit_logs", {
+                    action: "login",
+                    userId: userData.id,
+                    ip: req.ip
+                }),
+                new Promise((resolve) => setTimeout(resolve, 1200))
+            ]);
+        } catch (auditErr) {
+            console.error("Audit log failed:", auditErr);
+        }
+
         res.json({
             success: true,
             token,
@@ -319,16 +333,6 @@ const handleLogin = async (req: any, res: any) => {
                 role: userData.role
             }
         });
-
-        try {
-            await db.addDoc("audit_logs", {
-                action: "login",
-                userId: userData.id,
-                ip: req.ip
-            });
-        } catch (auditErr) {
-            console.error("Audit log failed:", auditErr);
-        }
 
     } catch (error: any) {
         console.error("Login Error:", error);
@@ -1616,8 +1620,17 @@ app.post("/api/db/batch/:collection", authenticate, async (req, res) => {
     }
 });
 
+app.use((err: any, req: any, res: any, next: any) => {
+    console.error("[EXPRESS] Unhandled route error:", err);
+    if (res.headersSent) return next(err);
+    res.status(err?.status || 500).json({
+        error: err?.message || "Internal server error"
+    });
+});
+
 async function startServer() {
     console.log("[SERVER] Initializing...");
+    const httpServer = http.createServer(app);
 
     // Trigger seeding lazily on startup, but do not block node server initialization
     getSeedPromise().catch((err) => {
@@ -1639,6 +1652,7 @@ async function startServer() {
         });
     } else {
         console.log("[SERVER] Mode: Vite Dev Middleware with SPA fallback");
+        const { createServer: createViteServer } = await import("vite");
         const vite = await createViteServer({
             server: { 
                 middlewareMode: true,
@@ -1666,20 +1680,20 @@ async function startServer() {
         });
     }
 
-    if (!process.env.VERCEL) {
-        httpServer.on("error", (err: any) => {
-            if (err.code === "EADDRINUSE") {
-                console.error(`[SERVER] ⚠️ Port ${PORT} already in use. Retrying or binding to existing handle.`);
-            } else {
-                console.error("[SERVER] HTTP Server error:", err);
-            }
-        });
+    httpServer.on("error", (err: any) => {
+        if (err.code === "EADDRINUSE") {
+            console.error(`[SERVER] ⚠️ Port ${PORT} already in use. Retrying or binding to existing handle.`);
+        } else {
+            console.error("[SERVER] HTTP Server error:", err);
+        }
+    });
 
-        httpServer.listen(PORT, "0.0.0.0", () => {
-            console.log(`Server running on http://localhost:${PORT}`);
-        });
-    }
+    httpServer.listen(PORT, "0.0.0.0", () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+    });
 }
 
-startServer();
+if (!process.env.VERCEL) {
+    startServer();
+}
 export default app;

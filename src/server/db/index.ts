@@ -1,4 +1,7 @@
 import fs from "node:fs";
+import { TursoAdapter } from "./adapters/turso.js";
+import { SupabaseAdapter } from "./adapters/supabase.js";
+import { MemoryAdapter } from "./adapters/memory.js";
 
 export interface DatabaseAdapter {
   getDoc(collection: string, id: string): Promise<any>;
@@ -7,6 +10,10 @@ export interface DatabaseAdapter {
   updateDoc(collection: string, id: string, data: any): Promise<void>;
   deleteDoc(collection: string, id: string): Promise<void>;
   getDocs(collection: string, filters?: any[]): Promise<any[]>;
+}
+
+function hasEnvWithSuffix(suffix: string): boolean {
+  return Object.keys(process.env).some((k) => k.endsWith(suffix) && Boolean(process.env[k]));
 }
 
 class LazyDatabaseAdapter implements DatabaseAdapter {
@@ -24,16 +31,31 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
     const envDbType = process.env.DATABASE_MODE || process.env.DB_TYPE;
     let dbType = "";
 
+    const hasTurso =
+      Boolean(
+        (process.env.TURSO_DATABASE_URL || process.env.LIBSQL_URL || hasEnvWithSuffix("_TURSO_DATABASE_URL")) &&
+        (process.env.TURSO_AUTH_TOKEN || process.env.LIBSQL_AUTH_TOKEN || hasEnvWithSuffix("_TURSO_AUTH_TOKEN")) &&
+        process.env.TURSO_DATABASE_URL !== "libsql://missing-url.turso.io"
+      );
+
+    const hasSupabase =
+      Boolean(
+        process.env.SUPABASE_URL ||
+        process.env.NEXT_PUBLIC_SUPABASE_URL ||
+        process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        hasEnvWithSuffix("_SUPABASE_URL")
+      );
+
     if (!envDbType) {
       if (process.env.POLARDB_DATABASE_URL) {
         dbType = "polardb";
-      } else if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN && process.env.TURSO_DATABASE_URL !== "libsql://missing-url.turso.io") {
+      } else if (hasTurso) {
         dbType = "turso";
       } else if (process.env.FIREBASE_PROJECT_ID || fs.existsSync("./firebase-applet-config.json")) {
         dbType = "firebase";
       } else if (process.env.POCKETBASE_URL) {
         dbType = "pocketbase";
-      } else if (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      } else if (hasSupabase) {
         dbType = "supabase";
       } else {
         // Default to Turso with fallback credentials so everything works and persists automatically everywhere
@@ -54,7 +76,6 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
           return new PolarDBAdapter();
         }
         case "turso": {
-          const { TursoAdapter } = await import("./adapters/turso.js");
           return new TursoAdapter();
         }
         case "cockroach":
@@ -71,7 +92,6 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
           return new PocketBaseAdapter();
         }
         case "supabase": {
-          const { SupabaseAdapter } = await import("./adapters/supabase.js");
           return new SupabaseAdapter();
         }
         case "firebase": {
@@ -91,10 +111,12 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
           return new SQLiteAdapter();
         }
         case "memory": {
-          const { MemoryAdapter } = await import("./adapters/memory.js");
           return new MemoryAdapter();
         }
         default: {
+          if (process.env.VERCEL) {
+            return new MemoryAdapter();
+          }
           console.warn(`[DB] Unsupported database mode "${dbType}", falling back to local SQLite`);
           const { SQLiteAdapter } = await import("./adapters/sqlite.js");
           return new SQLiteAdapter();
@@ -102,12 +124,15 @@ class LazyDatabaseAdapter implements DatabaseAdapter {
       }
     } catch (loadErr: any) {
       console.error(`[DB] ❌ Failed to load adapter for "${dbType}":`, loadErr.message);
+      if (process.env.VERCEL) {
+        console.log("[DB] 💡 Vercel environment detected — falling back to MemoryAdapter");
+        return new MemoryAdapter();
+      }
       console.log("[DB] 💡 Falling back to SQLiteAdapter for local file persistence");
       try {
         const { SQLiteAdapter } = await import("./adapters/sqlite.js");
         return new SQLiteAdapter();
-      } catch (sqErr) {
-        const { MemoryAdapter } = await import("./adapters/memory.js");
+      } catch {
         return new MemoryAdapter();
       }
     }
