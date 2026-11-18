@@ -1,8 +1,9 @@
 # Keep local workspace data, backups, docs, and chat attachments out of Vercel deployments
-data/
-docs/
-.aistudio/
-public/assets/aistudio/
+/data/
+/docs/
+/.aistudio/
+/public/assets/aistudio/
+!src/data/
 *.sqlite
 *.db
 *.parquet
