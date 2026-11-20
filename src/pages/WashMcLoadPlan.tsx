@@ -632,7 +632,6 @@ export default function WashMcLoadPlan() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Garments Washing M/C Loading Schedule</h3>
             </div>
             <span className="text-[10px] bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full font-bold">
@@ -805,7 +804,7 @@ export default function WashMcLoadPlan() {
                     </div>
                   </div>
                   <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                    activeLoad ? 'bg-amber-500 text-slate-950 animate-pulse' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    activeLoad ? 'bg-amber-500 text-slate-950' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                   }`}>
                     {activeLoad ? activeLoad.status : 'Idle / Ready'}
                   </span>

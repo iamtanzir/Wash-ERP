@@ -747,10 +747,6 @@ export default function Dashboard() {
       {/* Auto Refresh Status Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm text-xs text-slate-600">
         <div className="flex items-center gap-2">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-          </span>
           <span className="font-semibold text-slate-700">Live Auto-Sync</span>
           <span className="text-slate-400">•</span>
           <span className="text-slate-400">Updates every 5 mins</span>
@@ -1368,7 +1364,7 @@ export default function Dashboard() {
       </div>
 
       <React.Suspense fallback={
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-slate-500 font-medium animate-pulse flex flex-col items-center justify-center gap-3">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-slate-500 font-medium flex flex-col items-center justify-center gap-3">
           <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
           <span className="text-sm font-semibold text-slate-600">Loading ERP Workspace Module...</span>
         </div>
@@ -1685,7 +1681,6 @@ export default function Dashboard() {
                 {/* Additional diagnostic advisory */}
                 <div className="p-3 bg-blue-50/50 border border-blue-100/60 rounded-xl space-y-1">
                   <div className="flex items-center gap-1.5 text-blue-800 font-bold text-[10px] uppercase tracking-wide">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
                     Manager Action Advisory
                   </div>
                   <p className="text-[10px] text-slate-600 leading-relaxed font-medium">

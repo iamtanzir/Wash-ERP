@@ -412,5 +412,155 @@ export const api = {
 
   async deleteWashRejection(id: string): Promise<any> {
     return fetchJSON(`/api/wash-rejections/${id}`, { method: "DELETE" });
+  },
+
+  async getOpenErpConfigs(): Promise<any> {
+    return fetchJSON("/api/open-erp/configs");
+  },
+
+  async connectOdooRpc(payload: { url: string; db: string; username: string; password: string }): Promise<any> {
+    return fetchJSON("/api/rpc-bridge/config", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async pushOdooBuyers(): Promise<any> {
+    return fetchJSON("/api/rpc-bridge/sync/push", { method: "POST" });
+  },
+
+  async pullOdooModel(model: string): Promise<any> {
+    return fetchJSON("/api/rpc-bridge/sync/pull", {
+      method: "POST",
+      body: JSON.stringify({ model })
+    });
+  },
+
+  async connectErpNext(payload: { url: string; apiKey: string; apiSecret: string; company?: string }): Promise<any> {
+    return fetchJSON("/api/open-erp/erpnext/connect", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async pushErpNextBuyers(): Promise<any> {
+    return fetchJSON("/api/open-erp/erpnext/push", { method: "POST" });
+  },
+
+  async pullErpNextDoctype(doctype: string): Promise<any> {
+    return fetchJSON("/api/open-erp/erpnext/pull", {
+      method: "POST",
+      body: JSON.stringify({ doctype })
+    });
+  },
+
+  async connectDolibarr(payload: { url: string; apiKey: string }): Promise<any> {
+    return fetchJSON("/api/open-erp/dolibarr/connect", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async pushDolibarrBuyers(): Promise<any> {
+    return fetchJSON("/api/open-erp/dolibarr/push", { method: "POST" });
+  },
+
+  async pullDolibarrResource(resource: string): Promise<any> {
+    return fetchJSON("/api/open-erp/dolibarr/pull", {
+      method: "POST",
+      body: JSON.stringify({ resource })
+    });
+  },
+
+  async probeOracleApex(payload: { url: string; ordsUrl?: string }): Promise<any> {
+    return fetchJSON("/api/open-erp/apex/probe", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async fetchApexOrds(payload: { ordsUrl: string; authHeader?: string }): Promise<any> {
+    return fetchJSON("/api/open-erp/apex/ords-fetch", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async importApexRows(rows: any[]): Promise<any> {
+    return fetchJSON("/api/open-erp/apex/import-rows", {
+      method: "POST",
+      body: JSON.stringify({ rows })
+    });
+  },
+
+  async executeOpenErpSandbox(payload: {
+    platform: "odoo" | "erpnext" | "dolibarr";
+    action: "create_buyer" | "create_work_order" | "create_chemical_po";
+    buyerName: string;
+    fileNo: string;
+    styleNo: string;
+    qty: number;
+    washType: string;
+    chemicalName: string;
+    chemicalKg: number;
+  }): Promise<any> {
+    return fetchJSON("/api/open-erp/sandbox/execute", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async connectOracleFreeSql(payload: {
+    user: string;
+    password?: string;
+    connectString: string;
+    walletPassword?: string;
+  }): Promise<any> {
+    return fetchJSON("/api/open-erp/freesql/connect", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async executeOracleFreeSql(payload: { sql: string; maxRows?: number }): Promise<any> {
+    return fetchJSON("/api/open-erp/freesql/execute", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async provisionOracleWashSchema(): Promise<any> {
+    return fetchJSON("/api/open-erp/freesql/provision", {
+      method: "POST",
+      body: JSON.stringify({})
+    });
+  },
+
+  async syncOracleFreeSql(): Promise<any> {
+    return fetchJSON("/api/open-erp/freesql/sync", {
+      method: "POST",
+      body: JSON.stringify({})
+    });
+  },
+
+  async convertQuickSql(quickSql: string): Promise<{ success: boolean; ddl: string }> {
+    return fetchJSON("/api/open-erp/freesql/quicksql", {
+      method: "POST",
+      body: JSON.stringify({ quickSql })
+    });
+  },
+
+  async runApexSqlQuery(payload: { sql: string; target?: "wash-erp" | "freesql" }): Promise<{
+    success: boolean;
+    sourceLabel: string;
+    headers: string[];
+    rows: any[][];
+    dbmsOutput?: string[];
+    executionMs?: number;
+  }> {
+    return fetchJSON("/api/apex/sql-query", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
   }
 };

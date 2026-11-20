@@ -760,7 +760,6 @@ export default function ErpAiChatWidget({ embedded = false }: { embedded?: boole
           className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-full shadow-xl border border-slate-700 transition-all hover:scale-105 active:scale-95 cursor-pointer"
           title="Live ERP Support • Permanent Memory & Excel Calculations"
         >
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <Headphones size={15} className="text-emerald-400" />
           <span className="text-xs font-extrabold tracking-wide">Support</span>
         </button>

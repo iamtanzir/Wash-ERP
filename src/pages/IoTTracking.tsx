@@ -498,7 +498,6 @@ export default function IoTTracking() {
               </div>
               <h1 className="text-2xl font-black tracking-tight text-white">OpenRemote Core • IoT Smart Tracking</h1>
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 {bridgeConfig.mode === 'hybrid-bridge' ? 'Hybrid Manager Bridge' : 'Embedded Asset Engine'}
               </span>
             </div>
@@ -663,11 +662,10 @@ export default function IoTTracking() {
 
                         <div className="text-right shrink-0">
                           <span
-                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
                               asset.online ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
                             }`}
                           >
-                            <span className={`w-1.5 h-1.5 rounded-full ${asset.online ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                             {asset.online ? 'Online' : 'Offline'}
                           </span>
                           {primaryAttr && (

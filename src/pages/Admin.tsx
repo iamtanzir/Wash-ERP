@@ -872,7 +872,6 @@ export default function Admin() {
                 <div className="bg-slate-900/90 border border-emerald-900/40 p-5 rounded-2xl">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                       Public Global Online Link
                     </span>
                     <span className="text-[10px] text-slate-400">
@@ -1999,7 +1998,7 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
               <div className="bg-slate-950/70 border border-slate-800 p-4 rounded-xl w-full lg:w-auto min-w-[320px]">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Wifi size={14} className="text-emerald-400 animate-pulse" />
+                    <Wifi size={14} className="text-emerald-400" />
                     Factory LAN Access URL
                   </span>
                   <button 
@@ -2325,7 +2324,7 @@ rclone sync ./data/gdrive_backups gdrive:INCTL_ERP_Backups -v
                 </button>
 
                 <label className="flex flex-col items-center justify-center p-4 bg-slate-50 hover:bg-slate-100 border border-dashed border-slate-300 rounded-xl transition-all cursor-pointer group">
-                  <Upload size={24} className={cn("text-emerald-600 mb-2 group-hover:scale-110 transition-transform", restoringFile && "animate-bounce")} />
+                  <Upload size={24} className="text-emerald-600 mb-2 group-hover:scale-110 transition-transform" />
                   <span className="text-xs font-bold text-slate-900">
                     {restoringFile ? "রিস্টোর হচ্ছে..." : "রিস্টোর ফাইল আপলোড"}
                   </span>

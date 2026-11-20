@@ -420,7 +420,6 @@ export default function ProactivePlan() {
         <div className="col-span-2 md:col-span-4 lg:col-span-1 bg-slate-900 text-white p-4 rounded-xl shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-300">Active AI Engine</p>
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           </div>
           <div>
             <p className="text-sm font-black truncate text-white">
@@ -686,7 +685,7 @@ export default function ProactivePlan() {
                             {m.status === 'completed' ? (
                               <CheckCircle2 size={16} className="text-emerald-500" />
                             ) : m.status === 'delayed' ? (
-                              <AlertCircle size={16} className="text-rose-500 animate-pulse" />
+                              <AlertCircle size={16} className="text-rose-500" />
                             ) : m.status === 'in_progress' ? (
                               <Activity size={16} className="text-indigo-600" />
                             ) : (

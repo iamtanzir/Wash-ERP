@@ -27,6 +27,7 @@ const WashMcLoadPlan = lazy(() => import('./pages/WashMcLoadPlan'));
 const ShiftProductionReport = lazy(() => import('./pages/ShiftProductionReport'));
 const WashRejectionReport = lazy(() => import('./pages/WashRejectionReport'));
 const WashFloorLive = lazy(() => import('./pages/WashFloorLive'));
+const OpenSourceErpHub = lazy(() => import('./pages/OpenSourceErpHub'));
 const Admin = lazy(() => import('./pages/Admin'));
 
 function PageFallback() {
@@ -62,6 +63,7 @@ export default function App() {
                   <Route path="wash-mc-plan" element={<WashMcLoadPlan />} />
                   <Route path="shift-production" element={<ShiftProductionReport />} />
                   <Route path="wash-rejection" element={<WashRejectionReport />} />
+                  <Route path="open-erp" element={<OpenSourceErpHub />} />
                   <Route path="close-order" element={<CloseOrder />} />
                   <Route path="data-bank" element={<DataBank />} />
                   

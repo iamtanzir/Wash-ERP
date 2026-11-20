@@ -212,7 +212,7 @@ export default function AionSuperAdminControl() {
           <div className="flex items-center gap-4">
             <div className={cn(
               "w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-xl shrink-0",
-              isSystemLocked ? "bg-rose-600 animate-pulse" : "bg-gradient-to-br from-indigo-500 to-purple-600"
+              isSystemLocked ? "bg-rose-600" : "bg-gradient-to-br from-indigo-500 to-purple-600"
             )}>
               <Globe size={28} />
             </div>
@@ -254,7 +254,7 @@ export default function AionSuperAdminControl() {
         {activeBroadcast && (
           <div className="mt-5 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between text-amber-200 text-xs">
             <div className="flex items-center gap-2.5">
-              <Radio size={18} className="text-amber-400 animate-pulse shrink-0" />
+              <Radio size={18} className="text-amber-400 shrink-0" />
               <span className="font-bold">Active Global Banner:</span>
               <span className="truncate">{activeBroadcast}</span>
             </div>
@@ -302,7 +302,6 @@ export default function AionSuperAdminControl() {
                   {node.type}
                 </span>
                 <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                   {node.latencyMs}ms
                 </span>
               </div>

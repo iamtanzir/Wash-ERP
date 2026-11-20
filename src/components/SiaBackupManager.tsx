@@ -116,7 +116,6 @@ export default function SiaBackupManager() {
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-2">
             <span>Sia Renter Node Status</span>
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
           </div>
           <div className="text-lg font-black text-slate-800">Connected & Synced</div>
           <div className="text-[11px] text-emerald-600 font-medium mt-1 flex items-center gap-1">

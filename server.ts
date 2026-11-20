@@ -37,6 +37,33 @@ import {
     createOpenRemoteAsset,
     syncExternalOpenRemoteManager
 } from "./src/server/openRemoteIot.js";
+import {
+    testErpNextConnection,
+    pushBuyersToErpNext,
+    pullErpNextDoctype,
+    testDolibarrConnection,
+    pushBuyersToDolibarr,
+    pullDolibarrResource,
+    probeOracleApexServer,
+    fetchOracleOrdsData,
+    buildRealWorldErpPayload,
+    generateOpenSourceErpCompose,
+    type ErpNextConfig,
+    type ErpNextDoctype,
+    type DolibarrConfig,
+    type DolibarrResource,
+    type OpenErpPlatform,
+    type SandboxWorkflowAction
+} from "./src/server/openSourceErpHub.js";
+import {
+    testOracleFreeSqlConnection,
+    executeOracleSql,
+    provisionWashErpSchema,
+    syncWashErpToOracleFreeSql,
+    convertQuickSqlToOracleDdl,
+    executeLocalWashSqlQuery,
+    type OracleFreeSqlConfig
+} from "./src/server/oracleFreeSql.js";
 
 let db = getDatabase();
 const app = express();
@@ -197,7 +224,7 @@ const authorize = (roles: string[]) => {
 
 const requireSuperAdmin = (req: any, res: any, next: any) => {
     if (!isSuperAdminUser(req.user)) {
-        return res.status(403).json({ error: "Forbidden: Host & Cloud Admin access is restricted to Super User (super_admin)." });
+        return res.status(403).json({ error: "Forbidden: Access is strictly restricted to Super User (super_admin)." });
     }
     next();
 };
@@ -1336,6 +1363,602 @@ app.get("/api/rpc-bridge/docker-compose", authenticate, (req, res) => {
     res.send(yaml);
 });
 
+// ============================================================================
+// ERP Hub (Odoo, ERPNext, Dolibarr) & Oracle APEX Bridge
+// ============================================================================
+app.get("/api/open-erp/configs", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const [odoo, erpnext, dolibarr, apex, freesql, labRuns] = await Promise.all([
+            db.getDoc("erp_integrations", "rpc_bridge").catch(() => null),
+            db.getDoc("erp_integrations", "erpnext_bridge").catch(() => null),
+            db.getDoc("erp_integrations", "dolibarr_bridge").catch(() => null),
+            db.getDoc("erp_integrations", "oracle_apex_bridge").catch(() => null),
+            db.getDoc("erp_integrations", "freesql_bridge").catch(() => null),
+            db.getDocs("open_erp_lab_runs").catch(() => [])
+        ]);
+
+        const sortedRuns = [...(Array.isArray(labRuns) ? labRuns : [])]
+            .sort((a: any, b: any) => String(b.created_at || "").localeCompare(String(a.created_at || "")))
+            .slice(0, 25);
+
+        res.json({
+            odoo: {
+                configured: Boolean(odoo?.url && odoo?.db && odoo?.username),
+                url: odoo?.url || "http://localhost:8069",
+                db: odoo?.db || "rmg_wash_erp",
+                username: odoo?.username || "admin",
+                hasPassword: Boolean(odoo?.password),
+                serverVersion: odoo?.serverVersion || null,
+                installedModules: odoo?.installedModules || [],
+                lastSyncAt: odoo?.lastSyncAt || null,
+            },
+            erpnext: {
+                configured: Boolean(erpnext?.url && erpnext?.apiKey),
+                url: erpnext?.url || "http://localhost:8080",
+                company: erpnext?.company || "INCTL Wash Unit",
+                hasCredentials: Boolean(erpnext?.apiKey && erpnext?.apiSecret),
+                loggedUser: erpnext?.loggedUser || null,
+                versions: erpnext?.versions || null,
+                lastSyncAt: erpnext?.lastSyncAt || null,
+            },
+            dolibarr: {
+                configured: Boolean(dolibarr?.url && dolibarr?.apiKey),
+                url: dolibarr?.url || "http://localhost:8090",
+                hasApiKey: Boolean(dolibarr?.apiKey),
+                dolibarrVersion: dolibarr?.dolibarrVersion || null,
+                lastSyncAt: dolibarr?.lastSyncAt || null,
+            },
+            apex: {
+                url: apex?.url || "",
+                ordsUrl: apex?.ordsUrl || "",
+                label: apex?.label || "Oracle APEX Bridge",
+                lastProbe: apex?.lastProbe || null,
+                lastSyncAt: apex?.lastSyncAt || null,
+            },
+            freesql: {
+                configured: Boolean(freesql?.user && freesql?.connectString && freesql?.password),
+                user: freesql?.user || "",
+                connectString: freesql?.connectString || "",
+                hasPassword: Boolean(freesql?.password),
+                hasWalletPassword: Boolean(freesql?.walletPassword),
+                lastCheck: freesql?.lastCheck || null,
+                lastSync: freesql?.lastSync || null,
+            },
+            labRuns: sortedRuns,
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: "Failed to load ERP Hub configuration", details: error.message });
+    }
+});
+
+// ERPNext / Frappe REST Connect, Push & Pull
+app.post("/api/open-erp/erpnext/connect", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const { url, apiKey, apiSecret, company } = req.body || {};
+        if (!url || !apiKey || !apiSecret) {
+            return res.status(400).json({ error: "ERPNext URL, API Key, and API Secret are required." });
+        }
+        const cfg: ErpNextConfig = {
+            url: String(url).trim(),
+            apiKey: String(apiKey).trim(),
+            apiSecret: String(apiSecret).trim(),
+            company: String(company || "INCTL Wash Unit").trim(),
+        };
+        const result = await testErpNextConnection(cfg);
+        await db.setDoc("erp_integrations", "erpnext_bridge", {
+            id: "erpnext_bridge",
+            ...cfg,
+            loggedUser: result.loggedUser,
+            versions: result.versions,
+            lastSyncAt: new Date().toISOString(),
+        });
+        res.json({
+            success: true,
+            loggedUser: result.loggedUser,
+            versions: result.versions,
+            message: `Connected to ERPNext as ${result.loggedUser}`,
+        });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message || "Failed to connect to ERPNext" });
+    }
+});
+
+app.post("/api/open-erp/erpnext/push", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const saved = await db.getDoc("erp_integrations", "erpnext_bridge").catch(() => null);
+        if (!saved?.url || !saved?.apiKey || !saved?.apiSecret) {
+            return res.status(400).json({ error: "Connect ERPNext first with URL, API Key, and API Secret." });
+        }
+        const orders = await db.getDocs("erp_orders").catch(() => []);
+        const buyerNames = orders.map((o: any) => o.buyer).filter(Boolean);
+        const stats = await pushBuyersToErpNext(saved as ErpNextConfig, buyerNames);
+        await db.setDoc("erp_integrations", "erpnext_bridge", {
+            ...saved,
+            lastSyncAt: new Date().toISOString(),
+        });
+        res.json({
+            success: true,
+            stats,
+            message: `ERPNext Customers synced (${stats.created} created, ${stats.existing} existing).`,
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "ERPNext push failed" });
+    }
+});
+
+app.post("/api/open-erp/erpnext/pull", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const doctype = String(req.body?.doctype || "Customer") as ErpNextDoctype;
+        const allowed: ErpNextDoctype[] = ["Customer", "Work Order", "Item", "Purchase Order", "Employee"];
+        if (!allowed.includes(doctype)) {
+            return res.status(400).json({ error: `Unsupported ERPNext DocType "${doctype}"` });
+        }
+        const saved = await db.getDoc("erp_integrations", "erpnext_bridge").catch(() => null);
+        if (!saved?.url || !saved?.apiKey || !saved?.apiSecret) {
+            return res.status(400).json({ error: "Connect ERPNext first." });
+        }
+        const records = await pullErpNextDoctype(saved as ErpNextConfig, doctype, 50);
+        const targetMap: Record<ErpNextDoctype, string> = {
+            Customer: "erp_crm_leads",
+            "Work Order": "erp_work_orders",
+            Item: "erp_inventory_items",
+            "Purchase Order": "erp_rfqs",
+            Employee: "erp_employees",
+        };
+        const targetCol = targetMap[doctype];
+        let imported = 0;
+        for (const rec of records) {
+            const safeKey = String(rec.name || rec.item_code || imported).replace(/[^a-zA-Z0-9_-]/g, "_");
+            const docId = `erpnext_${doctype.toLowerCase().replace(/\s+/g, "_")}_${safeKey}`;
+            await db.setDoc(targetCol, docId, {
+                id: docId,
+                external_erp: "erpnext",
+                external_doctype: doctype,
+                name: rec.customer_name || rec.item_name || rec.employee_name || rec.production_item || rec.name,
+                title: rec.customer_name || rec.item_name || rec.employee_name || rec.name,
+                customer_name: rec.customer_name || rec.supplier || rec.name,
+                qty_to_produce: Number(rec.qty) || 0,
+                status: rec.status || "Active",
+                raw: rec,
+                synced_at: new Date().toISOString(),
+            });
+            imported++;
+        }
+        res.json({
+            success: true,
+            doctype,
+            targetCollection: targetCol,
+            importedCount: imported,
+            records,
+            message: `Pulled ${imported} ERPNext ${doctype} records into ${targetCol}.`,
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "ERPNext pull failed" });
+    }
+});
+
+// Dolibarr REST Connect, Push & Pull
+app.post("/api/open-erp/dolibarr/connect", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const { url, apiKey } = req.body || {};
+        if (!url || !apiKey) {
+            return res.status(400).json({ error: "Dolibarr URL and DOLAPIKEY are required." });
+        }
+        const cfg: DolibarrConfig = {
+            url: String(url).trim(),
+            apiKey: String(apiKey).trim(),
+        };
+        const result = await testDolibarrConnection(cfg);
+        await db.setDoc("erp_integrations", "dolibarr_bridge", {
+            id: "dolibarr_bridge",
+            ...cfg,
+            dolibarrVersion: result.dolibarrVersion,
+            lastSyncAt: new Date().toISOString(),
+        });
+        res.json({
+            success: true,
+            dolibarrVersion: result.dolibarrVersion,
+            message: `Connected to Dolibarr (${result.dolibarrVersion})!`,
+        });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message || "Failed to connect to Dolibarr" });
+    }
+});
+
+app.post("/api/open-erp/dolibarr/push", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const saved = await db.getDoc("erp_integrations", "dolibarr_bridge").catch(() => null);
+        if (!saved?.url || !saved?.apiKey) {
+            return res.status(400).json({ error: "Connect Dolibarr first with URL and DOLAPIKEY." });
+        }
+        const orders = await db.getDocs("erp_orders").catch(() => []);
+        const buyerNames = orders.map((o: any) => o.buyer).filter(Boolean);
+        const stats = await pushBuyersToDolibarr(saved as DolibarrConfig, buyerNames);
+        await db.setDoc("erp_integrations", "dolibarr_bridge", {
+            ...saved,
+            lastSyncAt: new Date().toISOString(),
+        });
+        res.json({
+            success: true,
+            stats,
+            message: `Dolibarr Thirdparties synced (${stats.created} created, ${stats.existing} existing).`,
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Dolibarr push failed" });
+    }
+});
+
+app.post("/api/open-erp/dolibarr/pull", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const resource = String(req.body?.resource || "thirdparties") as DolibarrResource;
+        const allowed: DolibarrResource[] = ["thirdparties", "products", "orders", "supplierorders", "users"];
+        if (!allowed.includes(resource)) {
+            return res.status(400).json({ error: `Unsupported Dolibarr resource "${resource}"` });
+        }
+        const saved = await db.getDoc("erp_integrations", "dolibarr_bridge").catch(() => null);
+        if (!saved?.url || !saved?.apiKey) {
+            return res.status(400).json({ error: "Connect Dolibarr first." });
+        }
+        const records = await pullDolibarrResource(saved as DolibarrConfig, resource, 50);
+        const targetMap: Record<DolibarrResource, string> = {
+            thirdparties: "erp_crm_leads",
+            products: "erp_inventory_items",
+            orders: "erp_work_orders",
+            supplierorders: "erp_rfqs",
+            users: "erp_employees",
+        };
+        const targetCol = targetMap[resource];
+        let imported = 0;
+        for (const rec of records) {
+            const safeKey = String(rec.id || rec.ref || imported).replace(/[^a-zA-Z0-9_-]/g, "_");
+            const docId = `dolibarr_${resource}_${safeKey}`;
+            await db.setDoc(targetCol, docId, {
+                id: docId,
+                external_erp: "dolibarr",
+                external_resource: resource,
+                name: rec.name || rec.label || rec.ref || `${rec.firstname || ""} ${rec.lastname || ""}`.trim() || docId,
+                title: rec.label || rec.name || rec.ref || docId,
+                customer_name: rec.name || rec.ref || docId,
+                status: String(rec.status ?? "Active"),
+                raw: rec,
+                synced_at: new Date().toISOString(),
+            });
+            imported++;
+        }
+        res.json({
+            success: true,
+            resource,
+            targetCollection: targetCol,
+            importedCount: imported,
+            records,
+            message: `Pulled ${imported} Dolibarr ${resource} records into ${targetCol}.`,
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Dolibarr pull failed" });
+    }
+});
+
+// Oracle APEX Live Server Probe, ORDS REST Pull, & Order Bridge Import
+app.post("/api/open-erp/apex/probe", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const targetUrl = String(req.body?.url || "").trim();
+        if (!targetUrl) {
+            return res.status(400).json({ error: "Please enter your Oracle APEX URL." });
+        }
+        const probe = await probeOracleApexServer(targetUrl);
+        const existing = await db.getDoc("erp_integrations", "oracle_apex_bridge").catch(() => null);
+        await db.setDoc("erp_integrations", "oracle_apex_bridge", {
+            id: "oracle_apex_bridge",
+            url: targetUrl,
+            ordsUrl: existing?.ordsUrl || String(req.body?.ordsUrl || ""),
+            label: existing?.label || "Oracle APEX Bridge",
+            lastProbe: probe,
+            lastSyncAt: new Date().toISOString(),
+        });
+        res.json(probe);
+    } catch (error: any) {
+        res.status(400).json({ error: error.message || "Failed to probe Oracle APEX endpoint" });
+    }
+});
+
+app.post("/api/open-erp/apex/ords-fetch", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const ordsUrl = String(req.body?.ordsUrl || "").trim();
+        const authHeader = String(req.body?.authHeader || "").trim();
+        if (!ordsUrl) {
+            return res.status(400).json({ error: "ORDS REST endpoint URL is required." });
+        }
+        const data = await fetchOracleOrdsData({ ordsUrl, authHeader });
+        const existing = await db.getDoc("erp_integrations", "oracle_apex_bridge").catch(() => null);
+        await db.setDoc("erp_integrations", "oracle_apex_bridge", {
+            id: "oracle_apex_bridge",
+            url: existing?.url || "",
+            ordsUrl,
+            label: existing?.label || "Oracle APEX Bridge",
+            lastProbe: existing?.lastProbe || null,
+            lastSyncAt: new Date().toISOString(),
+        });
+        res.json({ success: true, ...data });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message || "Failed to fetch Oracle ORDS JSON data" });
+    }
+});
+
+app.post("/api/open-erp/apex/import-rows", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const rows = Array.isArray(req.body?.rows) ? req.body.rows : [];
+        if (rows.length === 0) {
+            return res.status(400).json({ error: "Provide at least one Oracle APEX row to import." });
+        }
+        const now = new Date().toISOString();
+        const today = new Date(Date.now() + 6 * 3600 * 1000).toISOString().split("T")[0];
+        let imported = 0;
+
+        for (const r of rows.slice(0, 200)) {
+            const fileNo = String(r.file_no || r.erp_no || r.FILE_NO || r.ERP_NO || r.JOB_NO || "").trim();
+            const buyer = String(r.buyer || r.BUYER || r.BUYER_NAME || "Oracle APEX").trim();
+            const styleNo = String(r.style_no || r.STYLE_NO || r.STYLE || "").trim();
+            const color = String(r.color || r.COLOR || r.COLOUR || "").trim();
+            const orderQty = Number(r.order_qty || r.ORDER_QTY || r.QTY || r.QTY_PCS || 0) || 0;
+            const washType = String(r.wash_type || r.WASH_TYPE || r.PROCESS_TYPE || "Normal Wash").trim();
+
+            if (!fileNo && !styleNo) continue;
+
+            const safeId = `apex_${(fileNo || styleNo).replace(/[^a-zA-Z0-9_-]/g, "_")}_${Date.now().toString(36)}_${imported}`;
+            await db.setDoc("erp_orders", safeId, {
+                id: safeId,
+                file_no: fileNo || styleNo,
+                job_ref: fileNo || styleNo,
+                buyer,
+                style_no: styleNo || fileNo,
+                color,
+                order_qty: orderQty,
+                wash_type: washType,
+                sew_floor: String(r.sew_floor || r.FLOOR || "Wash Floor"),
+                erp_date: String(r.erp_date || today),
+                status: "Active",
+                source_system: "ORACLE_APEX_BRIDGE",
+                created_at: now,
+                updated_at: now,
+            });
+            imported++;
+        }
+
+        res.json({
+            success: true,
+            importedCount: imported,
+            message: `Imported ${imported} Oracle APEX order rows into Wash ERP.`,
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to import Oracle APEX rows" });
+    }
+});
+
+// Hands-On Practice Lab Execution (Odoo / ERPNext / Dolibarr interactive workflow)
+app.post("/api/open-erp/sandbox/execute", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const platform = String(req.body?.platform || "odoo") as OpenErpPlatform;
+        const action = String(req.body?.action || "create_work_order") as SandboxWorkflowAction;
+        if (!["odoo", "erpnext", "dolibarr"].includes(platform)) {
+            return res.status(400).json({ error: "Invalid platform. Choose odoo, erpnext, or dolibarr." });
+        }
+        if (!["create_buyer", "create_work_order", "create_chemical_po"].includes(action)) {
+            return res.status(400).json({ error: "Invalid sandbox action." });
+        }
+
+        const payload = buildRealWorldErpPayload(platform, action, {
+            buyerName: String(req.body?.buyerName || "H&M Bangladesh").trim(),
+            fileNo: String(req.body?.fileNo || "111-9001").trim(),
+            styleNo: String(req.body?.styleNo || "8763").trim(),
+            qty: Math.max(1, Number(req.body?.qty) || 1200),
+            washType: String(req.body?.washType || "Enzyme Stone Wash").trim(),
+            chemicalName: String(req.body?.chemicalName || "Neutral Cellulase Enzyme").trim(),
+            chemicalKg: Math.max(1, Number(req.body?.chemicalKg) || 25),
+        });
+
+        // Persist into live ERP collection so hands-on actions have real effect
+        await db.setDoc(payload.targetCollection, payload.localDoc.id, payload.localDoc);
+
+        const runId = `run_${Date.now()}`;
+        const runLog = {
+            id: runId,
+            platform,
+            action,
+            protocol: payload.protocol,
+            endpoint: payload.endpoint,
+            method: payload.method,
+            targetCollection: payload.targetCollection,
+            createdDocId: payload.localDoc.id,
+            summary: payload.localDoc.title || payload.localDoc.name,
+            user: (req as any).user?.username || "operator",
+            created_at: new Date().toISOString(),
+        };
+        await db.setDoc("open_erp_lab_runs", runId, runLog);
+
+        res.json({
+            success: true,
+            run: runLog,
+            requestPreview: {
+                protocol: payload.protocol,
+                endpoint: payload.endpoint,
+                method: payload.method,
+                headers: payload.headers,
+                body: payload.body,
+            },
+            savedRecord: payload.localDoc,
+            message: `Executed ${platform.toUpperCase()} (${payload.protocol}) workflow & saved to ${payload.targetCollection}.`,
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Sandbox execution failed" });
+    }
+});
+
+app.get("/api/open-erp/docker-compose", authenticate, requireSuperAdmin, (req, res) => {
+    const rawStack = String(req.query?.stack || "all").toLowerCase();
+    const stack = (["odoo", "erpnext", "dolibarr", "oracle-free", "all"].includes(rawStack) ? rawStack : "all") as
+        | "odoo"
+        | "erpnext"
+        | "dolibarr"
+        | "oracle-free"
+        | "all";
+    const yaml = generateOpenSourceErpCompose(stack);
+    res.setHeader("Content-Disposition", `attachment; filename="docker-compose.${stack}.yml"`);
+    res.setHeader("Content-Type", "text/yaml");
+    res.send(yaml);
+});
+
+// Oracle FreeSQL / Oracle Database Free Thin-Mode Bridge (Super Admin Only)
+async function resolveFreeSqlConfig(body: any): Promise<OracleFreeSqlConfig> {
+    const saved = await db.getDoc("erp_integrations", "freesql_bridge").catch(() => null);
+    const user = String(body?.user || saved?.user || "").trim();
+    const password = String(body?.password || saved?.password || "");
+    const connectString = String(body?.connectString || saved?.connectString || "").trim();
+    const walletPassword = String(body?.walletPassword || saved?.walletPassword || "").trim();
+    if (!user || !password || !connectString) {
+        throw new Error("Oracle FreeSQL Schema User, Password, and SQL*Net Connect String are required.");
+    }
+    return {
+        user,
+        password,
+        connectString,
+        ...(walletPassword ? { walletPassword } : {}),
+    };
+}
+
+app.post("/api/open-erp/freesql/connect", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const cfg = await resolveFreeSqlConfig(req.body);
+        const testResult = await testOracleFreeSqlConnection(cfg);
+        const existing = await db.getDoc("erp_integrations", "freesql_bridge").catch(() => null);
+        await db.setDoc("erp_integrations", "freesql_bridge", {
+            id: "freesql_bridge",
+            user: cfg.user,
+            password: cfg.password,
+            connectString: cfg.connectString,
+            walletPassword: cfg.walletPassword || "",
+            lastCheck: testResult,
+            lastSync: existing?.lastSync || null,
+            updatedAt: new Date().toISOString(),
+        });
+        res.json({
+            success: true,
+            ...testResult,
+            message: `Connected to Oracle FreeSQL (${testResult.schemaUser}) in ${testResult.latencyMs}ms`,
+        });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message || "Failed to connect to Oracle FreeSQL" });
+    }
+});
+
+app.post("/api/open-erp/freesql/execute", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const sql = String(req.body?.sql || "").trim();
+        if (!sql) {
+            return res.status(400).json({ error: "Enter a SQL or PL/SQL statement to execute." });
+        }
+        const cfg = await resolveFreeSqlConfig(req.body);
+        const maxRows = Math.min(500, Math.max(1, Number(req.body?.maxRows) || 200));
+        const result = await executeOracleSql(cfg, sql, maxRows);
+        res.json({ success: true, ...result });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message || "Oracle FreeSQL execution failed" });
+    }
+});
+
+app.post("/api/open-erp/freesql/provision", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const cfg = await resolveFreeSqlConfig(req.body);
+        const result = await provisionWashErpSchema(cfg);
+        res.json({
+            success: true,
+            ...result,
+            message: `Provisioned ${result.created.length} new tables (${result.existing.length} already existed) in ${result.latencyMs}ms.`,
+        });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message || "Failed to provision Wash ERP tables in Oracle FreeSQL" });
+    }
+});
+
+app.post("/api/open-erp/freesql/sync", authenticate, requireSuperAdmin, async (req, res) => {
+    try {
+        const cfg = await resolveFreeSqlConfig(req.body);
+        const [orders, rejections, loads] = await Promise.all([
+            db.getDocs("erp_orders").catch(() => []),
+            db.getDocs("wash_rejections").catch(() => []),
+            db.getDocs("wash_mc_loads").catch(() => []),
+        ]);
+        const syncStats = await syncWashErpToOracleFreeSql(cfg, { orders, rejections, loads });
+        const existing = await db.getDoc("erp_integrations", "freesql_bridge").catch(() => null);
+        const lastSync = { ...syncStats, syncedAt: new Date().toISOString() };
+        if (existing) {
+            await db.setDoc("erp_integrations", "freesql_bridge", {
+                ...existing,
+                lastSync,
+            });
+        }
+        res.json({
+            success: true,
+            ...lastSync,
+            message: `Synced ${syncStats.ordersSynced} orders, ${syncStats.rejectionsSynced} rejections, and ${syncStats.loadsSynced} machine loads to Oracle FreeSQL.`,
+        });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message || "Failed to sync Wash ERP data to Oracle FreeSQL" });
+    }
+});
+
+app.post("/api/open-erp/freesql/quicksql", authenticate, requireSuperAdmin, (req, res) => {
+    try {
+        const quickSql = String(req.body?.quickSql || "");
+        const ddl = convertQuickSqlToOracleDdl(quickSql);
+        res.json({ success: true, ddl });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message || "QuickSQL conversion failed" });
+    }
+});
+
+// Dashboard Oracle APEX SQL Workshop (Live Wash ERP SQL + Optional FreeSQL for Super Admin)
+app.post("/api/apex/sql-query", authenticate, async (req, res) => {
+    try {
+        const sql = String(req.body?.sql || "").trim();
+        const target = String(req.body?.target || "wash-erp").toLowerCase();
+        if (!sql) {
+            return res.status(400).json({ error: "Please enter a SQL statement." });
+        }
+
+        if (target === "freesql") {
+            if (!isSuperAdminUser((req as any).user)) {
+                return res.status(403).json({ error: "Forbidden: FreeSQL target requires Super Admin privileges." });
+            }
+            const cfg = await resolveFreeSqlConfig({});
+            const oracleRes = await executeOracleSql(cfg, sql, 100);
+            const headers = oracleRes.columns.length > 0 ? oracleRes.columns : ["STATUS", "ROWS_AFFECTED"];
+            const rows = oracleRes.columns.length > 0
+                ? oracleRes.rows.map((r) => headers.map((h) => r[h] ?? ""))
+                : [["Statement executed on Oracle FreeSQL", oracleRes.rowsAffected]];
+            return res.json({
+                success: true,
+                sourceLabel: `Oracle FreeSQL (${cfg.user.toUpperCase()})`,
+                headers,
+                rows,
+                dbmsOutput: oracleRes.dbmsOutput,
+                executionMs: oracleRes.executionMs,
+            });
+        }
+
+        const [orders, loads, rejections, dailyLogs, archive] = await Promise.all([
+            db.getDocs("erp_orders").catch(() => []),
+            db.getDocs("wash_mc_loads").catch(() => []),
+            db.getDocs("wash_rejections").catch(() => []),
+            db.getDocs("daily_logs").catch(() => []),
+            db.getDocs("buyer_data_bank").catch(() => []),
+        ]);
+        const result = executeLocalWashSqlQuery(sql, { orders, loads, rejections, dailyLogs, archive });
+        res.json({ success: true, ...result });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message || "SQL query failed" });
+    }
+});
+
 app.get("/api/admin/users", authenticate, authorize(["admin"]), async (req, res) => {
     try {
         const users = await db.getDocs("users");
@@ -2063,6 +2686,86 @@ app.get("/api/orders", authenticate, async (req, res) => {
 // ============================================================================
 // MULTI-BUYER WASH REJECTION REPORT ROUTES (/api/wash-rejections/*)
 // ============================================================================
+function normalizeWashDefectLabel(raw: any): string {
+    const clean = String(raw || "").replace(/\s+/g, " ").trim();
+    if (!clean) return "";
+    const low = clean.toLowerCase();
+    const aliasMap: Record<string, string> = {
+        "wash raject": "Wash Reject",
+        "wash reject": "Wash Reject",
+        "wash rejt": "Wash Reject",
+        "neddle cut": "Needle Cut",
+        "needle cut": "Needle Cut",
+        "big sport": "Big Spot",
+        "big spot": "Big Spot",
+        "shade raject": "Shade Reject",
+        "shade reject": "Shade Reject",
+        "part shade": "Part Shade",
+        "part & sleeve shade": "Part & Sleeve Shade",
+        "part & sleeve shde": "Part & Sleeve Shade",
+        "body hole": "Body Hole",
+        "zipper rejection": "Zipper Rejection",
+        "broken stitch": "Broken Stitch",
+        "broken stich": "Broken Stitch",
+        "oil spot": "Oil Spot",
+        "oil sport": "Oil Spot",
+    };
+    return aliasMap[low] || clean;
+}
+
+function buildWashRejectionDoc(body: any, username: string) {
+    const id = body.id || `rej-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    let xs = Math.max(0, Number(body.xs) || 0);
+    let s = Math.max(0, Number(body.s) || 0);
+    let m = Math.max(0, Number(body.m) || 0);
+    let l = Math.max(0, Number(body.l) || 0);
+    let xl = Math.max(0, Number(body.xl) || 0);
+    let xxl = Math.max(0, Number(body.xxl) || 0);
+    let noSize = Math.max(0, Number(body.noSize) || 0);
+
+    const customSizes: Record<string, number> = {};
+    if (body.customSizes && typeof body.customSizes === "object" && !Array.isArray(body.customSizes)) {
+        for (const [k, v] of Object.entries(body.customSizes)) {
+            const label = String(k || "").trim();
+            const val = Math.max(0, Number(v) || 0);
+            if (!label || val <= 0) continue;
+            customSizes[label] = val;
+            const norm = label.toLowerCase().replace(/\s+/g, "");
+            if (norm === "xs") xs = val;
+            else if (norm === "s") s = val;
+            else if (norm === "m") m = val;
+            else if (norm === "l") l = val;
+            else if (norm === "xl") xl = val;
+            else if (norm === "xxl") xxl = val;
+            else if (norm === "nosize") noSize = val;
+        }
+    }
+
+    const customKeys = Object.keys(customSizes);
+    const ttl = customKeys.length > 0
+        ? Object.values(customSizes).reduce((acc, n) => acc + n, 0)
+        : xs + s + m + l + xl + xxl + noSize;
+
+    const rDateRaw = String(body.rDate || "").trim();
+    const rDate = rDateRaw || new Date(Date.now() + 6 * 3600 * 1000).toISOString().split("T")[0];
+
+    return {
+        id,
+        buyer: String(body.buyer || "Unknown").trim(),
+        erpNo: String(body.erpNo || "").trim(),
+        colour: String(body.colour || "").trim(),
+        country: String(body.country || "").trim(),
+        rDate,
+        xs, s, m, l, xl, xxl, noSize,
+        ...(customKeys.length > 0 ? { customSizes } : {}),
+        ttl,
+        rejectionType: String(body.rejectionType || "Before Wash Rejections").trim(),
+        remarks: normalizeWashDefectLabel(body.remarks),
+        updatedBy: username || "operator",
+        updatedAt: new Date().toISOString()
+    };
+}
+
 app.get("/api/wash-rejections", authenticate, async (req, res) => {
     try {
         const [entries, configDocs] = await Promise.all([
@@ -2072,11 +2775,17 @@ app.get("/api/wash-rejections", authenticate, async (req, res) => {
         const config = configDocs.find((d: any) => d.id === "master_config") || null;
         res.json({
             entries,
-            config: config || {
+            config: config ? {
+                buyerSizeLists: {},
+                customErpMasters: [],
+                ...config
+            } : {
                 id: "master_config",
                 sizeColumns: ["XS", "S", "M", "L", "XL", "XXL", "No Size"],
                 sizeRatios: { XS: 5, S: 10, M: 20, L: 25, XL: 25, XXL: 15, "No Size": 0 },
-                recvOverrides: {}
+                recvOverrides: {},
+                customErpMasters: [],
+                buyerSizeLists: {}
             }
         });
     } catch (error: any) {
@@ -2086,32 +2795,8 @@ app.get("/api/wash-rejections", authenticate, async (req, res) => {
 
 app.post("/api/wash-rejections", authenticate, authorize(["admin", "editor"]), async (req: any, res) => {
     try {
-        const body = req.body || {};
-        const id = body.id || `rej-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-        const xs = Number(body.xs) || 0;
-        const s = Number(body.s) || 0;
-        const m = Number(body.m) || 0;
-        const l = Number(body.l) || 0;
-        const xl = Number(body.xl) || 0;
-        const xxl = Number(body.xxl) || 0;
-        const noSize = Number(body.noSize) || 0;
-        const ttl = xs + s + m + l + xl + xxl + noSize;
-
-        const doc = {
-            id,
-            buyer: String(body.buyer || "Unknown").trim(),
-            erpNo: String(body.erpNo || "").trim(),
-            colour: String(body.colour || "").trim(),
-            country: String(body.country || "").trim(),
-            rDate: String(body.rDate || new Date(Date.now() + 6 * 3600 * 1000).toISOString().split("T")[0]).trim(),
-            xs, s, m, l, xl, xxl, noSize,
-            ttl,
-            rejectionType: String(body.rejectionType || "Before Wash Rejections").trim(),
-            remarks: String(body.remarks || "").trim(),
-            updatedBy: req.user?.username || "operator",
-            updatedAt: new Date().toISOString()
-        };
-        await db.setDoc("wash_rejections", id, doc);
+        const doc = buildWashRejectionDoc(req.body || {}, req.user?.username || "operator");
+        await db.setDoc("wash_rejections", doc.id, doc);
         res.status(201).json(doc);
     } catch (error: any) {
         res.status(500).json({ error: error.message || "Failed to save wash rejection" });
@@ -2126,29 +2811,8 @@ app.post("/api/wash-rejections/batch", authenticate, authorize(["admin", "editor
         }
         const saved: any[] = [];
         for (const item of entries) {
-            const id = item.id || `rej-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-            const xs = Number(item.xs) || 0;
-            const s = Number(item.s) || 0;
-            const m = Number(item.m) || 0;
-            const l = Number(item.l) || 0;
-            const xl = Number(item.xl) || 0;
-            const xxl = Number(item.xxl) || 0;
-            const noSize = Number(item.noSize) || 0;
-            const doc = {
-                id,
-                buyer: String(item.buyer || "Unknown").trim(),
-                erpNo: String(item.erpNo || "").trim(),
-                colour: String(item.colour || "").trim(),
-                country: String(item.country || "").trim(),
-                rDate: String(item.rDate || new Date(Date.now() + 6 * 3600 * 1000).toISOString().split("T")[0]).trim(),
-                xs, s, m, l, xl, xxl, noSize,
-                ttl: xs + s + m + l + xl + xxl + noSize,
-                rejectionType: String(item.rejectionType || "Before Wash Rejections").trim(),
-                remarks: String(item.remarks || "").trim(),
-                updatedBy: req.user?.username || "operator",
-                updatedAt: new Date().toISOString()
-            };
-            await db.setDoc("wash_rejections", id, doc);
+            const doc = buildWashRejectionDoc(item, req.user?.username || "operator");
+            await db.setDoc("wash_rejections", doc.id, doc);
             saved.push(doc);
         }
         res.status(201).json({ count: saved.length, entries: saved });
@@ -2167,6 +2831,9 @@ app.post("/api/wash-rejections/config", authenticate, authorize(["admin", "edito
             sizeRatios: body.sizeRatios || existing?.sizeRatios || { XS: 5, S: 10, M: 20, L: 25, XL: 25, XXL: 15, "No Size": 0 },
             recvOverrides: body.recvOverrides || existing?.recvOverrides || {},
             customErpMasters: Array.isArray(body.customErpMasters) ? body.customErpMasters : (existing?.customErpMasters || []),
+            buyerSizeLists: body.buyerSizeLists && typeof body.buyerSizeLists === "object"
+                ? body.buyerSizeLists
+                : (existing?.buyerSizeLists || {}),
             updatedBy: req.user?.username || "operator",
             updatedAt: new Date().toISOString()
         };

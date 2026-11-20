@@ -1,7 +1,10 @@
 import React, { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Play, Database, FileCode2, LayoutTemplate, Plus, Terminal, Search, Layers } from "lucide-react";
+import { Play, Database, FileCode2, LayoutTemplate, Plus, Terminal, Search, Layers, Globe } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "../contexts/AuthContext";
+import { api } from "../lib/api";
 
 interface ApexApp {
   id?: string;
@@ -20,13 +23,22 @@ interface OracleTable {
 }
 
 export default function ErpApex() {
+  const { isSuperAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"builder" | "sql" | "blueprints">("builder");
   const [searchApp, setSearchApp] = useState("");
   
   // SQL Terminal state
-  const [sqlCommand, setSqlCommand] = useState("SELECT * FROM EMPLOYEES WHERE DEPT_NO = 10;");
-  const [sqlResult, setSqlResult] = useState<{ headers: string[]; rows: any[][] } | null>(null);
+  const [sqlCommand, setSqlCommand] = useState("SELECT * FROM WASH_LOADS FETCH FIRST 25 ROWS ONLY");
+  const [sqlTarget, setSqlTarget] = useState<"wash-erp" | "freesql">("wash-erp");
+  const [runningSql, setRunningSql] = useState(false);
+  const [sqlResult, setSqlResult] = useState<{
+    sourceLabel: string;
+    headers: string[];
+    rows: any[][];
+    dbmsOutput?: string[];
+    executionMs?: number;
+  } | null>(null);
 
   // App form state
   const [newAppName, setNewAppName] = useState("");
@@ -36,44 +48,73 @@ export default function ErpApex() {
   // Table structure state
   const [selectedTable, setSelectedTable] = useState<string>("WASH_LOADS");
 
-  // Oracle DB Schema
+  // Live Wash ERP / Oracle Relational Schema Catalog
   const schemaTables: Record<string, OracleTable> = {
+    WASH_ORDERS: {
+      table_name: "WASH_ORDERS",
+      row_count: 0,
+      columns: [
+        { name: "ORDER_ID", type: "VARCHAR2(80)", nullable: false, pk: true },
+        { name: "FILE_NO", type: "VARCHAR2(80)", nullable: false },
+        { name: "BUYER", type: "VARCHAR2(120)", nullable: false },
+        { name: "STYLE_NO", type: "VARCHAR2(80)", nullable: true },
+        { name: "COLOR", type: "VARCHAR2(80)", nullable: true },
+        { name: "ORDER_QTY", type: "NUMBER(12)", nullable: false },
+        { name: "WASH_TYPE", type: "VARCHAR2(100)", nullable: false },
+        { name: "TOD", type: "VARCHAR2(40)", nullable: true }
+      ]
+    },
     WASH_LOADS: {
       table_name: "WASH_LOADS",
-      row_count: 1420,
+      row_count: 0,
       columns: [
-        { name: "LOAD_ID", type: "NUMBER(10)", nullable: false, pk: true },
+        { name: "LOAD_ID", type: "VARCHAR2(80)", nullable: false, pk: true },
         { name: "LOAD_NO", type: "VARCHAR2(50)", nullable: false },
-        { name: "MACHINE_CODE", type: "VARCHAR2(20)", nullable: false },
-        { name: "BUYER_NAME", type: "VARCHAR2(100)", nullable: true },
-        { name: "QTY_PCS", type: "NUMBER(8)", nullable: false },
+        { name: "MC_NUMBER", type: "VARCHAR2(20)", nullable: false },
+        { name: "SHIFT", type: "VARCHAR2(20)", nullable: true },
+        { name: "BUYER", type: "VARCHAR2(100)", nullable: true },
+        { name: "PCS_QTY", type: "NUMBER(8)", nullable: false },
         { name: "TOTAL_WEIGHT_KG", type: "NUMBER(10,2)", nullable: false },
-        { name: "PROCESS_TYPE", type: "VARCHAR2(50)", nullable: false },
-        { name: "CREATED_ON", type: "TIMESTAMP", nullable: false }
+        { name: "WET_PROCESS_TYPE", type: "VARCHAR2(50)", nullable: false }
       ]
     },
-    EMPLOYEES: {
-      table_name: "EMPLOYEES",
-      row_count: 48,
+    WASH_REJECTIONS: {
+      table_name: "WASH_REJECTIONS",
+      row_count: 0,
       columns: [
-        { name: "EMP_ID", type: "NUMBER(6)", nullable: false, pk: true },
-        { name: "FIRST_NAME", type: "VARCHAR2(50)", nullable: true },
-        { name: "LAST_NAME", type: "VARCHAR2(50)", nullable: false },
-        { name: "EMAIL", type: "VARCHAR2(100)", nullable: false },
-        { name: "JOB_ID", type: "VARCHAR2(30)", nullable: false },
-        { name: "SALARY", type: "NUMBER(8,2)", nullable: true },
-        { name: "DEPT_NO", type: "NUMBER(4)", nullable: true }
+        { name: "REJ_ID", type: "VARCHAR2(80)", nullable: false, pk: true },
+        { name: "BUYER", type: "VARCHAR2(120)", nullable: false },
+        { name: "ERP_NO", type: "VARCHAR2(80)", nullable: false },
+        { name: "COLOUR", type: "VARCHAR2(80)", nullable: true },
+        { name: "R_DATE", type: "VARCHAR2(30)", nullable: true },
+        { name: "TTL_QTY", type: "NUMBER(10)", nullable: false },
+        { name: "REJECTION_TYPE", type: "VARCHAR2(60)", nullable: false },
+        { name: "DEFECT_REMARKS", type: "VARCHAR2(200)", nullable: true }
       ]
     },
-    CHEMICAL_STOCKS: {
-      table_name: "CHEMICAL_STOCKS",
-      row_count: 85,
+    DAILY_LOGS: {
+      table_name: "DAILY_LOGS",
+      row_count: 0,
       columns: [
-        { name: "STOCK_ID", type: "NUMBER(8)", nullable: false, pk: true },
-        { name: "ITEM_NAME", type: "VARCHAR2(150)", nullable: false },
-        { name: "QTY_KG", type: "NUMBER(12,3)", nullable: false },
-        { name: "MIN_ALERT_LEVEL", type: "NUMBER(12,3)", nullable: true },
-        { name: "SHELF_LOCATION", type: "VARCHAR2(30)", nullable: true }
+        { name: "LOG_ID", type: "VARCHAR2(80)", nullable: false, pk: true },
+        { name: "LOG_DATE", type: "VARCHAR2(30)", nullable: false },
+        { name: "ERP_ORDER", type: "VARCHAR2(80)", nullable: false },
+        { name: "RECEIVED_QTY", type: "NUMBER(10)", nullable: false },
+        { name: "DELIVERED_QTY", type: "NUMBER(10)", nullable: false },
+        { name: "UNIT", type: "VARCHAR2(30)", nullable: true }
+      ]
+    },
+    BUYER_DATA_BANK: {
+      table_name: "BUYER_DATA_BANK",
+      row_count: 0,
+      columns: [
+        { name: "ARCHIVE_ID", type: "VARCHAR2(80)", nullable: false, pk: true },
+        { name: "BUYER", type: "VARCHAR2(120)", nullable: false },
+        { name: "FILE_NO", type: "VARCHAR2(80)", nullable: false },
+        { name: "STYLE_NO", type: "VARCHAR2(80)", nullable: true },
+        { name: "ORDER_QTY", type: "NUMBER(12)", nullable: false },
+        { name: "TOTAL_RECEIVED", type: "NUMBER(12)", nullable: false },
+        { name: "TOTAL_DELIVERED", type: "NUMBER(12)", nullable: false }
       ]
     }
   };
@@ -138,41 +179,26 @@ export default function ErpApex() {
     });
   };
 
-  // Run SQL Command
-  const handleRunSQL = () => {
-    const cleanCmd = sqlCommand.trim().toUpperCase();
-    if (!cleanCmd) return toast.error("Please specify a SQL Command.");
-
-    if (cleanCmd.startsWith("SELECT * FROM EMPLOYEES")) {
+  // Run SQL Command against Live Wash ERP or Connected Oracle FreeSQL
+  const handleRunSQL = async (overrideSql?: string) => {
+    const queryText = (overrideSql ?? sqlCommand).trim();
+    if (!queryText) return toast.error("Please specify a SQL command.");
+    if (overrideSql) setSqlCommand(overrideSql);
+    setRunningSql(true);
+    try {
+      const res = await api.runApexSqlQuery({ sql: queryText, target: sqlTarget });
       setSqlResult({
-        headers: ["EMP_ID", "FIRST_NAME", "LAST_NAME", "EMAIL", "SALARY", "DEPT_NO"],
-        rows: [
-          [1001, "Tanzir", "Hossain", "tanzir.iu@gmail.com", 8500, 10],
-          [1002, "Farhan", "Ahmed", "farhan@lab.com", 6200, 10],
-          [1003, "Sharif", "Khan", "sharif@dyer.com", 5800, 20],
-          [1004, "Rezaul", "Karim", "reza@it.com", 7200, 10]
-        ]
+        sourceLabel: res.sourceLabel,
+        headers: res.headers,
+        rows: res.rows,
+        dbmsOutput: res.dbmsOutput,
+        executionMs: res.executionMs,
       });
-      toast.success("Query executed: 4 rows returned.");
-    } else if (cleanCmd.startsWith("SELECT * FROM WASH_LOADS")) {
-      setSqlResult({
-        headers: ["LOAD_ID", "LOAD_NO", "MACHINE_CODE", "BUYER_NAME", "QTY_PCS", "TOTAL_WEIGHT_KG"],
-        rows: [
-          [101, "LD-2026-0001", "MC-01", "H&M Bangladesh", 600, 300.0],
-          [102, "LD-2026-0002", "MC-02", "Zara Group", 400, 260.0],
-          [103, "LD-2026-0003", "MC-03", "Levi Strauss", 300, 165.0]
-        ]
-      });
-      toast.success("Query executed: 3 rows returned.");
-    } else {
-      // General feedback
-      setSqlResult({
-        headers: ["STATUS_MSG", "ROWS_AFFECTED"],
-        rows: [
-          ["SQL execution successful on Oracle database schema.", "1 row updated"]
-        ]
-      });
-      toast.success("Statement processed successfully.");
+      toast.success(`${res.sourceLabel}: ${res.rows.length} row(s) returned.`);
+    } catch (err: any) {
+      toast.error(err?.message || "SQL execution failed.");
+    } finally {
+      setRunningSql(false);
     }
   };
 
@@ -184,6 +210,29 @@ export default function ErpApex() {
 
   return (
     <div className="space-y-6">
+      {/* Oracle APEX & Multi-ERP Workbench Bar */}
+      {isSuperAdmin && (
+      <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+            <Globe size={15} className="text-amber-600 shrink-0" />
+            <span>Oracle APEX Workspace &amp; Multi-ERP Bridge</span>
+          </div>
+          <p className="text-[11px] text-slate-500 truncate mt-0.5">
+            Design declarative apps or connect Odoo, ERPNext, Dolibarr, and Oracle APEX servers.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <Link
+            to="/open-erp"
+            className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors"
+          >
+            <span>ERP Hub (Odoo · ERPNext · Dolibarr · APEX)</span>
+          </Link>
+        </div>
+      </div>
+      )}
+
       {/* Top control bar */}
       <div className="flex flex-wrap items-center justify-between border-b border-slate-200 gap-2">
         <div className="flex">
@@ -350,9 +399,11 @@ export default function ErpApex() {
                   onChange={(e) => setSelectedTable(e.target.value)}
                   className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:outline-none"
                 >
-                  <option value="WASH_LOADS">WASH_LOADS (1,420 rows)</option>
-                  <option value="EMPLOYEES">EMPLOYEES (48 rows)</option>
-                  <option value="CHEMICAL_STOCKS">CHEMICAL_STOCKS (85 rows)</option>
+                  <option value="WASH_ORDERS">WASH_ORDERS (Live Active Orders)</option>
+                  <option value="WASH_LOADS">WASH_LOADS (Machine Load Plan)</option>
+                  <option value="WASH_REJECTIONS">WASH_REJECTIONS (QC Defects)</option>
+                  <option value="DAILY_LOGS">DAILY_LOGS (Recv &amp; Delivery)</option>
+                  <option value="BUYER_DATA_BANK">BUYER_DATA_BANK (Archived Jobs)</option>
                 </select>
               </div>
 
@@ -360,7 +411,13 @@ export default function ErpApex() {
               <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50/50">
                 <div className="bg-slate-100 px-3 py-2 border-b border-slate-200 flex items-center justify-between">
                   <span className="font-mono text-xs font-bold text-slate-700">{selectedTable}</span>
-                  <span className="text-[9px] bg-slate-200 px-1.5 py-0.2 rounded font-black text-slate-600">Oracle RDBMS</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRunSQL(`SELECT * FROM ${selectedTable} FETCH FIRST 25 ROWS ONLY`)}
+                    className="text-[10px] bg-amber-600 hover:bg-amber-700 text-white px-2 py-0.5 rounded font-bold cursor-pointer"
+                  >
+                    Query Table
+                  </button>
                 </div>
                 <div className="divide-y divide-slate-150 text-[11px] font-sans text-slate-600">
                   {schemaTables[selectedTable].columns.map((col, idx) => (
@@ -377,53 +434,113 @@ export default function ErpApex() {
           {/* SQL terminal console */}
           <div className="lg:col-span-2 space-y-4">
             <div className="bg-slate-900 rounded-xl overflow-hidden shadow-xl border border-slate-800 flex flex-col">
-              <div className="px-4 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+              <div className="px-4 py-3 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-mono font-bold text-slate-300 flex items-center gap-1.5"><Terminal size={14} className="text-amber-500" /> SQL Command Processor</span>
-                <button
-                  onClick={handleRunSQL}
-                  className="bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white text-[10px] font-bold px-3 py-1 rounded-lg transition-colors flex items-center gap-1"
-                >
-                  <Play size={10} fill="currentColor" /> Run Statement
-                </button>
+                <div className="flex items-center gap-2">
+                  {isSuperAdmin && (
+                    <div className="inline-flex rounded-lg bg-slate-800 p-0.5 text-[10px] font-semibold">
+                      <button
+                        type="button"
+                        onClick={() => setSqlTarget("wash-erp")}
+                        className={`px-2 py-1 rounded-md cursor-pointer transition-colors ${
+                          sqlTarget === "wash-erp" ? "bg-amber-600 text-white" : "text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        Live Wash ERP
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSqlTarget("freesql")}
+                        className={`px-2 py-1 rounded-md cursor-pointer transition-colors ${
+                          sqlTarget === "freesql" ? "bg-amber-600 text-white" : "text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        Oracle FreeSQL
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleRunSQL()}
+                    disabled={runningSql}
+                    className="bg-amber-600 hover:bg-amber-500 disabled:bg-amber-800 active:bg-amber-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <Play size={10} fill="currentColor" /> {runningSql ? "Running..." : "Run Statement"}
+                  </button>
+                </div>
               </div>
               <textarea
                 value={sqlCommand}
                 onChange={(e) => setSqlCommand(e.target.value)}
-                className="w-full bg-slate-900 text-amber-400 font-mono text-xs p-4 focus:outline-none min-h-[140px] leading-relaxed resize-y"
-                placeholder="Write your SQL SELECT/INSERT statements..."
+                className="w-full bg-slate-900 text-amber-400 font-mono text-xs p-4 focus:outline-none min-h-[130px] leading-relaxed resize-y"
+                placeholder="Write your SQL SELECT statement (e.g. SELECT * FROM WASH_ORDERS WHERE BUYER LIKE '%H&M%')..."
               />
+              <div className="px-4 py-2 bg-slate-950/70 border-t border-slate-800 flex flex-wrap gap-1.5">
+                {[
+                  { label: "USER_TABLES", sql: "SELECT TABLE_NAME, ROW_COUNT FROM USER_TABLES" },
+                  { label: "Active Orders", sql: "SELECT * FROM WASH_ORDERS FETCH FIRST 25 ROWS ONLY" },
+                  { label: "M/C Loads", sql: "SELECT * FROM WASH_LOADS FETCH FIRST 25 ROWS ONLY" },
+                  { label: "Rejections", sql: "SELECT * FROM WASH_REJECTIONS FETCH FIRST 25 ROWS ONLY" },
+                  { label: "Daily Logs", sql: "SELECT * FROM DAILY_LOGS FETCH FIRST 25 ROWS ONLY" },
+                ].map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => handleRunSQL(preset.sql)}
+                    className="text-[10px] font-mono bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded border border-slate-700 cursor-pointer"
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* SQL Query Result Display */}
             {sqlResult ? (
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                 <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Oracle DB Query Result</span>
+                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                    {sqlResult.sourceLabel} · {sqlResult.rows.length} rows
+                    {typeof sqlResult.executionMs === "number" ? ` · ${sqlResult.executionMs}ms` : ""}
+                  </span>
                 </div>
-                <div className="overflow-auto max-h-[220px]">
+                {sqlResult.dbmsOutput && sqlResult.dbmsOutput.length > 0 && (
+                  <div className="px-4 py-2.5 bg-slate-900 text-emerald-300 font-mono text-[11px] border-b border-slate-800 whitespace-pre-wrap">
+                    {sqlResult.dbmsOutput.join("\n")}
+                  </div>
+                )}
+                <div className="overflow-auto max-h-[260px]">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-100 border-b border-slate-200 text-[10px] font-bold text-slate-600 font-mono uppercase">
                         {sqlResult.headers.map((hdr, i) => (
-                          <th key={i} className="px-3 py-2">{hdr}</th>
+                          <th key={i} className="px-3 py-2 whitespace-nowrap">{hdr}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-150 font-mono text-[11px] text-slate-700">
-                      {sqlResult.rows.map((row, rIdx) => (
-                        <tr key={rIdx} className="hover:bg-slate-50/50">
-                          {row.map((val, cIdx) => (
-                            <td key={cIdx} className="px-3 py-2 text-slate-800">{val}</td>
-                          ))}
+                      {sqlResult.rows.length === 0 ? (
+                        <tr>
+                          <td colSpan={sqlResult.headers.length} className="px-3 py-4 text-center text-slate-400">
+                            No rows matched this query.
+                          </td>
                         </tr>
-                      ))}
+                      ) : (
+                        sqlResult.rows.map((row, rIdx) => (
+                          <tr key={rIdx} className="hover:bg-slate-50/50">
+                            {row.map((val, cIdx) => (
+                              <td key={cIdx} className="px-3 py-2 text-slate-800 whitespace-nowrap">{String(val ?? "")}</td>
+                            ))}
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
               </div>
             ) : (
               <div className="p-6 text-center text-slate-400 text-xs italic border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/30">
-                Execute a SELECT statement to display real-time live data.
+                Execute a SELECT statement or click any quick query above to inspect real-time Wash ERP data.
               </div>
             )}
           </div>

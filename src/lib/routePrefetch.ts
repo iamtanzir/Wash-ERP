@@ -13,6 +13,7 @@ const routeImporters: Record<string, () => Promise<unknown>> = {
   "/hm-tod": () => import("../pages/HMTOD"),
   "/proactive-plan": () => import("../pages/ProactivePlan"),
   "/iot-tracking": () => import("../pages/IoTTracking"),
+  "/open-erp": () => import("../pages/OpenSourceErpHub"),
   "/close-order": () => import("../pages/CloseOrder"),
   "/data-bank": () => import("../pages/DataBank"),
   "/admin": () => import("../pages/Admin"),

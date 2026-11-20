@@ -19,7 +19,8 @@ import {
   Sparkles,
   Activity,
   Tv,
-  AlertTriangle
+  AlertTriangle,
+  Globe
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../contexts/AuthContext";
@@ -48,6 +49,7 @@ const navItems: NavItem[] = [
   { name: "WORKING MATRIX (TOD)", href: "/hm-tod", icon: ClipboardCheck, desc: "Garment Wash Risk Analysis & TOD working matrix" },
   { name: "PROACTIVE PLAN", href: "/proactive-plan", icon: Sparkles, desc: "AI Powered Cloud-Based Apparel Planning Solution (MPS & T&A)" },
   { name: "IOT TRACKING", href: "/iot-tracking", icon: Activity, desc: "IoT-driven real-time production & critical path tracking" },
+  { name: "ERP HUB", href: "/open-erp", icon: Globe, desc: "Odoo, ERPNext, Dolibarr hands-on lab & Oracle APEX Bridge", superAdminOnly: true },
   { name: "CLOSE ERP ORDER", href: "/close-order", icon: Lock, desc: "Archive completed ERP orders" },
   { name: "ALL BUYER BANK", href: "/data-bank", icon: Database, desc: "Historic buyer data bank archive" },
   { 
@@ -119,6 +121,7 @@ export default function Layout() {
       case '/hm-tod': return 'Working Matrix & Risk Analysis';
       case '/proactive-plan': return 'ProactivePlan (Zero-Setup FLM Free AI)';
       case '/iot-tracking': return 'OpenRemote IoT Smart Tracking';
+      case '/open-erp': return 'ERP HUB (ODOO · ERPNEXT · DOLIBARR · APEX)';
       case '/close-order': return 'Close ERP Orders';
       case '/data-bank': return 'All Buyer Data';
       case '/admin': return 'Host & Cloud Database (PC, RPi, Google Drive)';
@@ -141,7 +144,7 @@ export default function Layout() {
               <WashingMachine size={22} className="text-white" strokeWidth={2.2} />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-white font-black text-xl tracking-tight leading-none group-hover:text-blue-100 transition-colors">WASH</h1>
+              <h1 className="text-white font-black text-xl tracking-wide leading-none group-hover:text-blue-100 transition-colors">WASH</h1>
               <span className="text-[#4da2ff] font-bold text-[10px] tracking-[0.2em] leading-none mt-1">ERP SYSTEM</span>
             </div>
           </Link>
@@ -204,7 +207,6 @@ export default function Layout() {
                   </p>
                   {canViewFinancialMetrics && (
                     <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-400 flex items-center gap-1 mt-0.5 truncate max-w-[165px]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
                       <span className="truncate">Financial Clearance</span>
                     </span>
                   )}
@@ -312,7 +314,6 @@ export default function Layout() {
                 title="Puter.com 100% Free Cloud & Host Admin"
                 className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 border border-amber-200 text-amber-900 hover:bg-amber-100 transition-all shadow-xs"
               >
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                 <span>Puter Cloud</span>
               </Link>
             )}
@@ -333,8 +334,7 @@ export default function Layout() {
 
         {/* Clean Minimal Status Footer */}
         <footer className="h-9 bg-slate-50 px-4 md:px-6 flex items-center justify-between text-[11px] text-slate-500 shrink-0 border-t border-slate-200">
-          <span className="flex items-center gap-1.5 text-emerald-600 font-semibold">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span className="text-emerald-600 font-semibold">
             Cloud Sync Active
           </span>
           <span className="text-slate-400 font-mono text-[10px]">WASH ERP</span>

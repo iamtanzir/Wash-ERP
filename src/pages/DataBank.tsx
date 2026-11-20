@@ -101,7 +101,7 @@ export default function DataBank() {
       if (remainingHours < 15) {
         urgentAlert = true;
         statusText = 'Urgent Maintenance Required';
-        statusColor = 'text-rose-600 bg-rose-50 border-rose-200 animate-pulse';
+        statusColor = 'text-rose-600 bg-rose-50 border-rose-200';
       } else if (remainingHours < 35) {
         statusText = 'Attention Needed Soon';
         statusColor = 'text-amber-600 bg-amber-50 border-amber-200';
@@ -480,7 +480,7 @@ export default function DataBank() {
                   </div>
                   <div className="flex items-center justify-between text-[10px] mt-1 font-bold">
                     <span className="text-slate-400">CYCLE COMPLETED: {Math.floor(m.cumulativeHours / m.thresholdHours)}</span>
-                    <span className={m.urgentAlert ? 'text-rose-600 animate-pulse' : 'text-slate-500'}>
+                    <span className={m.urgentAlert ? 'text-rose-600' : 'text-slate-500'}>
                       {m.remainingHours} hrs remaining
                     </span>
                   </div>
@@ -504,7 +504,7 @@ export default function DataBank() {
 
                 {/* Urgent Callout banner */}
                 {m.urgentAlert && (
-                  <div className="bg-rose-50 border border-rose-100 text-rose-800 p-2.5 rounded-lg flex items-start gap-2 animate-pulse mt-3">
+                  <div className="bg-rose-50 border border-rose-100 text-rose-800 p-2.5 rounded-lg flex items-start gap-2 mt-3">
                     <AlertTriangle size={14} className="text-rose-500 shrink-0 mt-0.5" />
                     <p className="text-[10px] leading-normal font-medium">
                       <strong>Critical Runtime Alert:</strong> Machine has breached safe running margins. Lock load sequencing & delegate physical bearing maintenance immediately.
